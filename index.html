@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proyectos Corporativos · Capacitaciones</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  /* ── RESET & BASE ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --surface-0: #f5f5f3;
+    --surface-1: #efefec;
+    --surface-2: #ffffff;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6b67;
+    --text-muted: #9b9b97;
+    --border: rgba(0,0,0,0.10);
+    --border-strong: rgba(0,0,0,0.18);
+    --radius: 8px;
+    --bg-accent: #e6f1fb;
+    --text-accent: #185fa5;
+    --border-accent: #85b7eb;
+    --fill-accent: #378add;
+    --on-accent: #ffffff;
+    --bg-success: #eaf3de;
+    --text-success: #3b6d11;
+    --border-success: #97c459;
+    --fill-success: #639922;
+    --bg-warning: #faeeda;
+    --text-warning: #854f0b;
+    --border-warning: #ef9f27;
+    --bg-danger: #fcebeb;
+    --text-danger: #a32d2d;
+    --border-danger: #f09595;
+    --fill-danger: #e24b4a;
+    --on-danger: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface-0: #1a1a18;
+      --surface-1: #242420;
+      --surface-2: #2e2e2a;
+      --text-primary: #f0f0ec;
+      --text-secondary: #a0a09a;
+      --text-muted: #6b6b65;
+      --border: rgba(255,255,255,0.10);
+      --border-strong: rgba(255,255,255,0.18);
+      --bg-accent: #042c53;
+      --text-accent: #85b7eb;
+      --border-accent: #185fa5;
+      --fill-accent: #378add;
+      --bg-success: #173404;
+      --text-success: #97c459;
+      --border-success: #3b6d11;
+      --bg-warning: #412402;
+      --text-warning: #ef9f27;
+      --border-warning: #854f0b;
+      --bg-danger: #501313;
+      --text-danger: #f09595;
+      --border-danger: #a32d2d;
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; color: var(--text-primary); background: var(--surface-0); min-height: 100vh; }
+
+  /* ── SETUP SCREEN ── */
+  #setupScreen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+  .setup-card { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 16px; padding: 32px; width: 100%; max-width: 440px; }
+  .setup-logo { width: 48px; height: 48px; background: var(--bg-accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+  .setup-logo svg { width: 26px; height: 26px; stroke: var(--text-accent); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .setup-card h1 { font-size: 20px; font-weight: 500; margin-bottom: 6px; }
+  .setup-card p { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.6; }
+  .form-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+  .form-field label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+  .form-field input { font-size: 13px; border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 9px 11px; background: var(--surface-1); color: var(--text-primary); outline: none; }
+  .form-field input:focus { border-color: var(--border-accent); box-shadow: 0 0 0 3px var(--bg-accent); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 13px; border: 0.5px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--text-primary); cursor: pointer; white-space: nowrap; font-family: inherit; transition: background 0.12s; }
+  .btn:hover { background: var(--surface-1); }
+  .btn.primary { background: var(--fill-accent); border-color: var(--fill-accent); color: var(--on-accent); }
+  .btn.primary:hover { opacity: 0.9; }
+  .btn.danger { background: var(--bg-danger); border-color: var(--border-danger); color: var(--text-danger); }
+  .btn-full { width: 100%; justify-content: center; padding: 10px; }
+  .hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
+  .hint a { color: var(--text-accent); text-decoration: none; }
+  .hint a:hover { text-decoration: underline; }
+  .err-msg { font-size: 12px; color: var(--text-danger); background: var(--bg-danger); border: 0.5px solid var(--border-danger); border-radius: var(--radius); padding: 8px 12px; margin-bottom: 14px; display: none; }
+
+  /* ── APP ── */
+  #app { display: none; flex-direction: column; min-height: 100vh; }
+  .header { background: var(--surface-2); border-bottom: 0.5px solid var(--border); padding: 13px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .logo { width: 32px; height: 32px; background: var(--bg-accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .logo svg { width: 18px; height: 18px; stroke: var(--text-accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .header h1 { font-size: 15px; font-weight: 500; }
+  .header-meta { font-size: 12px; color: var(--text-secondary); }
+  .profile-badge { display: flex; align-items: center; gap: 8px; background: var(--surface-1); border: 0.5px solid var(--border); border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 13px; position: relative; }
+  .profile-badge:hover { border-color: var(--border-strong); }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; }
+  .nav { display: flex; border-bottom: 0.5px solid var(--border); background: var(--surface-2); padding: 0 20px; overflow-x: auto; }
+  .nav-tab { padding: 10px 14px; font-size: 13px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.12s; }
+  .nav-tab:hover { color: var(--text-primary); }
+  .nav-tab.active { color: var(--text-accent); border-bottom-color: var(--fill-accent); font-weight: 500; }
+  .content { padding: 20px; flex: 1; }
+
+  /* ── STATS ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  @media (max-width: 600px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card { background: var(--surface-1); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+  .stat-value { font-size: 24px; font-weight: 500; }
+  .stat-value.accent { color: var(--text-accent); }
+  .stat-value.success { color: var(--text-success); }
+
+  /* ── TEAM CARDS ── */
+  .teams-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 700px) { .teams-grid { grid-template-columns: 1fr; } }
+  .team-card { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 12px; padding: 16px; }
+  .team-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .team-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .team-icon svg { width: 20px; height: 20px; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .team-name { font-size: 14px; font-weight: 500; }
+  .team-email { font-size: 11px; color: var(--text-secondary); }
+  .team-stats { display: flex; gap: 14px; }
+  .ts-item { display: flex; flex-direction: column; align-items: center; }
+  .ts-num { font-size: 18px; font-weight: 500; }
+  .ts-lab { font-size: 11px; color: var(--text-secondary); }
+  .progress-bar-bg { height: 5px; background: var(--surface-1); border-radius: 3px; overflow: hidden; margin-top: 10px; }
+  .progress-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+
+  /* ── TOOLBAR ── */
+  .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .toolbar input, .toolbar select { flex: 1; min-width: 130px; max-width: 200px; font-size: 13px; border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 7px 10px; background: var(--surface-2); color: var(--text-primary); outline: none; font-family: inherit; }
+  .toolbar input:focus, .toolbar select:focus { border-color: var(--border-accent); }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; border: 0.5px solid var(--border); border-radius: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
+  thead { background: var(--surface-1); }
+  th { padding: 9px 12px; text-align: left; font-weight: 500; color: var(--text-secondary); font-size: 12px; border-bottom: 0.5px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 0.5px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface-1); }
+  .empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; }
+
+  /* ── BADGES ── */
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-plan { background: var(--bg-accent); color: var(--text-accent); }
+  .badge-impl { background: var(--bg-success); color: var(--text-success); }
+  .badge-om   { background: var(--bg-warning); color: var(--text-warning); }
+  .badge-done { background: var(--bg-success); color: var(--text-success); }
+  .badge-curso { background: var(--bg-accent); color: var(--text-accent); }
+  .badge-pend { background: var(--bg-warning); color: var(--text-warning); }
+  .badge-inicia { background: var(--surface-1); color: var(--text-secondary); border: 0.5px solid var(--border); }
+  .badge-alta { background: var(--bg-danger); color: var(--text-danger); }
+  .badge-media { background: var(--bg-warning); color: var(--text-warning); }
+  .badge-baja { background: var(--bg-success); color: var(--text-success); }
+
+  /* ── PROGRESS BAR INLINE ── */
+  .pct-bar { width: 56px; height: 5px; background: var(--surface-1); border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; margin-left: 5px; }
+  .pct-fill { height: 100%; background: var(--fill-accent); border-radius: 3px; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.40); display: flex; align-items: center; justify-content: center; z-index: 200; }
+  .modal { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 16px; width: 94%; max-width: 560px; max-height: 92vh; overflow-y: auto; }
+  .modal-header { padding: 18px 20px 14px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-header h2 { font-size: 15px; font-weight: 500; }
+  .modal-body { padding: 20px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+  .form-field.full { grid-column: 1 / -1; }
+  .form-field select, .form-field textarea { font-size: 13px; border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 8px 10px; background: var(--surface-1); color: var(--text-primary); outline: none; font-family: inherit; }
+  .form-field select:focus, .form-field input:focus, .form-field textarea:focus { border-color: var(--border-accent); }
+  .form-field textarea { resize: vertical; min-height: 60px; }
+  .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 0.5px solid var(--border); }
+
+  /* ── CURSO ITEM ── */
+  .search-curso { width: 100%; font-size: 13px; border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 8px 10px; background: var(--surface-1); color: var(--text-primary); margin-bottom: 8px; outline: none; font-family: inherit; }
+  .search-curso:focus { border-color: var(--border-accent); }
+  .curso-list { max-height: 200px; overflow-y: auto; margin-bottom: 12px; display: flex; flex-direction: column; gap: 5px; }
+  .curso-item { padding: 9px 11px; border-radius: var(--radius); border: 0.5px solid var(--border); background: var(--surface-1); cursor: pointer; transition: border-color 0.12s; }
+  .curso-item:hover { border-color: var(--border-accent); }
+  .curso-item.selected { border-color: var(--fill-accent); background: var(--bg-accent); }
+  .curso-title { font-size: 12px; font-weight: 500; }
+  .curso-meta { font-size: 11px; color: var(--text-secondary); margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .curso-selected-box { display: none; background: var(--bg-accent); border: 0.5px solid var(--border-accent); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 14px; font-size: 13px; }
+
+  /* ── PROFILE MENU ── */
+  .profile-menu { display: none; position: absolute; top: calc(100% + 8px); right: 0; background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 12px; padding: 8px; z-index: 300; min-width: 230px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+  .pm-item { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: var(--radius); cursor: pointer; font-size: 13px; }
+  .pm-item:hover { background: var(--surface-1); }
+  .pm-divider { border: none; border-top: 0.5px solid var(--border); margin: 6px 0; }
+  .pm-label { font-size: 11px; color: var(--text-muted); padding: 4px 8px 2px; }
+
+  /* ── SPINNER ── */
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--fill-accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── LOADING OVERLAY ── */
+  #loadingOverlay { position: fixed; inset: 0; background: var(--surface-2); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; z-index: 999; }
+  #loadingOverlay .spinner { width: 32px; height: 32px; border-width: 3px; }
+  #loadingOverlay p { font-size: 13px; color: var(--text-secondary); }
+
+  /* ── TOAST ── */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--text-primary); color: var(--surface-2); font-size: 13px; padding: 10px 16px; border-radius: var(--radius); opacity: 0; transform: translateY(8px); transition: all 0.2s; z-index: 500; pointer-events: none; }
+  #toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── SECTION TITLE ── */
+  .section-title { font-size: 14px; font-weight: 500; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; color: var(--text-secondary); }
+
+  /* ── INFO BOX ── */
+  .info-box { background: var(--bg-accent); border: 0.5px solid var(--border-accent); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; font-size: 13px; color: var(--text-accent); line-height: 1.6; }
+  .info-box ul { margin-top: 6px; padding-left: 18px; display: flex; flex-direction: column; gap: 2px; }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+  <p>Cargando sistema...</p>
+</div>
+
+<!-- SETUP SCREEN -->
+<div id="setupScreen" style="display:none">
+  <div class="setup-card">
+    <div class="setup-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+    </div>
+    <h1>Proyectos Corporativos · Capacitaciones</h1>
+    <p>Conecta tu proyecto de Supabase para comenzar. Los datos se guardarán en tu base de datos.</p>
+    <div id="setupErr" class="err-msg"></div>
+    <div class="form-field">
+      <label>URL del proyecto Supabase</label>
+      <input type="url" id="sbUrl" placeholder="https://xxxxxxxxxxxx.supabase.co" autocomplete="off">
+      <span class="hint">Proyecto → Settings → API → Project URL</span>
+    </div>
+    <div class="form-field">
+      <label>Anon / Public Key</label>
+      <input type="text" id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." autocomplete="off">
+      <span class="hint">Proyecto → Settings → API → <code>anon public</code> key</span>
+    </div>
+    <button class="btn primary btn-full" onclick="connectSupabase()" id="btnConnect">Conectar</button>
+    <hr style="border:none;border-top:0.5px solid var(--border);margin:20px 0">
+    <p class="hint">
+      ¿Nuevo en Supabase? <a href="https://supabase.com" target="_blank">Crear cuenta gratis →</a><br><br>
+      Después de conectar, abre la consola SQL de Supabase y ejecuta el script <code>schema.sql</code> incluido en este repositorio para crear las tablas necesarias.
+    </p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">
+        <svg viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+      </div>
+      <div>
+        <div class="header h1" style="font-size:15px;font-weight:500">Proyectos Corporativos · Capacitaciones</div>
+        <div class="header-meta" id="headerMeta">Portal de gestión de formación</div>
+      </div>
+    </div>
+    <div style="position:relative">
+      <div class="profile-badge" id="profileBadge" onclick="toggleProfileMenu()">
+        <div class="avatar" id="avatarEl" style="background:var(--bg-accent);color:var(--text-accent)">TU</div>
+        <span id="profileName">Admin</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="profile-menu" id="profileMenu">
+        <div class="pm-label">Cambiar perfil</div>
+        <div class="pm-item" onclick="setProfile('admin')">
+          <div class="avatar" style="width:28px;height:28px;background:var(--bg-accent);color:var(--text-accent)">TU</div>
+          <div><div style="font-weight:500">Admin</div><div style="font-size:11px;color:var(--text-secondary)">Vista completa</div></div>
+        </div>
+        <div class="pm-item" onclick="setProfile('plan')">
+          <div class="avatar" style="width:28px;height:28px;background:var(--bg-accent);color:var(--text-accent)">PL</div>
+          <div><div style="font-weight:500">Planificación</div><div style="font-size:11px;color:var(--text-secondary)">hchiluisatn2209@gmail.com</div></div>
+        </div>
+        <div class="pm-item" onclick="setProfile('impl')">
+          <div class="avatar" style="width:28px;height:28px;background:var(--bg-success);color:var(--text-success)">IM</div>
+          <div><div style="font-weight:500">Implementación</div><div style="font-size:11px;color:var(--text-secondary)">geovanna.naranjo23@gmail.com</div></div>
+        </div>
+        <div class="pm-item" onclick="setProfile('om')">
+          <div class="avatar" style="width:28px;height:28px;background:var(--bg-warning);color:var(--text-warning)">OM</div>
+          <div><div style="font-weight:500">O&amp;M</div><div style="font-size:11px;color:var(--text-secondary)">cralarcontn1607@gmail.com</div></div>
+        </div>
+        <hr class="pm-divider">
+        <div class="pm-item" onclick="desconectar()" style="color:var(--text-danger)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          Desconectar Supabase
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <div class="nav-tab active" onclick="switchTab(this,'dashboard')">📊 Dashboard</div>
+    <div class="nav-tab" onclick="switchTab(this,'asignaciones')">📋 Asignaciones</div>
+    <div class="nav-tab" onclick="switchTab(this,'cursos')">🎓 Catálogo Udemy</div>
+    <div class="nav-tab" onclick="switchTab(this,'personal')">👥 Personal</div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div id="tab-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Personal total</div><div class="stat-value" id="s-total">—</div></div>
+        <div class="stat-card"><div class="stat-label">Cursos en curso</div><div class="stat-value accent" id="s-active">—</div></div>
+        <div class="stat-card"><div class="stat-label">Culminados</div><div class="stat-value success" id="s-done">—</div></div>
+        <div class="stat-card"><div class="stat-label">Cursos disponibles</div><div class="stat-value" id="s-udemy">—</div></div>
+      </div>
+      <div class="section-title">Equipos</div>
+      <div class="teams-grid">
+        <div class="team-card">
+          <div class="team-header">
+            <div class="team-icon" style="background:var(--bg-accent)">
+              <svg viewBox="0 0 24 24" style="stroke:var(--text-accent)"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            </div>
+            <div><div class="team-name">Planificación</div><div class="team-email">hchiluisatn2209@gmail.com</div></div>
+          </div>
+          <div class="team-stats">
+            <div class="ts-item"><span class="ts-num" id="tp-total">—</span><span class="ts-lab">personas</span></div>
+            <div class="ts-item"><span class="ts-num accent" id="tp-en">—</span><span class="ts-lab">en curso</span></div>
+            <div class="ts-item"><span class="ts-num success" id="tp-done">—</span><span class="ts-lab">culminados</span></div>
+          </div>
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-plan" style="width:0%;background:var(--fill-accent)"></div></div>
+        </div>
+        <div class="team-card">
+          <div class="team-header">
+            <div class="team-icon" style="background:var(--bg-success)">
+              <svg viewBox="0 0 24 24" style="stroke:var(--text-success)"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <div><div class="team-name">Implementación</div><div class="team-email">geovanna.naranjo23@gmail.com</div></div>
+          </div>
+          <div class="team-stats">
+            <div class="ts-item"><span class="ts-num" id="ti-total">—</span><span class="ts-lab">personas</span></div>
+            <div class="ts-item"><span class="ts-num accent" id="ti-en">—</span><span class="ts-lab">en curso</span></div>
+            <div class="ts-item"><span class="ts-num success" id="ti-done">—</span><span class="ts-lab">culminados</span></div>
+          </div>
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-impl" style="width:0%;background:var(--fill-success)"></div></div>
+        </div>
+        <div class="team-card">
+          <div class="team-header">
+            <div class="team-icon" style="background:var(--bg-warning)">
+              <svg viewBox="0 0 24 24" style="stroke:var(--text-warning)"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            </div>
+            <div><div class="team-name">O&amp;M</div><div class="team-email">cralarcontn1607@gmail.com</div></div>
+          </div>
+          <div class="team-stats">
+            <div class="ts-item"><span class="ts-num" id="to-total">—</span><span class="ts-lab">personas</span></div>
+            <div class="ts-item"><span class="ts-num accent" id="to-en">—</span><span class="ts-lab">en curso</span></div>
+            <div class="ts-item"><span class="ts-num success" id="to-done">—</span><span class="ts-lab">culminados</span></div>
+          </div>
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-om" style="width:0%;background:var(--fill-warning)"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ASIGNACIONES -->
+    <div id="tab-asignaciones" style="display:none">
+      <div class="toolbar">
+        <input type="text" id="filtroNombre" placeholder="Buscar nombre o usuario..." oninput="renderAsignaciones()">
+        <select id="filtroEquipo" onchange="renderAsignaciones()">
+          <option value="">Todos los equipos</option>
+          <option>Planificación</option><option>Implementación</option><option>O&amp;M</option>
+        </select>
+        <select id="filtroEstado" onchange="renderAsignaciones()">
+          <option value="">Todos los estados</option>
+          <option>Culminado</option><option>En curso</option><option>Inicia cuando termine el anterior</option>
+        </select>
+        <button class="btn primary" onclick="openModal()">+ Nueva asignación</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Personal</th><th>Equipo</th><th>Curso</th><th>Institución</th>
+              <th>Inicio</th><th>Fin</th><th>Avance</th><th>Estado</th>
+              <th>Prioridad</th><th>Certificado</th><th>Licencia</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="tbAsig"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CATÁLOGO UDEMY -->
+    <div id="tab-cursos" style="display:none">
+      <div class="toolbar">
+        <input type="text" id="filtroCurso" placeholder="Buscar curso, instructor, tema..." oninput="renderCursos()">
+        <select id="filtroCat" onchange="renderCursos()">
+          <option value="">Todas las categorías</option>
+        </select>
+        <select id="filtroNivel" onchange="renderCursos()">
+          <option value="">Todos los niveles</option>
+          <option>All Levels</option><option>Beginner</option><option>Intermediate</option>
+        </select>
+      </div>
+      <div id="listaCursos"></div>
+    </div>
+
+    <!-- PERSONAL -->
+    <div id="tab-personal" style="display:none">
+      <div class="toolbar">
+        <input type="text" id="filtroPersonal" placeholder="Buscar..." oninput="renderPersonal()">
+        <select id="filtroEquipoP" onchange="renderPersonal()">
+          <option value="">Todos los equipos</option>
+          <option>Planificación</option><option>Implementación</option><option>O&amp;M</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Usuario</th><th>Nombre</th><th>Equipo</th><th>Asignados</th><th>Culminados</th><th>Avance</th></tr></thead>
+          <tbody id="tbPersonal"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL NUEVA ASIGNACIÓN -->
+<div id="modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Nueva asignación</h2>
+      <button class="btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="section-title" style="font-size:13px;margin-bottom:8px">Seleccionar curso del catálogo</div>
+      <input class="search-curso" type="text" id="searchModalCurso" placeholder="Buscar curso..." oninput="renderModalCursos()">
+      <div class="curso-list" id="listModalCursos"></div>
+      <div class="curso-selected-box" id="cursoSelBox">
+        <strong id="csTitulo"></strong><br>
+        <span style="color:var(--text-accent);font-size:11px" id="csMeta"></span>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Equipo</label>
+          <select id="fEquipo" onchange="filterPersonalByEquipo()">
+            <option value="">Seleccionar...</option>
+            <option>Planificación</option><option>Implementación</option><option>O&amp;M</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Personal</label>
+          <select id="fPersonal"><option value="">Selecciona equipo primero</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Institución</label>
+          <select id="fInstitucion"><option>UDEMY</option><option>Coursera</option><option>Interna</option><option>Otra</option></select>
+        </div>
+        <div class="form-field">
+          <label>Tipo de licencia</label>
+          <select id="fLicencia"><option>Telco U</option><option>Interna</option><option>Externa</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Fecha inicio</label>
+          <input type="date" id="fInicio">
+        </div>
+        <div class="form-field">
+          <label>Fecha fin estimada</label>
+          <input type="date" id="fFin">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Prioridad</label>
+          <select id="fPrioridad"><option>Alta</option><option selected>Media</option><option>Baja</option></select>
+        </div>
+        <div class="form-field">
+          <label>Modalidad</label>
+          <select id="fModalidad"><option selected>Online</option><option>Presencial</option><option>Blended</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Objetivo</label>
+          <select id="fObjetivo"><option>Técnico</option><option>Certificación</option><option>Gestión</option><option>Habilidades blandas</option></select>
+        </div>
+        <div class="form-field">
+          <label>Aprobado por</label>
+          <input type="text" id="fAprobado" placeholder="Jefe directo">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Estado</label>
+          <select id="fEstado"><option>En curso</option><option>Inicia cuando termine el anterior</option><option>Culminado</option></select>
+        </div>
+        <div class="form-field">
+          <label>% Avance</label>
+          <input type="number" id="fAvance" min="0" max="100" value="0" placeholder="0-100">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Presentó certificado</label>
+          <select id="fCertificado"><option value="">—</option><option>SI</option><option>NO</option></select>
+        </div>
+        <div class="form-field">
+          <label>Costo (USD)</label>
+          <input type="number" id="fCosto" min="0" placeholder="0.00">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field full">
+          <label>Observaciones</label>
+          <textarea id="fObs" placeholder="Notas adicionales..."></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="closeModal()">Cancelar</button>
+        <button class="btn primary" id="btnGuardar" onclick="guardarAsignacion()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────
+const STORAGE_KEY_URL = 'proycorp_sb_url';
+const STORAGE_KEY_KEY = 'proycorp_sb_key';
+
+let sb = null;
+let currentProfile = 'admin';
+let selectedCurso = null;
+let editingId = null;
+
+// ── INLINE DATA (personal & cursos Udemy) ───────────────────────
+const personal = [
+  {user:'hchiluisa',nombre:'Chiluisa Lopez Haydi Guissela',equipo:'Planificación'},
+  {user:'raacosta',nombre:'Acosta Mato Romina Alexandra',equipo:'Planificación'},
+  {user:'cdalmeida',nombre:'Almeida Chicaiza Christian David',equipo:'Planificación'},
+  {user:'vcarrillo',nombre:'Carrillo Quezada Veronica Melina',equipo:'Planificación'},
+  {user:'vcruz',nombre:'Cruz Cargua Verónica Lucia',equipo:'Planificación'},
+  {user:'dagallardo',nombre:'Gallardo Reasco Diana Alejandra',equipo:'Planificación'},
+  {user:'wgaona',nombre:'Gaona Barba Wendy Denisse',equipo:'Planificación'},
+  {user:'ealopezt',nombre:'Lopez Topanta Erika Alexandra',equipo:'Planificación'},
+  {user:'aonate',nombre:'Oñate Campana Alexis David',equipo:'Planificación'},
+  {user:'morozco',nombre:'Orozco Vega Melany Aracely',equipo:'Planificación'},
+  {user:'sortiz',nombre:'Ortiz Granda Silvia Valeria',equipo:'Planificación'},
+  {user:'durbano',nombre:'Urbano Valverde Daisy Tatiana',equipo:'Planificación'},
+  {user:'svacacela',nombre:'Vacacela De La A Soraya Lissette',equipo:'Planificación'},
+  {user:'ggavilanez',nombre:'Gavilanez Perrazo Gabriela Fernanda',equipo:'Planificación'},
+  {user:'sbaque',nombre:'Baque Allauca Sulay Katherine',equipo:'Planificación'},
+  {user:'mydelgado',nombre:'Delgado Veliz Melany Yuleisy',equipo:'Planificación'},
+  {user:'wsalazar',nombre:'Salazar Salazar Wendy Priscilla',equipo:'Planificación'},
+  {user:'mspalma',nombre:'Palma Vargas Mery Stephanie',equipo:'Planificación'},
+  {user:'aavellan',nombre:'Avellan Arreaga Ana Paula',equipo:'Implementación'},
+  {user:'jcamalle',nombre:'Camalle Vásquez Jerson Rodrigo',equipo:'Implementación'},
+  {user:'kcorrea',nombre:'Correa Ullon Karen Gabriela',equipo:'Implementación'},
+  {user:'pluna',nombre:'Luna Valencia Pablo Mauricio',equipo:'Implementación'},
+  {user:'femoran',nombre:'Moran Muñoz Flor Esther',equipo:'Implementación'},
+  {user:'ganaranjo',nombre:'Naranjo Samaniego Geovanna Adriana',equipo:'Implementación'},
+  {user:'pjsanchezc',nombre:'Sanchez Cajamarca Pedro Jonathan',equipo:'Implementación'},
+  {user:'sntorres',nombre:'Torres Noboa Stephano Nicolas',equipo:'Implementación'},
+  {user:'dvera',nombre:'Vera Cardenas Daylin Joyce',equipo:'Implementación'},
+  {user:'lgaibor',nombre:'Gaibor Noboa Luis Alberto',equipo:'Implementación'},
+  {user:'abguallpa',nombre:'Guallpa Parra Ana Beatriz',equipo:'Implementación'},
+  {user:'mvaldez',nombre:'Valdez Mora Mirian Cecilia',equipo:'Implementación'},
+  {user:'jkleon',nombre:'Leon Gaona Jhordy Kristofer',equipo:'Implementación'},
+  {user:'echiluiza',nombre:'Chiluiza Chavez Estefania Paola',equipo:'Implementación'},
+  {user:'mamartinezv',nombre:'Martinez Vergara Milton Alfredo',equipo:'Implementación'},
+  {user:'vtacuri',nombre:'Tacuri Ordonez Victor Manuel',equipo:'Implementación'},
+  {user:'amguzman',nombre:'Guzman Araujo Adriana Mayli',equipo:'Implementación'},
+  {user:'dcoronel',nombre:'Coronel Bonifaz Diana Elizabeth',equipo:'Implementación'},
+  {user:'klmartinez',nombre:'Martinez Toapanta Katherine Lizeth',equipo:'Implementación'},
+  {user:'kremache',nombre:'Remache Santa Maria Katherine Ivanova',equipo:'Implementación'},
+  {user:'cralarcon',nombre:'Alarcon Arreaga Carmen Rosa',equipo:'O&M'},
+  {user:'erchoez',nombre:'Choez Quimis Erick Roberto',equipo:'O&M'},
+  {user:'jkguaman',nombre:'Guaman Ruiz Jennyfer Katherine',equipo:'O&M'},
+  {user:'clhidalgo',nombre:'Hidalgo Jimenez Cristina Lisbeth',equipo:'O&M'},
+  {user:'esrivera',nombre:'Rivera Castaneda Elizabeth Stephania',equipo:'O&M'},
+  {user:'ansanchez',nombre:'Sanchez Zambrano Angela Rosa',equipo:'O&M'},
+  {user:'aarroyo',nombre:'Arroyo Burgos Aura Erlinda',equipo:'O&M'},
+  {user:'jlcastillot',nombre:'Castillo Tipantasi José Luis',equipo:'O&M'},
+  {user:'aldelgado',nombre:'Delgado Simbaña Ana Laura',equipo:'O&M'},
+  {user:'bsangolqui',nombre:'Sangolqui Campoverde Byron Raul',equipo:'O&M'},
+];
+
+const cursos = [
+  {id:5238734,titulo:'The Complete Prompt Engineering for AI Bootcamp (2026)',instructor:'Mike Taylor',categoria:'Generative AI',nivel:'All Levels',horas:22.9,rating:4.5,practica:false},
+  {id:2196488,titulo:'Ultimate AWS Certified Solutions Architect Associate 2026',instructor:'Stephane Maarek',categoria:'Cloud Computing',nivel:'All Levels',horas:27.2,rating:4.7,practica:true},
+  {id:3142166,titulo:'[NEW] Ultimate AWS Certified Cloud Practitioner CLF-C02 2026',instructor:'Stephane Maarek',categoria:'Cloud Computing',nivel:'Beginner',horas:14.7,rating:4.7,practica:true},
+  {id:1759114,titulo:'PMP Certification Exam Prep Course 35 PDU',instructor:'Andrew Ramdayal',categoria:'Project Management',nivel:'All Levels',horas:35.1,rating:4.7,practica:true},
+  {id:6791359,titulo:'Intro to AI Agents and Agentic AI',instructor:'365 Careers',categoria:'Generative AI',nivel:'All Levels',horas:2.2,rating:4.5,practica:false},
+  {id:6100015,titulo:'AI Engineer Core Track: LLM Engineering, RAG, QLoRA, Agents',instructor:'LLM Engineer',categoria:'Generative AI',nivel:'All Levels',horas:33.4,rating:4.7,practica:false},
+  {id:793796,titulo:'Microsoft Excel - Excel from Beginner to Advanced',instructor:'Kyle Pew',categoria:'Productivity',nivel:'All Levels',horas:22.4,rating:4.7,practica:false},
+  {id:2015076,titulo:'CompTIA Security+ (SY0-701) Complete Course & Practice Exam',instructor:'Jason Dion',categoria:'Cybersecurity',nivel:'All Levels',horas:31.2,rating:4.7,practica:true},
+  {id:1570206,titulo:'Microsoft Power BI Desktop for Business Intelligence',instructor:'Maven Analytics',categoria:'Data Science',nivel:'All Levels',horas:17,rating:4.6,practica:false},
+  {id:2301254,titulo:'Certified Kubernetes Administrator (CKA) with Practice Tests',instructor:'Mumshad Mannambeth',categoria:'Cloud Computing',nivel:'All Levels',horas:26.1,rating:4.7,practica:false},
+  {id:762616,titulo:'The Complete SQL Bootcamp: Go from Zero to Hero',instructor:'Jose Portilla',categoria:'Data Science',nivel:'All Levels',horas:8.9,rating:4.7,practica:false},
+  {id:4039556,titulo:'Decoding DevOps – From Basics to Advanced Projects with AI',instructor:'Imran Teli',categoria:'DevOps',nivel:'All Levels',horas:64,rating:4.6,practica:false},
+  {id:1921420,titulo:'Ultimate AWS Certified Developer Associate 2026 DVA-C02',instructor:'Stephane Maarek',categoria:'Cloud Computing',nivel:'All Levels',horas:32,rating:4.7,practica:true},
+  {id:1203374,titulo:'Cisco CCNA 200-301 – The Complete Guide to Getting Certified',instructor:'Neil Anderson',categoria:'Networking',nivel:'Beginner',horas:42.7,rating:4.8,practica:false},
+  {id:4223486,titulo:'CompTIA Network+ (N10-009) Full Course & Practice Exam',instructor:'Jason Dion',categoria:'Networking',nivel:'Beginner',horas:32.7,rating:4.7,practica:true},
+  {id:1617616,titulo:'HashiCorp Certified: Terraform Associate 2026',instructor:'Zeal Vora',categoria:'DevOps',nivel:'Beginner',horas:25.5,rating:4.6,practica:true},
+  {id:533682,titulo:'Java Masterclass 2025: 130+ Hours of Expert Lessons',instructor:'Tim Buchalka',categoria:'Development',nivel:'All Levels',horas:135.7,rating:4.6,practica:false},
+  {id:2776760,titulo:'100 Days of Code: The Complete Python Pro Bootcamp',instructor:'Dr. Angela Yu',categoria:'Development',nivel:'All Levels',horas:56.7,rating:4.7,practica:true},
+  {id:851712,titulo:'The Complete JavaScript Course 2025: From Zero to Expert!',instructor:'Jonas Schmedtmann',categoria:'Development',nivel:'All Levels',horas:71.2,rating:4.7,practica:true},
+  {id:1523066,titulo:'Complete Linux Training Course to Get Your Dream IT Job 2026',instructor:'Imran Afzal',categoria:'IT Operations',nivel:'All Levels',horas:42,rating:4.7,practica:true},
+  {id:2394982,titulo:'Master Microsoft Azure Fundamentals: AZ-900 Exam Prep 2025',instructor:'Scott Duffy',categoria:'Cloud Computing',nivel:'Beginner',horas:8.7,rating:4.6,practica:true},
+  {id:5281528,titulo:'LangChain - Agentic AI Engineering with LangChain & LangGraph',instructor:'Eden Marco',categoria:'Generative AI',nivel:'Intermediate',horas:18.9,rating:4.6,practica:true},
+  {id:5170404,titulo:'The Complete AI Guide: Learn ChatGPT, Generative AI & More',instructor:'Julian Melanson',categoria:'Generative AI',nivel:'All Levels',horas:41.6,rating:4.5,practica:false},
+  {id:6112535,titulo:'The AI Engineer Course 2026: Complete AI Engineer Bootcamp',instructor:'365 Careers',categoria:'Generative AI',nivel:'All Levels',horas:29.7,rating:4.6,practica:true},
+  {id:950390,titulo:'Machine Learning A-Z: AI, Python & R + ChatGPT Prize [2026]',instructor:'Kirill Eremenko',categoria:'Data Science',nivel:'All Levels',horas:42.7,rating:4.5,practica:true},
+];
+
+// ── SUPABASE CONNECT ─────────────────────────────────────────────
+async function connectSupabase() {
+  const url = document.getElementById('sbUrl').value.trim();
+  const key = document.getElementById('sbKey').value.trim();
+  const errEl = document.getElementById('setupErr');
+  const btn = document.getElementById('btnConnect');
+  errEl.style.display = 'none';
+  if (!url || !key) { showSetupErr('Completa ambos campos.'); return; }
+  btn.innerHTML = '<span class="spinner"></span> Conectando...';
+  btn.disabled = true;
+  try {
+    sb = window.supabase.createClient(url, key);
+    const { error } = await sb.from('asignaciones').select('id').limit(1);
+    if (error && error.code === '42P01') {
+      showSetupErr('Tabla "asignaciones" no encontrada. Ejecuta el schema.sql en Supabase primero.');
+      sb = null; btn.innerHTML = 'Conectar'; btn.disabled = false; return;
+    }
+    localStorage.setItem(STORAGE_KEY_URL, url);
+    localStorage.setItem(STORAGE_KEY_KEY, key);
+    showApp();
+  } catch(e) {
+    showSetupErr('No se pudo conectar: ' + e.message);
+    btn.innerHTML = 'Conectar'; btn.disabled = false;
+  }
+}
+
+function showSetupErr(msg) {
+  const el = document.getElementById('setupErr');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+async function showApp() {
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  populateCatFilter();
+  renderCursos();
+  await loadAll();
+  document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+function desconectar() {
+  localStorage.removeItem(STORAGE_KEY_URL);
+  localStorage.removeItem(STORAGE_KEY_KEY);
+  location.reload();
+}
+
+// ── DATA LOAD ────────────────────────────────────────────────────
+let asignaciones = [];
+
+async function loadAll() {
+  const { data, error } = await sb.from('asignaciones').select('*').order('id', { ascending: false });
+  if (!error) asignaciones = data || [];
+  renderAll();
+}
+
+// ── PROFILE ──────────────────────────────────────────────────────
+const profileMap = {
+  admin: { name:'Admin', initials:'TU', bg:'var(--bg-accent)', color:'var(--text-accent)', equipo:null },
+  plan:  { name:'Planificación', initials:'PL', bg:'var(--bg-accent)', color:'var(--text-accent)', equipo:'Planificación' },
+  impl:  { name:'Implementación', initials:'IM', bg:'var(--bg-success)', color:'var(--text-success)', equipo:'Implementación' },
+  om:    { name:'O&M', initials:'OM', bg:'var(--bg-warning)', color:'var(--text-warning)', equipo:'O&M' },
+};
+
+function setProfile(p) {
+  currentProfile = p;
+  const prof = profileMap[p];
+  document.getElementById('avatarEl').textContent = prof.initials;
+  document.getElementById('avatarEl').style.background = prof.bg;
+  document.getElementById('avatarEl').style.color = prof.color;
+  document.getElementById('profileName').textContent = prof.name;
+  document.getElementById('profileMenu').style.display = 'none';
+  renderAll();
+}
+
+function toggleProfileMenu() {
+  const m = document.getElementById('profileMenu');
+  m.style.display = m.style.display === 'none' || !m.style.display ? 'block' : 'none';
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#profileBadge') && !e.target.closest('.profile-menu'))
+    document.getElementById('profileMenu').style.display = 'none';
+});
+
+// ── TABS ─────────────────────────────────────────────────────────
+function switchTab(el, tab) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['dashboard','asignaciones','cursos','personal'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+// ── RENDER ───────────────────────────────────────────────────────
+function getFilteredAsig() {
+  const eq = profileMap[currentProfile].equipo;
+  return eq ? asignaciones.filter(a => a.equipo === eq) : asignaciones;
+}
+
+function renderAll() { updateDashboard(); renderAsignaciones(); renderPersonal(); }
+
+function updateDashboard() {
+  const data = getFilteredAsig();
+  const done = data.filter(a => a.estado === 'Culminado').length;
+  const active = data.filter(a => a.estado === 'En curso').length;
+  const p = profileMap[currentProfile];
+  document.getElementById('s-total').textContent = p.equipo ? personal.filter(x => x.equipo === p.equipo).length : personal.length;
+  document.getElementById('s-active').textContent = active;
+  document.getElementById('s-done').textContent = done;
+  document.getElementById('s-udemy').textContent = cursos.length;
+
+  ['Planificación','Implementación','O&M'].forEach(eq => {
+    const pd = asignaciones.filter(a => a.equipo === eq);
+    const pc = personal.filter(x => x.equipo === eq).length;
+    const prefix = eq === 'Planificación' ? 'tp' : eq === 'Implementación' ? 'ti' : 'to';
+    document.getElementById(prefix+'-total').textContent = pc;
+    document.getElementById(prefix+'-en').textContent = pd.filter(a => a.estado === 'En curso').length;
+    document.getElementById(prefix+'-done').textContent = pd.filter(a => a.estado === 'Culminado').length;
+    const pct = Math.round(pd.filter(a => a.estado === 'Culminado').length / Math.max(pc,1) * 100);
+    const barId = eq === 'Planificación' ? 'prog-plan' : eq === 'Implementación' ? 'prog-impl' : 'prog-om';
+    document.getElementById(barId).style.width = pct + '%';
+  });
+}
+
+function estadoBadge(e) {
+  if (e === 'Culminado') return '<span class="badge badge-done">Culminado</span>';
+  if (e === 'En curso') return '<span class="badge badge-curso">En curso</span>';
+  return '<span class="badge badge-inicia" title="'+e+'">En espera</span>';
+}
+function equipoBadge(e) {
+  if (e === 'Planificación') return '<span class="badge badge-plan">Planificación</span>';
+  if (e === 'Implementación') return '<span class="badge badge-impl">Implementación</span>';
+  return '<span class="badge badge-om">O&amp;M</span>';
+}
+function prioridadBadge(p) {
+  if (p === 'Alta') return '<span class="badge badge-alta">Alta</span>';
+  if (p === 'Baja') return '<span class="badge badge-baja">Baja</span>';
+  return '<span class="badge badge-media">Media</span>';
+}
+
+function renderAsignaciones() {
+  const q = (document.getElementById('filtroNombre').value || '').toLowerCase();
+  const eq = document.getElementById('filtroEquipo').value;
+  const est = document.getElementById('filtroEstado').value;
+  let data = getFilteredAsig();
+  if (q) data = data.filter(a => (a.nombre||'').toLowerCase().includes(q) || (a.user_login||'').toLowerCase().includes(q));
+  if (eq) data = data.filter(a => a.equipo === eq);
+  if (est) data = data.filter(a => a.estado === est);
+  const tb = document.getElementById('tbAsig');
+  if (!data.length) { tb.innerHTML = '<tr><td colspan="12" class="empty">No hay asignaciones</td></tr>'; return; }
+  tb.innerHTML = data.map(a => `<tr>
+    <td><div style="font-weight:500">${a.nombre||''}</div><div style="font-size:11px;color:var(--text-secondary)">${a.user_login||''}</div></td>
+    <td>${equipoBadge(a.equipo)}</td>
+    <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${a.curso_titulo||''}">${a.curso_titulo||'<span style="color:var(--text-muted)">Sin asignar</span>'}</td>
+    <td style="font-size:12px">${a.institucion||''}</td>
+    <td style="font-size:12px">${a.fecha_inicio||'—'}</td>
+    <td style="font-size:12px">${a.fecha_fin||'—'}</td>
+    <td><span style="font-size:12px">${a.avance||0}%</span><div class="pct-bar"><div class="pct-fill" style="width:${a.avance||0}%"></div></div></td>
+    <td>${estadoBadge(a.estado)}</td>
+    <td>${prioridadBadge(a.prioridad)}</td>
+    <td style="font-size:13px">${a.certificado==='SI'?'✅':a.certificado==='NO'?'❌':'—'}</td>
+    <td style="font-size:12px">${a.licencia||'—'}</td>
+    <td><button class="btn" style="padding:4px 8px;font-size:12px" onclick="editAsig(${a.id})">✏️</button></td>
+  </tr>`).join('');
+}
+
+function renderCursos() {
+  const q = (document.getElementById('filtroCurso').value || '').toLowerCase();
+  const cat = document.getElementById('filtroCat').value;
+  const niv = document.getElementById('filtroNivel').value;
+  let data = cursos;
+  if (q) data = data.filter(c => c.titulo.toLowerCase().includes(q) || c.instructor.toLowerCase().includes(q) || c.categoria.toLowerCase().includes(q));
+  if (cat) data = data.filter(c => c.categoria === cat);
+  if (niv) data = data.filter(c => c.nivel === niv);
+  const el = document.getElementById('listaCursos');
+  if (!data.length) { el.innerHTML = '<div class="empty">No se encontraron cursos</div>'; return; }
+  el.innerHTML = data.map(c => `<div class="curso-item" onclick="asignarCursoDirecto(${c.id})">
+    <div class="curso-title">${c.titulo}</div>
+    <div class="curso-meta">
+      <span>👤 ${c.instructor}</span>
+      <span>🏷 ${c.categoria}</span>
+      <span>⏱ ${c.horas.toFixed(0)}h</span>
+      <span>⭐ ${c.rating}</span>
+      <span>${c.nivel}</span>
+      ${c.practica ? '<span style="color:var(--text-success)">✓ práctica</span>' : ''}
+    </div>
+  </div>`).join('');
+}
+
+function renderPersonal() {
+  const q = (document.getElementById('filtroPersonal').value || '').toLowerCase();
+  const eq = document.getElementById('filtroEquipoP').value;
+  const p = profileMap[currentProfile];
+  let data = personal;
+  if (p.equipo) data = data.filter(x => x.equipo === p.equipo);
+  if (q) data = data.filter(x => x.nombre.toLowerCase().includes(q) || x.user.toLowerCase().includes(q));
+  if (eq) data = data.filter(x => x.equipo === eq);
+  const tb = document.getElementById('tbPersonal');
+  tb.innerHTML = data.map(per => {
+    const asig = asignaciones.filter(a => a.user_login === per.user);
+    const done = asig.filter(a => a.estado === 'Culminado').length;
+    const avg = asig.length ? Math.round(asig.reduce((s,a) => s+(a.avance||0), 0) / asig.length) : 0;
+    return `<tr>
+      <td style="font-size:12px;color:var(--text-secondary)">${per.user}</td>
+      <td style="font-weight:500">${per.nombre}</td>
+      <td>${equipoBadge(per.equipo)}</td>
+      <td style="text-align:center">${asig.length}</td>
+      <td style="text-align:center">${done}</td>
+      <td><span style="font-size:12px">${avg}%</span><div class="pct-bar"><div class="pct-fill" style="width:${avg}%"></div></div></td>
+    </tr>`;
+  }).join('');
+}
+
+function populateCatFilter() {
+  const cats = [...new Set(cursos.map(c => c.categoria))].sort();
+  const sel = document.getElementById('filtroCat');
+  cats.forEach(c => { const o = document.createElement('option'); o.textContent = c; sel.appendChild(o); });
+}
+
+// ── MODAL ────────────────────────────────────────────────────────
+function openModal(asig = null) {
+  editingId = asig ? asig.id : null;
+  selectedCurso = null;
+  document.getElementById('cursoSelBox').style.display = 'none';
+  document.getElementById('searchModalCurso').value = '';
+  renderModalCursos();
+
+  if (asig) {
+    document.getElementById('modalTitle').textContent = 'Editar asignación';
+    document.getElementById('fEquipo').value = asig.equipo || '';
+    filterPersonalByEquipo();
+    document.getElementById('fPersonal').value = asig.user_login || '';
+    document.getElementById('fInstitucion').value = asig.institucion || 'UDEMY';
+    document.getElementById('fLicencia').value = asig.licencia || 'Telco U';
+    document.getElementById('fInicio').value = asig.fecha_inicio || '';
+    document.getElementById('fFin').value = asig.fecha_fin || '';
+    document.getElementById('fPrioridad').value = asig.prioridad || 'Media';
+    document.getElementById('fModalidad').value = asig.modalidad || 'Online';
+    document.getElementById('fObjetivo').value = asig.objetivo || 'Técnico';
+    document.getElementById('fAprobado').value = asig.aprobado_por || '';
+    document.getElementById('fEstado').value = asig.estado || 'En curso';
+    document.getElementById('fAvance').value = asig.avance || 0;
+    document.getElementById('fCertificado').value = asig.certificado || '';
+    document.getElementById('fCosto').value = asig.costo || '';
+    document.getElementById('fObs').value = asig.observaciones || '';
+    if (asig.curso_titulo) {
+      document.getElementById('cursoSelBox').style.display = 'block';
+      document.getElementById('csTitulo').textContent = asig.curso_titulo;
+      document.getElementById('csMeta').textContent = '';
+    }
+  } else {
+    document.getElementById('modalTitle').textContent = 'Nueva asignación';
+    ['fInstitucion','fLicencia','fPrioridad','fModalidad','fObjetivo','fEstado'].forEach(id => document.getElementById(id).selectedIndex = 0);
+    ['fInicio','fFin','fAprobado','fObs','fCosto'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fAvance').value = 0;
+    document.getElementById('fCertificado').value = '';
+    document.getElementById('fEquipo').value = '';
+    document.getElementById('fPersonal').innerHTML = '<option value="">Selecciona equipo primero</option>';
+    const p = profileMap[currentProfile];
+    if (p.equipo) { document.getElementById('fEquipo').value = p.equipo; filterPersonalByEquipo(); }
+  }
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function closeModal() { document.getElementById('modal').style.display = 'none'; editingId = null; }
+
+function filterPersonalByEquipo() {
+  const eq = document.getElementById('fEquipo').value;
+  const sel = document.getElementById('fPersonal');
+  sel.innerHTML = '<option value="">Seleccionar persona</option>';
+  if (!eq) return;
+  personal.filter(p => p.equipo === eq).forEach(p => {
+    const o = document.createElement('option'); o.value = p.user; o.textContent = p.nombre + ' (' + p.user + ')'; sel.appendChild(o);
+  });
+}
+
+function renderModalCursos() {
+  const q = (document.getElementById('searchModalCurso').value || '').toLowerCase();
+  let data = cursos;
+  if (q) data = data.filter(c => c.titulo.toLowerCase().includes(q) || c.instructor.toLowerCase().includes(q));
+  data = data.slice(0, 8);
+  document.getElementById('listModalCursos').innerHTML = data.map(c => `
+    <div class="curso-item ${selectedCurso && selectedCurso.id === c.id ? 'selected' : ''}" onclick="selectCurso(${c.id})">
+      <div class="curso-title">${c.titulo}</div>
+      <div class="curso-meta"><span>${c.categoria}</span><span>${c.horas.toFixed(0)}h</span><span>⭐${c.rating}</span></div>
+    </div>`).join('');
+}
+
+function selectCurso(id) {
+  selectedCurso = cursos.find(c => c.id === id);
+  renderModalCursos();
+  if (selectedCurso) {
+    document.getElementById('cursoSelBox').style.display = 'block';
+    document.getElementById('csTitulo').textContent = selectedCurso.titulo;
+    document.getElementById('csMeta').textContent = selectedCurso.instructor + ' · ' + selectedCurso.horas.toFixed(0) + 'h · ⭐' + selectedCurso.rating;
+  }
+}
+
+function asignarCursoDirecto(id) { selectedCurso = cursos.find(c => c.id === id); openModal(); }
+
+function editAsig(id) { const a = asignaciones.find(x => x.id === id); if (a) openModal(a); }
+
+async function guardarAsignacion() {
+  const user_login = document.getElementById('fPersonal').value;
+  const equipo = document.getElementById('fEquipo').value;
+  if (!equipo) { showToast('Selecciona el equipo'); return; }
+  if (!editingId && !user_login) { showToast('Selecciona la persona'); return; }
+  const pers = personal.find(p => p.user === user_login);
+  const btn = document.getElementById('btnGuardar');
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  const payload = {
+    user_login: user_login || (editingId ? asignaciones.find(a=>a.id===editingId)?.user_login : ''),
+    nombre: pers ? pers.nombre : (editingId ? asignaciones.find(a=>a.id===editingId)?.nombre : ''),
+    equipo,
+    curso_id: selectedCurso ? selectedCurso.id : (editingId ? asignaciones.find(a=>a.id===editingId)?.curso_id : null),
+    curso_titulo: selectedCurso ? selectedCurso.titulo : (editingId ? asignaciones.find(a=>a.id===editingId)?.curso_titulo : null),
+    institucion: document.getElementById('fInstitucion').value,
+    licencia: document.getElementById('fLicencia').value,
+    fecha_inicio: document.getElementById('fInicio').value || null,
+    fecha_fin: document.getElementById('fFin').value || null,
+    prioridad: document.getElementById('fPrioridad').value,
+    modalidad: document.getElementById('fModalidad').value,
+    objetivo: document.getElementById('fObjetivo').value,
+    aprobado_por: document.getElementById('fAprobado').value,
+    estado: document.getElementById('fEstado').value,
+    avance: parseInt(document.getElementById('fAvance').value) || 0,
+    certificado: document.getElementById('fCertificado').value,
+    costo: parseFloat(document.getElementById('fCosto').value) || null,
+    observaciones: document.getElementById('fObs').value,
+  };
+
+  let error;
+  if (editingId) {
+    ({ error } = await sb.from('asignaciones').update(payload).eq('id', editingId));
+  } else {
+    ({ error } = await sb.from('asignaciones').insert([payload]));
+  }
+
+  btn.innerHTML = 'Guardar'; btn.disabled = false;
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal();
+  showToast(editingId ? 'Asignación actualizada ✓' : 'Asignación guardada ✓');
+  await loadAll();
+}
+
+// ── TOAST ────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+(async function init() {
+  const url = localStorage.getItem(STORAGE_KEY_URL);
+  const key = localStorage.getItem(STORAGE_KEY_KEY);
+  if (url && key) {
+    try {
+      sb = window.supabase.createClient(url, key);
+      await showApp();
+    } catch(e) {
+      localStorage.removeItem(STORAGE_KEY_URL);
+      localStorage.removeItem(STORAGE_KEY_KEY);
+      document.getElementById('loadingOverlay').style.display = 'none';
+      document.getElementById('setupScreen').style.display = 'flex';
+    }
+  } else {
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('setupScreen').style.display = 'flex';
+  }
+})();
+</script>
+</body>
+</html>
