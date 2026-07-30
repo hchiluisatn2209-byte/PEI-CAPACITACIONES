@@ -1299,6 +1299,9 @@ function buildEmailHTML() {
   const userLogin = pers ? pers.user : '&nbsp;';
   const mail = pers ? userLogin + '@telconet.ec' : '&nbsp;';
   const aprobadoEmail = getAprobadoEmail(aprobado);
+  const contacto = document.getElementById('eqTelcouContacto')?.value || 'Melissa Zurita';
+  const contactoNombre = contacto.split(' ')[0];
+  const saludo = 'Estimad' + (contacto.includes('Carlos') ? 'o ' : 'a ') + contactoNombre;
 
   const thStyle = 'border:1px solid #ddd;padding:7px 10px;background:#0d1b2e;color:#ffffff;font-size:12px;text-align:left;white-space:nowrap';
   const tdStyle = 'border:1px solid #ddd;padding:7px 10px;font-size:12px;white-space:nowrap';
@@ -1311,8 +1314,10 @@ function buildEmailHTML() {
       <td style="${tdStyle}">${curso.idioma||'English'}</td>
     </tr>` : `<tr><td colspan="4" style="${tdStyle}">Sin curso seleccionado</td></tr>`;
 
+  const telcouMail = document.getElementById('eqTelcouMail')?.value || 'mdzurita@telconet.ec';
+
   return `<div style="font-family:Segoe UI,Arial,sans-serif;font-size:14px;color:#1a1a1a;line-height:1.6">
-<p>Estimad${(document.getElementById('eqTelcouContacto')?.value||'').includes('Carlos')?'o':'a'} ${(()=>{const n=(document.getElementById('eqTelcouContacto')?.value||'Melissa Zurita').split(' ');return n[0];})()},</p>
+<p>${saludo},</p>
 <p>Por medio de la presente, solicito su valioso apoyo con la asignación de una licencia de Udemy para el siguiente personal:</p>
 
 <table style="border-collapse:collapse;margin:12px 0">
