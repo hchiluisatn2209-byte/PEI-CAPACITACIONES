@@ -388,7 +388,7 @@
     <!-- CATÁLOGO UDEMY -->
     <div id="tab-cursos" style="display:none">
       <div class="toolbar">
-        <input type="text" id="filtroCurso" placeholder="Buscar curso, instructor, tema..." oninput="renderCursos()">
+        <input type="text" id="filtroCurso" placeholder="Buscar curso, instructor, tema..." oninput="debounceCursos()">
         <select id="filtroCat" onchange="renderCursos()">
           <option value="">Todas las categorías</option>
         </select>
@@ -587,32 +587,15 @@ const personal = [
   {user:'bsangolqui',nombre:'Sangolqui Campoverde Byron Raul',equipo:'O&M'},
 ];
 
-const cursos = [
-  {id:5238734,titulo:'The Complete Prompt Engineering for AI Bootcamp (2026)',instructor:'Mike Taylor',categoria:'Generative AI',nivel:'All Levels',horas:22.9,rating:4.5,practica:false},
-  {id:2196488,titulo:'Ultimate AWS Certified Solutions Architect Associate 2026',instructor:'Stephane Maarek',categoria:'Cloud Computing',nivel:'All Levels',horas:27.2,rating:4.7,practica:true},
-  {id:3142166,titulo:'[NEW] Ultimate AWS Certified Cloud Practitioner CLF-C02 2026',instructor:'Stephane Maarek',categoria:'Cloud Computing',nivel:'Beginner',horas:14.7,rating:4.7,practica:true},
-  {id:1759114,titulo:'PMP Certification Exam Prep Course 35 PDU',instructor:'Andrew Ramdayal',categoria:'Project Management',nivel:'All Levels',horas:35.1,rating:4.7,practica:true},
-  {id:6791359,titulo:'Intro to AI Agents and Agentic AI',instructor:'365 Careers',categoria:'Generative AI',nivel:'All Levels',horas:2.2,rating:4.5,practica:false},
-  {id:6100015,titulo:'AI Engineer Core Track: LLM Engineering, RAG, QLoRA, Agents',instructor:'LLM Engineer',categoria:'Generative AI',nivel:'All Levels',horas:33.4,rating:4.7,practica:false},
-  {id:793796,titulo:'Microsoft Excel - Excel from Beginner to Advanced',instructor:'Kyle Pew',categoria:'Productivity',nivel:'All Levels',horas:22.4,rating:4.7,practica:false},
-  {id:2015076,titulo:'CompTIA Security+ (SY0-701) Complete Course & Practice Exam',instructor:'Jason Dion',categoria:'Cybersecurity',nivel:'All Levels',horas:31.2,rating:4.7,practica:true},
-  {id:1570206,titulo:'Microsoft Power BI Desktop for Business Intelligence',instructor:'Maven Analytics',categoria:'Data Science',nivel:'All Levels',horas:17,rating:4.6,practica:false},
-  {id:2301254,titulo:'Certified Kubernetes Administrator (CKA) with Practice Tests',instructor:'Mumshad Mannambeth',categoria:'Cloud Computing',nivel:'All Levels',horas:26.1,rating:4.7,practica:false},
-  {id:762616,titulo:'The Complete SQL Bootcamp: Go from Zero to Hero',instructor:'Jose Portilla',categoria:'Data Science',nivel:'All Levels',horas:8.9,rating:4.7,practica:false},
-  {id:4039556,titulo:'Decoding DevOps – From Basics to Advanced Projects with AI',instructor:'Imran Teli',categoria:'DevOps',nivel:'All Levels',horas:64,rating:4.6,practica:false},
-  {id:1921420,titulo:'Ultimate AWS Certified Developer Associate 2026 DVA-C02',instructor:'Stephane Maarek',categoria:'Cloud Computing',nivel:'All Levels',horas:32,rating:4.7,practica:true},
-  {id:1203374,titulo:'Cisco CCNA 200-301 – The Complete Guide to Getting Certified',instructor:'Neil Anderson',categoria:'Networking',nivel:'Beginner',horas:42.7,rating:4.8,practica:false},
-  {id:4223486,titulo:'CompTIA Network+ (N10-009) Full Course & Practice Exam',instructor:'Jason Dion',categoria:'Networking',nivel:'Beginner',horas:32.7,rating:4.7,practica:true},
-  {id:1617616,titulo:'HashiCorp Certified: Terraform Associate 2026',instructor:'Zeal Vora',categoria:'DevOps',nivel:'Beginner',horas:25.5,rating:4.6,practica:true},
-  {id:533682,titulo:'Java Masterclass 2025: 130+ Hours of Expert Lessons',instructor:'Tim Buchalka',categoria:'Development',nivel:'All Levels',horas:135.7,rating:4.6,practica:false},
-  {id:2776760,titulo:'100 Days of Code: The Complete Python Pro Bootcamp',instructor:'Dr. Angela Yu',categoria:'Development',nivel:'All Levels',horas:56.7,rating:4.7,practica:true},
-  {id:851712,titulo:'The Complete JavaScript Course 2025: From Zero to Expert!',instructor:'Jonas Schmedtmann',categoria:'Development',nivel:'All Levels',horas:71.2,rating:4.7,practica:true},
-  {id:1523066,titulo:'Complete Linux Training Course to Get Your Dream IT Job 2026',instructor:'Imran Afzal',categoria:'IT Operations',nivel:'All Levels',horas:42,rating:4.7,practica:true},
-  {id:2394982,titulo:'Master Microsoft Azure Fundamentals: AZ-900 Exam Prep 2025',instructor:'Scott Duffy',categoria:'Cloud Computing',nivel:'Beginner',horas:8.7,rating:4.6,practica:true},
-  {id:5281528,titulo:'LangChain - Agentic AI Engineering with LangChain & LangGraph',instructor:'Eden Marco',categoria:'Generative AI',nivel:'Intermediate',horas:18.9,rating:4.6,practica:true},
-  {id:5170404,titulo:'The Complete AI Guide: Learn ChatGPT, Generative AI & More',instructor:'Julian Melanson',categoria:'Generative AI',nivel:'All Levels',horas:41.6,rating:4.5,practica:false},
-  {id:6112535,titulo:'The AI Engineer Course 2026: Complete AI Engineer Bootcamp',instructor:'365 Careers',categoria:'Generative AI',nivel:'All Levels',horas:29.7,rating:4.6,practica:true},
-  {id:950390,titulo:'Machine Learning A-Z: AI, Python & R + ChatGPT Prize [2026]',instructor:'Kirill Eremenko',categoria:'Data Science',nivel:'All Levels',horas:42.7,rating:4.5,practica:true},
+// Cursos cargados desde Supabase (34,055 cursos catálogo Udemy)
+let cursosCache = [];
+let cursosSearchTimer = null;
+const CATEGORIAS_UDEMY = [
+  'Business Operations','Cloud Computing','Communication','Continuing Education Units',
+  'Cybersecurity','Data Science','Design Tools','Development','Finance & Accounting',
+  'Generative AI','IT Operations','Language Learning','Leadership & Management',
+  'Marketing','Personal Development','Productivity','Project & Product Management',
+  'Sales & Customer Service','UX','Workplace & Human Resources'
 ];
 
 // ── SUPABASE CONNECT ─────────────────────────────────────────────
@@ -646,12 +629,18 @@ function showSetupErr(msg) {
   el.textContent = msg; el.style.display = 'block';
 }
 
+function debounceCursos() {
+  clearTimeout(cursosSearchTimer);
+  cursosSearchTimer = setTimeout(renderCursos, 400);
+}
+
 async function showApp() {
   document.getElementById('setupScreen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   populateCatFilter();
-  renderCursos();
   await loadAll();
+  // Show catalog hint on load
+  document.getElementById('listaCursos').innerHTML = '<div class="empty">Escribe al menos 2 caracteres para buscar en 34,055 cursos del catálogo Udemy</div>';
   document.getElementById('loadingOverlay').style.display = 'none';
 }
 
@@ -723,7 +712,7 @@ function updateDashboard() {
   document.getElementById('s-total').textContent = p.equipo ? personal.filter(x => x.equipo === p.equipo).length : personal.length;
   document.getElementById('s-active').textContent = active;
   document.getElementById('s-done').textContent = done;
-  document.getElementById('s-udemy').textContent = cursos.length;
+  document.getElementById('s-udemy').textContent = '34,055';
 
   ['Planificación','Implementación','O&M'].forEach(eq => {
     const pd = asignaciones.filter(a => a.equipo === eq);
@@ -780,27 +769,40 @@ function renderAsignaciones() {
   </tr>`).join('');
 }
 
-function renderCursos() {
-  const q = (document.getElementById('filtroCurso').value || '').toLowerCase();
+async function renderCursos() {
+  const q = document.getElementById('filtroCurso').value.trim();
   const cat = document.getElementById('filtroCat').value;
   const niv = document.getElementById('filtroNivel').value;
-  let data = cursos;
-  if (q) data = data.filter(c => c.titulo.toLowerCase().includes(q) || c.instructor.toLowerCase().includes(q) || c.categoria.toLowerCase().includes(q));
-  if (cat) data = data.filter(c => c.categoria === cat);
-  if (niv) data = data.filter(c => c.nivel === niv);
   const el = document.getElementById('listaCursos');
-  if (!data.length) { el.innerHTML = '<div class="empty">No se encontraron cursos</div>'; return; }
-  el.innerHTML = data.map(c => `<div class="curso-item" onclick="asignarCursoDirecto(${c.id})">
-    <div class="curso-title">${c.titulo}</div>
-    <div class="curso-meta">
-      <span>👤 ${c.instructor}</span>
-      <span>🏷 ${c.categoria}</span>
-      <span>⏱ ${c.horas.toFixed(0)}h</span>
-      <span>⭐ ${c.rating}</span>
-      <span>${c.nivel}</span>
-      ${c.practica ? '<span style="color:var(--text-success)">✓ práctica</span>' : ''}
-    </div>
-  </div>`).join('');
+  if (!q && !cat && !niv) {
+    el.innerHTML = '<div class="empty">Escribe al menos 2 caracteres para buscar entre 34,055 cursos</div>';
+    return;
+  }
+  el.innerHTML = '<div class="empty"><span class="spinner"></span> Buscando...</div>';
+  try {
+    let query = sb.from('cursos_udemy').select('*');
+    if (q && q.length >= 2) query = query.ilike('titulo', '%' + q + '%');
+    if (cat) query = query.eq('categoria', cat);
+    if (niv) query = query.eq('nivel', niv);
+    query = query.order('rating', { ascending: false }).limit(50);
+    const { data, error } = await query;
+    if (error) { el.innerHTML = '<div class="empty">Error al buscar: ' + error.message + '</div>'; return; }
+    cursosCache = data || [];
+    if (!cursosCache.length) { el.innerHTML = '<div class="empty">No se encontraron cursos</div>'; return; }
+    el.innerHTML = cursosCache.map(c => `<div class="curso-item" onclick="asignarCursoDirecto('${c.id}')">
+      <div class="curso-title">${c.titulo}</div>
+      <div class="curso-meta">
+        <span>👤 ${c.instructor||''}</span>
+        <span>🏷 ${c.categoria||''}</span>
+        <span>⏱ ${Number(c.horas||0).toFixed(0)}h</span>
+        <span>⭐ ${c.rating||''}</span>
+        <span>${c.nivel||''}</span>
+        ${c.practica ? '<span style="color:var(--text-success)">✓ práctica</span>' : ''}
+      </div>
+    </div>`).join('') + (cursosCache.length===50 ? '<div style="text-align:center;padding:10px;font-size:12px;color:var(--text-muted)">Mostrando los 50 mejores resultados — refina la búsqueda para ver más</div>' : '');
+  } catch(e) {
+    el.innerHTML = '<div class="empty">Error: ' + e.message + '</div>';
+  }
 }
 
 function renderPersonal() {
@@ -828,9 +830,8 @@ function renderPersonal() {
 }
 
 function populateCatFilter() {
-  const cats = [...new Set(cursos.map(c => c.categoria))].sort();
   const sel = document.getElementById('filtroCat');
-  cats.forEach(c => { const o = document.createElement('option'); o.textContent = c; sel.appendChild(o); });
+  CATEGORIAS_UDEMY.forEach(c => { const o = document.createElement('option'); o.textContent = c; sel.appendChild(o); });
 }
 
 // ── MODAL ────────────────────────────────────────────────────────
@@ -890,29 +891,44 @@ function filterPersonalByEquipo() {
   });
 }
 
-function renderModalCursos() {
-  const q = (document.getElementById('searchModalCurso').value || '').toLowerCase();
-  let data = cursos;
-  if (q) data = data.filter(c => c.titulo.toLowerCase().includes(q) || c.instructor.toLowerCase().includes(q));
-  data = data.slice(0, 8);
-  document.getElementById('listModalCursos').innerHTML = data.map(c => `
-    <div class="curso-item ${selectedCurso && selectedCurso.id === c.id ? 'selected' : ''}" onclick="selectCurso(${c.id})">
-      <div class="curso-title">${c.titulo}</div>
-      <div class="curso-meta"><span>${c.categoria}</span><span>${c.horas.toFixed(0)}h</span><span>⭐${c.rating}</span></div>
-    </div>`).join('');
-}
-
-function selectCurso(id) {
-  selectedCurso = cursos.find(c => c.id === id);
-  renderModalCursos();
-  if (selectedCurso) {
-    document.getElementById('cursoSelBox').style.display = 'block';
-    document.getElementById('csTitulo').textContent = selectedCurso.titulo;
-    document.getElementById('csMeta').textContent = selectedCurso.instructor + ' · ' + selectedCurso.horas.toFixed(0) + 'h · ⭐' + selectedCurso.rating;
+async function renderModalCursos() {
+  const q = (document.getElementById('searchModalCurso').value || '').trim();
+  const lista = document.getElementById('listModalCursos');
+  if (!q || q.length < 2) {
+    lista.innerHTML = '<div style="text-align:center;padding:12px;font-size:12px;color:var(--text-muted)">Escribe para buscar en 34,055 cursos</div>';
+    return;
   }
+  lista.innerHTML = '<div style="text-align:center;padding:10px"><span class="spinner"></span></div>';
+  const { data } = await sb.from('cursos_udemy').select('*').ilike('titulo', '%' + q + '%').order('rating', { ascending: false }).limit(10);
+  const results = data || [];
+  lista.innerHTML = results.map(c => `
+    <div class="curso-item ${selectedCurso && selectedCurso.id === c.id ? 'selected' : ''}" onclick="selectCurso('${c.id}')">
+      <div class="curso-title">${c.titulo}</div>
+      <div class="curso-meta"><span>${c.categoria||''}</span><span>${Number(c.horas||0).toFixed(0)}h</span><span>⭐${c.rating||''}</span></div>
+    </div>`).join('') || '<div style="text-align:center;padding:12px;font-size:12px;color:var(--text-muted)">Sin resultados</div>';
 }
 
-function asignarCursoDirecto(id) { selectedCurso = cursos.find(c => c.id === id); openModal(); }
+async function selectCurso(id) {
+  // Find in current modal results or fetch from DB
+  let found = (cursosCache || []).find(c => String(c.id) === String(id));
+  if (!found) {
+    const { data } = await sb.from('cursos_udemy').select('*').eq('id', String(id)).limit(1);
+    found = data && data[0];
+  }
+  if (!found) return;
+  selectedCurso = found;
+  renderModalCursos();
+  document.getElementById('cursoSelBox').style.display = 'block';
+  document.getElementById('csTitulo').textContent = found.titulo;
+  document.getElementById('csMeta').textContent = (found.instructor||'') + ' · ' + Number(found.horas||0).toFixed(0) + 'h · ⭐' + (found.rating||'');
+}
+
+function asignarCursoDirecto(id) {
+  // Find in cursosCache (catalog tab results)
+  const found = (cursosCache || []).find(c => String(c.id) === String(id));
+  if (found) selectedCurso = found;
+  openModal();
+}
 
 function editAsig(id) { const a = asignaciones.find(x => x.id === id); if (a) openModal(a); }
 
