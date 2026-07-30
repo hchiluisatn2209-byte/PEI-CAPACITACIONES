@@ -200,6 +200,12 @@
   #loadingOverlay .spinner { width: 32px; height: 32px; border-width: 3px; }
   #loadingOverlay p { font-size: 13px; color: var(--text-secondary); }
 
+  /* ── SUB-TABS ── */
+  .sub-tabs { display: flex; gap: 4px; margin-bottom: 14px; border-bottom: 0.5px solid var(--border); padding-bottom: 0; }
+  .sub-tab { padding: 8px 16px; font-size: 13px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -0.5px; white-space: nowrap; border-radius: 6px 6px 0 0; transition: all 0.12s; }
+  .sub-tab:hover { color: var(--text-primary); background: var(--surface-1); }
+  .sub-tab.active { color: var(--text-accent); border-bottom-color: var(--fill-accent); font-weight: 500; background: var(--bg-accent); }
+
   /* ── TOAST ── */
   #toast { position: fixed; bottom: 24px; right: 24px; background: var(--text-primary); color: var(--surface-2); font-size: 13px; padding: 10px 16px; border-radius: var(--radius); opacity: 0; transform: translateY(8px); transition: all 0.2s; z-index: 500; pointer-events: none; }
   #toast.show { opacity: 1; transform: translateY(0); }
@@ -359,12 +365,14 @@
 
     <!-- ASIGNACIONES -->
     <div id="tab-asignaciones" style="display:none">
+      <div class="sub-tabs">
+        <div class="sub-tab active" onclick="switchSubTab(this,'Todos')">🗂 Todos</div>
+        <div class="sub-tab" onclick="switchSubTab(this,'Planificación')">📐 Planificación</div>
+        <div class="sub-tab" onclick="switchSubTab(this,'Implementación')">⚙️ Implementación</div>
+        <div class="sub-tab" onclick="switchSubTab(this,'O&amp;M')">🖥 O&amp;M</div>
+      </div>
       <div class="toolbar">
         <input type="text" id="filtroNombre" placeholder="Buscar nombre o usuario..." oninput="renderAsignaciones()">
-        <select id="filtroEquipo" onchange="renderAsignaciones()">
-          <option value="">Todos los equipos</option>
-          <option>Planificación</option><option>Implementación</option><option>O&amp;M</option>
-        </select>
         <select id="filtroEstado" onchange="renderAsignaciones()">
           <option value="">Todos los estados</option>
           <option>Culminado</option><option>En curso</option><option>Inicia cuando termine el anterior</option>
@@ -644,6 +652,15 @@ function showSetupErr(msg) {
   el.textContent = msg; el.style.display = 'block';
 }
 
+let currentSubTab = 'Todos';
+
+function switchSubTab(el, equipo) {
+  currentSubTab = equipo;
+  document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderAsignaciones();
+}
+
 function debounceCursos() {
   clearTimeout(cursosSearchTimer);
   cursosSearchTimer = setTimeout(renderCursos, 400);
@@ -760,11 +777,10 @@ function prioridadBadge(p) {
 
 function renderAsignaciones() {
   const q = (document.getElementById('filtroNombre').value || '').toLowerCase();
-  const eq = document.getElementById('filtroEquipo').value;
   const est = document.getElementById('filtroEstado').value;
   let data = getFilteredAsig();
+  if (currentSubTab !== 'Todos') data = data.filter(a => a.equipo === currentSubTab);
   if (q) data = data.filter(a => (a.nombre||'').toLowerCase().includes(q) || (a.user_login||'').toLowerCase().includes(q));
-  if (eq) data = data.filter(a => a.equipo === eq);
   if (est) data = data.filter(a => a.estado === est);
   const tb = document.getElementById('tbAsig');
   if (!data.length) { tb.innerHTML = '<tr><td colspan="12" class="empty">No hay asignaciones</td></tr>'; return; }
@@ -896,7 +912,8 @@ function openModal(asig = null) {
     document.getElementById('fEquipo').value = '';
     document.getElementById('fPersonal').innerHTML = '<option value="">Selecciona equipo primero</option>';
     const p = profileMap[currentProfile];
-    if (p.equipo) { document.getElementById('fEquipo').value = p.equipo; filterPersonalByEquipo(); }
+    const preEquipo = p.equipo || (currentSubTab !== 'Todos' ? currentSubTab : '');
+    if (preEquipo) { document.getElementById('fEquipo').value = preEquipo; filterPersonalByEquipo(); }
   }
   document.getElementById('modal').style.display = 'flex';
 }
