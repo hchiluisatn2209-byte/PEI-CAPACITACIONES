@@ -494,7 +494,13 @@
         </div>
         <div class="form-field">
           <label>Aprobado por</label>
-          <input type="text" id="fAprobado" placeholder="Jefe directo">
+          <select id="fAprobado">
+            <option value="">Seleccionar...</option>
+            <option>Carmen Alarcón</option>
+            <option>Geovanna Naranjo</option>
+            <option>Haydi Chiluisa</option>
+            <option>Eduardo Nuñez</option>
+          </select>
         </div>
       </div>
       <div class="form-row">
@@ -883,7 +889,8 @@ function openModal(asig = null) {
   } else {
     document.getElementById('modalTitle').textContent = 'Nueva asignación';
     ['fInstitucion','fLicencia','fPrioridad','fModalidad','fObjetivo','fEstado'].forEach(id => document.getElementById(id).selectedIndex = 0);
-    ['fInicio','fFin','fAprobado','fObs','fCosto'].forEach(id => document.getElementById(id).value = '');
+    ['fInicio','fFin','fObs','fCosto'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fAprobado').selectedIndex = 0;
     document.getElementById('fAvance').value = 0;
     document.getElementById('fCertificado').value = '';
     document.getElementById('fEquipo').value = '';
