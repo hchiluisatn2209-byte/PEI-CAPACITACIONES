@@ -396,6 +396,15 @@
           <option value="">Todos los niveles</option>
           <option>All Levels</option><option>Beginner</option><option>Intermediate</option>
         </select>
+        <select id="filtroIdioma" onchange="renderCursos()">
+          <option value="">Todos los idiomas</option>
+          <option>Arabic</option><option>English</option><option>French</option>
+          <option>German</option><option>Hindi</option><option>Indonesian</option>
+          <option>Italian</option><option>Japanese</option><option>Korean</option>
+          <option>Polish</option><option>Portuguese</option><option>Russian</option>
+          <option>Simplified Chinese</option><option>Spanish</option>
+          <option>Traditional Chinese</option><option>Turkish</option><option>Vietnamese</option>
+        </select>
       </div>
       <div id="listaCursos"></div>
     </div>
@@ -773,8 +782,9 @@ async function renderCursos() {
   const q = document.getElementById('filtroCurso').value.trim();
   const cat = document.getElementById('filtroCat').value;
   const niv = document.getElementById('filtroNivel').value;
+  const idioma = document.getElementById('filtroIdioma').value;
   const el = document.getElementById('listaCursos');
-  if (!q && !cat && !niv) {
+  if (!q && !cat && !niv && !idioma) {
     el.innerHTML = '<div class="empty">Escribe al menos 2 caracteres para buscar entre 34,055 cursos</div>';
     return;
   }
@@ -784,19 +794,24 @@ async function renderCursos() {
     if (q && q.length >= 2) query = query.ilike('titulo', '%' + q + '%');
     if (cat) query = query.eq('categoria', cat);
     if (niv) query = query.eq('nivel', niv);
+    if (idioma) query = query.eq('idioma', idioma);
     query = query.order('rating', { ascending: false }).limit(50);
     const { data, error } = await query;
     if (error) { el.innerHTML = '<div class="empty">Error al buscar: ' + error.message + '</div>'; return; }
     cursosCache = data || [];
     if (!cursosCache.length) { el.innerHTML = '<div class="empty">No se encontraron cursos</div>'; return; }
     el.innerHTML = cursosCache.map(c => `<div class="curso-item" onclick="asignarCursoDirecto('${c.id}')">
-      <div class="curso-title">${c.titulo}</div>
+      <div style="display:flex;align-items:baseline;gap:10px">
+        <span style="font-size:11px;color:var(--text-muted);font-family:monospace;white-space:nowrap">ID: ${c.id}</span>
+        <div class="curso-title">${c.titulo}</div>
+      </div>
       <div class="curso-meta">
         <span>👤 ${c.instructor||''}</span>
         <span>🏷 ${c.categoria||''}</span>
-        <span>⏱ ${Number(c.horas||0).toFixed(0)}h</span>
+        <span>⏱ <strong>${Number(c.horas||0).toFixed(1)} hrs</strong></span>
         <span>⭐ ${c.rating||''}</span>
         <span>${c.nivel||''}</span>
+        <span>🌐 ${c.idioma||''}</span>
         ${c.practica ? '<span style="color:var(--text-success)">✓ práctica</span>' : ''}
       </div>
     </div>`).join('') + (cursosCache.length===50 ? '<div style="text-align:center;padding:10px;font-size:12px;color:var(--text-muted)">Mostrando los 50 mejores resultados — refina la búsqueda para ver más</div>' : '');
