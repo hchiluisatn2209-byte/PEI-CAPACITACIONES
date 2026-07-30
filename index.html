@@ -1013,8 +1013,13 @@ function renderPersonal() {
     const done = asig.filter(a => a.estado === 'Culminado').length;
     const avg = asig.length ? Math.round(asig.reduce((s,a) => s+(a.avance||0), 0) / asig.length) : 0;
     return `<tr>
-      <td style="font-size:12px;color:var(--text-secondary)">${per.user}</td>
-      <td style="font-weight:500">${per.nombre}</td>
+      <td style="font-size:12px;color:var(--text3);white-space:nowrap">${per.user}</td>
+      <td style="font-weight:500;font-size:13px">${per.nombre}</td>
+      <td><span class="badge" style="background:${per.ciudad==='UIO'?'var(--blue-lt)':'var(--green-lt)'};color:${per.ciudad==='UIO'?'var(--blue)':'var(--green)'}">${per.ciudad||'—'}</span></td>
+      <td style="font-size:12px">${per.codigo||'—'}</td>
+      <td style="font-size:12px">${per.cedula||'—'}</td>
+      <td style="font-size:12px">${per.celular||'—'}</td>
+      <td style="font-size:12px"><a href="mailto:${per.mail}" style="color:var(--blue);text-decoration:none">${per.mail||'—'}</a></td>
       <td>${equipoBadge(per.equipo)}</td>
       <td style="text-align:center">${asig.length}</td>
       <td style="text-align:center">${done}</td>
