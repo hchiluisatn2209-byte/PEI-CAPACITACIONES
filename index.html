@@ -683,8 +683,8 @@
       </div>
       <div class="form-actions">
         <button class="btn" onclick="closeEmailModal()">Cancelar</button>
-        <button class="btn" onclick="copyEmailText()" style="background:var(--navy2);border-color:var(--navy);color:#fff">📋 Copiar con formato</button>
-        <button class="btn primary" onclick="openInOutlook()">✉️ Abrir en correo</button>
+        <button class="btn" onclick="guardarSolicitudEnviada()" style="background:var(--navy);border-color:var(--navy);color:#fff">Guardar</button>
+        <button class="btn primary" onclick="guardarYEnviarCorreo()">✉️ Guardar y Correo</button>
       </div>
     </div>
   </div>
@@ -1187,8 +1187,8 @@ async function guardarAsignacion(abrirCorreo = false) {
   if (abrirCorreo) {
     // Find the saved record and open email modal with its data
     const saved = asignaciones.find(a => a.user_login === savedUser && a.equipo === savedEquipo);
-    if (saved) openEmailFromRow(saved.id);
-    else openEmailModal();
+    if (saved) { currentEmailAsigId = saved.id; openEmailFromRow(saved.id); }
+    else { currentEmailAsigId = null; openEmailModal(); }
   }
 }
 
@@ -1201,8 +1201,10 @@ function showToast(msg) {
 
 // ── EMAIL MODAL ─────────────────────────────────────────────────
 let selectedEmailCurso = null;
+let currentEmailAsigId = null;
 
 function openEmailModal() {
+  if (!currentEmailAsigId) currentEmailAsigId = null;
   selectedEmailCurso = null;
   document.getElementById('eqCursoSelBox').style.display = 'none';
   document.getElementById('eqSearchCurso').value = '';
@@ -1483,6 +1485,7 @@ function setFiltroEstado(val) {
 function openEmailFromRow(id) {
   const a = asignaciones.find(x => x.id === id);
   if (!a) return;
+  currentEmailAsigId = id;
   // pre-fill email modal with this assignment data
   openEmailModal();
   setTimeout(() => {
@@ -1577,6 +1580,38 @@ function updateWorkflowCounts() {
     const icons = ['📋','📤','✔','▶','📄','✅'];
     el.innerHTML = `${icons[i]} <span>${labels[i]}</span>${n > 0 ? '<span style="background:var(--orange);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">'+n+'</span>' : ''}`;
   });
+}
+
+// ── EMAIL SAVE HELPERS ──────────────────────────────────────────
+async function guardarSolicitudEnviada() {
+  // Update the linked assignment estado to "Solicitud enviada"
+  if (currentEmailAsigId) {
+    const { error } = await sb.from('asignaciones')
+      .update({ estado: 'Solicitud enviada' })
+      .eq('id', currentEmailAsigId);
+    if (!error) {
+      showToast('Estado actualizado a Solicitud enviada ✓');
+      await loadAll();
+    } else {
+      showToast('Error al guardar: ' + error.message);
+    }
+  } else {
+    showToast('Correo listo — actualiza el estado manualmente');
+  }
+  closeEmailModal();
+}
+
+async function guardarYEnviarCorreo() {
+  // Save estado first, then open Outlook
+  if (currentEmailAsigId) {
+    await sb.from('asignaciones')
+      .update({ estado: 'Solicitud enviada' })
+      .eq('id', currentEmailAsigId);
+    await loadAll();
+  }
+  openInOutlook();
+  showToast('Estado: Solicitud enviada · Outlook abierto — pega con Ctrl+V');
+  closeEmailModal();
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
