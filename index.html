@@ -380,24 +380,24 @@
 
     <!-- ASIGNACIONES -->
     <div id="tab-asignaciones" style="display:none">
-      <div class="workflow-banner">
-        <div class="wf-step" onclick="setFiltroEstado('')">📋 <span>Registrado</span></div>
-        <div class="wf-arrow">→</div>
-        <div class="wf-step" onclick="setFiltroEstado('Solicitud enviada')">📤 <span>Solicitud enviada</span></div>
-        <div class="wf-arrow">→</div>
-        <div class="wf-step" onclick="setFiltroEstado('Licencia confirmada')">✔ <span>Licencia confirmada</span></div>
-        <div class="wf-arrow">→</div>
-        <div class="wf-step" onclick="setFiltroEstado('En curso')">▶ <span>En curso</span></div>
-        <div class="wf-arrow">→</div>
-        <div class="wf-step" onclick="setFiltroEstado('Certificado pendiente')">📄 <span>Cert. pendiente</span></div>
-        <div class="wf-arrow">→</div>
-        <div class="wf-step" onclick="setFiltroEstado('Culminado')">✅ <span>Culminado</span></div>
-      </div>
       <div class="sub-tabs">
         <div class="sub-tab active" onclick="switchSubTab(this,'Todos')">🗂 Todos</div>
         <div class="sub-tab" onclick="switchSubTab(this,'Planificación')">📐 Planificación</div>
         <div class="sub-tab" onclick="switchSubTab(this,'Implementación')">⚙️ Implementación</div>
         <div class="sub-tab" onclick="switchSubTab(this,'O&amp;M')">🖥 O&amp;M</div>
+      </div>
+      <div id="workflowBanner" class="workflow-banner">
+        <div class="wf-step" id="wf0" onclick="setFiltroEstado('')">📋 <span>Registrado</span></div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step" id="wf1" onclick="setFiltroEstado('Solicitud enviada')">📤 <span>Solicitud enviada</span></div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step" id="wf2" onclick="setFiltroEstado('Licencia confirmada')">✔ <span>Licencia confirmada</span></div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step" id="wf3" onclick="setFiltroEstado('En curso')">▶ <span>En curso</span></div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step" id="wf4" onclick="setFiltroEstado('Certificado pendiente')">📄 <span>Cert. pendiente</span></div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step" id="wf5" onclick="setFiltroEstado('Culminado')">✅ <span>Culminado</span></div>
       </div>
       <div id="alertBanner" style="display:none" class="alert-banner">
         ⚠️ <span id="alertBannerMsg"></span>
@@ -804,9 +804,10 @@ function switchSubTabP(el, equipo) {
 
 function switchSubTab(el, equipo) {
   currentSubTab = equipo;
-  document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#tab-asignaciones .sub-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   renderAsignaciones();
+  checkAlerts();
 }
 
 function debounceCursos() {
@@ -1487,27 +1488,76 @@ function openEmailFromRow(id) {
 
 function checkAlerts() {
   const today = new Date();
-  const vencidos = asignaciones.filter(a => {
-    if (!a.fecha_fin || a.estado === 'Culminado' || a.estado === 'Vencido') return false;
-    return new Date(a.fecha_fin) < today && a.estado === 'En curso';
-  });
-  const proximos = asignaciones.filter(a => {
-    if (!a.fecha_fin || a.estado === 'Culminado' || a.estado === 'Vencido') return false;
-    const diff = (new Date(a.fecha_fin) - today) / (1000*60*60*24);
-    return diff >= 0 && diff <= 5 && a.estado === 'En curso';
-  });
-  const certPend = asignaciones.filter(a => a.estado === 'Certificado pendiente');
+  const equipos = currentSubTab === 'Todos'
+    ? ['Todos', 'Planificación', 'Implementación', 'O&M']
+    : [currentSubTab];
+
   const banner = document.getElementById('alertBanner');
-  const msgs = [];
-  if (vencidos.length) msgs.push(`${vencidos.length} curso(s) vencido(s) sin completar`);
-  if (proximos.length) msgs.push(`${proximos.length} curso(s) vencen en los próximos 5 días`);
-  if (certPend.length) msgs.push(`${certPend.length} certificado(s) pendiente(s) de envío`);
-  if (msgs.length) {
+  const allMsgs = [];
+
+  const equiposList = currentSubTab === 'Todos'
+    ? ['Planificación', 'Implementación', 'O&M']
+    : [currentSubTab];
+
+  equiposList.forEach(eq => {
+    const data = asignaciones.filter(a => a.equipo === eq);
+    const label = currentSubTab === 'Todos' ? `Eq. ${eq}` : eq;
+
+    const vencidos = data.filter(a => {
+      if (!a.fecha_fin || a.estado === 'Culminado' || a.estado === 'Vencido') return false;
+      return new Date(a.fecha_fin) < today && a.estado === 'En curso';
+    });
+    const proximos = data.filter(a => {
+      if (!a.fecha_fin || a.estado === 'Culminado' || a.estado === 'Vencido') return false;
+      const diff = (new Date(a.fecha_fin) - today) / (1000*60*60*24);
+      return diff >= 0 && diff <= 5 && a.estado === 'En curso';
+    });
+    const certPend = data.filter(a => a.estado === 'Certificado pendiente');
+
+    const msgs = [];
+    if (vencidos.length) msgs.push(`${vencidos.length} curso(s) vencido(s)`);
+    if (proximos.length) msgs.push(`${proximos.length} curso(s) vencen en 5 días`);
+    if (certPend.length) msgs.push(`${certPend.length} certificado(s) pendiente(s)`);
+
+    if (msgs.length) {
+      allMsgs.push(`<strong>Alertas - ${label}:</strong> ` + msgs.join(' · '));
+    }
+  });
+
+  // Also count workflow steps for current view
+  updateWorkflowCounts();
+
+  if (allMsgs.length) {
     banner.style.display = 'flex';
-    document.getElementById('alertBannerMsg').innerHTML = '<strong>Alertas:</strong> ' + msgs.join(' · ');
+    document.getElementById('alertBannerMsg').innerHTML = allMsgs.join('<br>');
   } else {
     banner.style.display = 'none';
   }
+}
+
+function updateWorkflowCounts() {
+  const data = currentSubTab === 'Todos'
+    ? asignaciones
+    : asignaciones.filter(a => a.equipo === currentSubTab);
+
+  const counts = {
+    '': data.filter(a => a.estado === 'Registrado').length,
+    'Solicitud enviada': data.filter(a => a.estado === 'Solicitud enviada').length,
+    'Licencia confirmada': data.filter(a => a.estado === 'Licencia confirmada').length,
+    'En curso': data.filter(a => a.estado === 'En curso').length,
+    'Certificado pendiente': data.filter(a => a.estado === 'Certificado pendiente').length,
+    'Culminado': data.filter(a => a.estado === 'Culminado').length,
+  };
+
+  const steps = ['','Solicitud enviada','Licencia confirmada','En curso','Certificado pendiente','Culminado'];
+  steps.forEach((estado, i) => {
+    const el = document.getElementById('wf'+i);
+    if (!el) return;
+    const n = counts[estado] || 0;
+    const labels = ['Registrado','Solicitud enviada','Lic. confirmada','En curso','Cert. pendiente','Culminado'];
+    const icons = ['📋','📤','✔','▶','📄','✅'];
+    el.innerHTML = `${icons[i]} <span>${labels[i]}</span>${n > 0 ? '<span style="background:var(--orange);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">'+n+'</span>' : ''}`;
+  });
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
