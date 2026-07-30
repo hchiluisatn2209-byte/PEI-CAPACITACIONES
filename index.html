@@ -203,6 +203,18 @@
   #loadingOverlay .spinner { width: 32px; height: 32px; border-width: 3px; border-color: rgba(255,255,255,.2); border-top-color: var(--orange); }
   #loadingOverlay p { font-size: 13px; color: #8ba3c4; }
 
+  /* ── WORKFLOW BANNER ── */
+  .workflow-banner { display:flex; align-items:center; gap:4px; background:var(--navy); border-radius:var(--radius); padding:10px 14px; margin-bottom:14px; flex-wrap:wrap; }
+  .wf-step { display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:700; color:#8ba3c4; text-transform:uppercase; letter-spacing:.04em; transition:all .12s; white-space:nowrap; }
+  .wf-step span { font-size:10px; }
+  .wf-step:hover { background:rgba(245,166,35,.2); color:var(--orange); }
+  .wf-step.active-wf { background:rgba(245,166,35,.2); color:var(--orange); }
+  .wf-arrow { color:#4a6080; font-size:14px; }
+
+  /* ── ALERT BANNER ── */
+  .alert-banner { display:flex; align-items:center; gap:10px; background:var(--red-lt); border:1px solid #e8a09a; border-left:4px solid var(--red); border-radius:var(--radius); padding:10px 14px; margin-bottom:14px; font-size:13px; color:var(--red); }
+  .alert-banner strong { font-weight:700; }
+
   /* ── SUB-TABS ── */
   .sub-tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 2px solid var(--gray-bd); padding-bottom: 0; }
   .sub-tab { padding: 8px 16px; font-size: 13px; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; border-radius: 6px 6px 0 0; transition: all 0.12s; font-weight: 600; }
@@ -368,17 +380,39 @@
 
     <!-- ASIGNACIONES -->
     <div id="tab-asignaciones" style="display:none">
+      <div class="workflow-banner">
+        <div class="wf-step" onclick="setFiltroEstado('')">📋 <span>Registrado</span></div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step" onclick="setFiltroEstado('Solicitud enviada')">📤 <span>Solicitud enviada</span></div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step" onclick="setFiltroEstado('Licencia confirmada')">✔ <span>Licencia confirmada</span></div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step" onclick="setFiltroEstado('En curso')">▶ <span>En curso</span></div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step" onclick="setFiltroEstado('Certificado pendiente')">📄 <span>Cert. pendiente</span></div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step" onclick="setFiltroEstado('Culminado')">✅ <span>Culminado</span></div>
+      </div>
       <div class="sub-tabs">
         <div class="sub-tab active" onclick="switchSubTab(this,'Todos')">🗂 Todos</div>
         <div class="sub-tab" onclick="switchSubTab(this,'Planificación')">📐 Planificación</div>
         <div class="sub-tab" onclick="switchSubTab(this,'Implementación')">⚙️ Implementación</div>
         <div class="sub-tab" onclick="switchSubTab(this,'O&amp;M')">🖥 O&amp;M</div>
       </div>
+      <div id="alertBanner" style="display:none" class="alert-banner">
+        ⚠️ <span id="alertBannerMsg"></span>
+      </div>
       <div class="toolbar">
         <input type="text" id="filtroNombre" placeholder="Buscar nombre o usuario..." oninput="renderAsignaciones()">
         <select id="filtroEstado" onchange="renderAsignaciones()">
           <option value="">Todos los estados</option>
-          <option>Culminado</option><option>En curso</option><option>Inicia cuando termine el anterior</option>
+          <option>Registrado</option>
+          <option>Solicitud enviada</option>
+          <option>Licencia confirmada</option>
+          <option>En curso</option>
+          <option>Certificado pendiente</option>
+          <option>Culminado</option>
+          <option>Vencido</option>
         </select>
         <button class="btn primary" onclick="openModal()">+ Nueva asignación</button>
         <button class="btn" onclick="openEmailModal()" style="background:var(--navy);border-color:var(--navy);color:#fff">✉️ Generar correo</button>
@@ -520,7 +554,15 @@
       <div class="form-row">
         <div class="form-field">
           <label>Estado</label>
-          <select id="fEstado"><option>En curso</option><option>Inicia cuando termine el anterior</option><option>Culminado</option></select>
+          <select id="fEstado">
+            <option>Registrado</option>
+            <option>Solicitud enviada</option>
+            <option>Licencia confirmada</option>
+            <option>En curso</option>
+            <option>Certificado pendiente</option>
+            <option>Culminado</option>
+            <option>Vencido</option>
+          </select>
         </div>
         <div class="form-field">
           <label>% Avance</label>
@@ -784,6 +826,7 @@ async function loadAll() {
   const { data, error } = await sb.from('asignaciones').select('*').order('id', { ascending: false });
   if (!error) asignaciones = data || [];
   renderAll();
+  checkAlerts();
 }
 
 // ── PROFILE ──────────────────────────────────────────────────────
@@ -837,6 +880,7 @@ function updateDashboard() {
   const active = data.filter(a => a.estado === 'En curso').length;
   const p = profileMap[currentProfile];
   document.getElementById('s-total').textContent = p.equipo ? personal.filter(x => x.equipo === p.equipo).length : personal.length;
+  const vencidos = data.filter(a => a.estado === 'Vencido' || (a.fecha_fin && new Date(a.fecha_fin) < new Date() && a.estado === 'En curso')).length;
   document.getElementById('s-active').textContent = active;
   document.getElementById('s-done').textContent = done;
   document.getElementById('s-udemy').textContent = '34,055';
@@ -855,9 +899,13 @@ function updateDashboard() {
 }
 
 function estadoBadge(e) {
-  if (e === 'Culminado') return '<span class="badge badge-done">Culminado</span>';
-  if (e === 'En curso') return '<span class="badge badge-curso">En curso</span>';
-  return '<span class="badge badge-inicia" title="'+e+'">En espera</span>';
+  if (e === 'Culminado')           return '<span class="badge" style="background:#e6f4ec;color:#1b7a3e">✅ Culminado</span>';
+  if (e === 'En curso')            return '<span class="badge" style="background:#e8f1fb;color:#1a73c8">▶ En curso</span>';
+  if (e === 'Solicitud enviada')   return '<span class="badge" style="background:#fff3e0;color:#e07b00">📤 Solicitud enviada</span>';
+  if (e === 'Licencia confirmada') return '<span class="badge" style="background:#f0eaf8;color:#5b2d8e">✔ Licencia confirmada</span>';
+  if (e === 'Certificado pendiente') return '<span class="badge" style="background:#fdecea;color:#c0392b">📄 Cert. pendiente</span>';
+  if (e === 'Vencido')             return '<span class="badge" style="background:#fdecea;color:#c0392b">⚠ Vencido</span>';
+  return '<span class="badge badge-inicia">📝 Registrado</span>';
 }
 function equipoBadge(e) {
   if (e === 'Planificación') return '<span class="badge badge-plan">Planificación</span>';
@@ -891,7 +939,10 @@ function renderAsignaciones() {
     <td>${prioridadBadge(a.prioridad)}</td>
     <td style="font-size:13px">${a.certificado==='SI'?'✅':a.certificado==='NO'?'❌':'—'}</td>
     <td style="font-size:12px">${a.licencia||'—'}</td>
-    <td><button class="btn" style="padding:4px 8px;font-size:12px" onclick="editAsig(${a.id})">✏️</button></td>
+    <td style="white-space:nowrap">
+      <button class="btn" style="padding:4px 7px;font-size:12px" onclick="editAsig(${a.id})" title="Editar">✏️</button>
+      <button class="btn" style="padding:4px 7px;font-size:12px;margin-left:3px;background:var(--navy);color:#fff;border-color:var(--navy)" onclick="openEmailFromRow(${a.id})" title="Generar correo">✉️</button>
+    </td>
   </tr>`).join('');
 }
 
@@ -1089,7 +1140,7 @@ async function guardarAsignacion() {
     modalidad: document.getElementById('fModalidad').value,
     objetivo: document.getElementById('fObjetivo').value,
     aprobado_por: document.getElementById('fAprobado').value,
-    estado: document.getElementById('fEstado').value,
+    estado: document.getElementById('fEstado').value || 'Registrado',
     avance: parseInt(document.getElementById('fAvance').value) || 0,
     certificado: document.getElementById('fCertificado').value,
     costo: parseFloat(document.getElementById('fCosto').value) || null,
@@ -1250,6 +1301,69 @@ function openInOutlook() {
   const to = 'mdzurita@telconet.ec;telcou_uio@telconet.ec';
   const cc = 'bnunez@telconet.ec;ganaranjo@telconet.ec;cralarcon@telconet.ec';
   window.open('mailto:' + to + '?cc=' + cc + '&subject=' + subject + '&body=' + body);
+}
+
+// ── WORKFLOW HELPERS ─────────────────────────────────────────────
+function setFiltroEstado(val) {
+  document.getElementById('filtroEstado').value = val;
+  // highlight active wf step
+  document.querySelectorAll('.wf-step').forEach(s => s.classList.remove('active-wf'));
+  if (val) {
+    document.querySelectorAll('.wf-step').forEach(s => {
+      if (s.textContent.includes(val.substring(0,6))) s.classList.add('active-wf');
+    });
+  }
+  renderAsignaciones();
+}
+
+function openEmailFromRow(id) {
+  const a = asignaciones.find(x => x.id === id);
+  if (!a) return;
+  // pre-fill email modal with this assignment data
+  openEmailModal();
+  setTimeout(() => {
+    if (a.equipo) {
+      document.getElementById('eqEquipo').value = a.equipo;
+      filterEmailPersonal();
+      setTimeout(() => {
+        document.getElementById('eqPersonal').value = a.user_login || '';
+        updateEmailPreview();
+      }, 50);
+    }
+    // If course is known, try to show it
+    if (a.curso_titulo) {
+      document.getElementById('eqCursoSelBox').style.display = 'block';
+      document.getElementById('eqCsTitulo').textContent = a.curso_titulo;
+      document.getElementById('eqCsMeta').textContent = a.curso_id ? 'ID: ' + a.curso_id : '';
+      selectedEmailCurso = { id: a.curso_id, titulo: a.curso_titulo, idioma: '', horas: a.horas_curso || 0, rating: '' };
+      updateEmailPreview();
+    }
+  }, 100);
+}
+
+function checkAlerts() {
+  const today = new Date();
+  const vencidos = asignaciones.filter(a => {
+    if (!a.fecha_fin || a.estado === 'Culminado' || a.estado === 'Vencido') return false;
+    return new Date(a.fecha_fin) < today && a.estado === 'En curso';
+  });
+  const proximos = asignaciones.filter(a => {
+    if (!a.fecha_fin || a.estado === 'Culminado' || a.estado === 'Vencido') return false;
+    const diff = (new Date(a.fecha_fin) - today) / (1000*60*60*24);
+    return diff >= 0 && diff <= 5 && a.estado === 'En curso';
+  });
+  const certPend = asignaciones.filter(a => a.estado === 'Certificado pendiente');
+  const banner = document.getElementById('alertBanner');
+  const msgs = [];
+  if (vencidos.length) msgs.push(`${vencidos.length} curso(s) vencido(s) sin completar`);
+  if (proximos.length) msgs.push(`${proximos.length} curso(s) vencen en los próximos 5 días`);
+  if (certPend.length) msgs.push(`${certPend.length} certificado(s) pendiente(s) de envío`);
+  if (msgs.length) {
+    banner.style.display = 'flex';
+    document.getElementById('alertBannerMsg').innerHTML = '<strong>Alertas:</strong> ' + msgs.join(' · ');
+  } else {
+    banner.style.display = 'none';
+  }
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
