@@ -468,7 +468,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Usuario</th><th>Nombre</th><th>Equipo</th><th>Asignados</th><th>Culminados</th><th>Avance</th></tr></thead>
+          <thead><tr><th>Usuario</th><th>Nombre</th><th>Ciudad</th><th>Código</th><th>Cédula</th><th>Celular</th><th>Mail</th><th>Equipo</th><th>Asignados</th><th>Culminados</th><th>Avance</th></tr></thead>
           <tbody id="tbPersonal"></tbody>
         </table>
       </div>
@@ -611,7 +611,7 @@
         </div>
         <div class="form-field">
           <label>Personal</label>
-          <select id="eqPersonal" onchange="updateEmailPreview()">
+          <select id="eqPersonal" onchange="autoFillPersonalData()">
             <option value="">Selecciona equipo primero</option>
           </select>
         </div>
@@ -636,13 +636,26 @@
       <div class="form-row">
         <div class="form-field">
           <label>Ciudad</label>
-          <select id="eqCiudad" onchange="updateEmailPreview()">
+          <select id="eqCiudad" onchange="autoSetTelcouContact(this.value);updateEmailPreview()">
             <option>UIO</option><option>GYE</option><option>CUE</option>
           </select>
         </div>
         <div class="form-field">
           <label>Código colaborador</label>
           <input type="text" id="eqCodigo" placeholder="5878" oninput="updateEmailPreview()">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Contacto Telco U</label>
+          <select id="eqTelcouContacto" onchange="updateEmailPreview()">
+            <option value="Melissa Zurita">Melissa Zurita (UIO) — mdzurita@telconet.ec</option>
+            <option value="Carlos Ruilova">Carlos Ruilova (GYE) — cruilova@telconet.ec</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Mail Telco U destino</label>
+          <input type="text" id="eqTelcouMail" value="mdzurita@telconet.ec" readonly style="background:var(--gray-bg);color:var(--text3);font-size:12px">
         </div>
       </div>
       <div class="form-row">
@@ -663,11 +676,11 @@
       </div>
       <div style="margin-top:14px">
         <label style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:8px">Vista previa del correo</label>
-        <div id="emailPreview" style="background:var(--gray-bg);border:1px solid var(--gray-bd);border-radius:var(--radius);padding:16px;font-size:13px;white-space:pre-wrap;font-family:inherit;line-height:1.7;max-height:280px;overflow-y:auto;color:var(--text)"></div>
+        <div id="emailPreview" style="background:#ffffff;border:1px solid var(--gray-bd);border-radius:var(--radius);padding:16px;font-size:13px;line-height:1.7;max-height:300px;overflow-y:auto;color:var(--text)"></div>
       </div>
       <div class="form-actions">
         <button class="btn" onclick="closeEmailModal()">Cancelar</button>
-        <button class="btn" onclick="copyEmailText()" style="background:var(--navy2);border-color:var(--navy);color:#fff">📋 Copiar texto</button>
+        <button class="btn" onclick="copyEmailText()" style="background:var(--navy2);border-color:var(--navy);color:#fff">📋 Copiar con formato</button>
         <button class="btn primary" onclick="openInOutlook()">✉️ Abrir en correo</button>
       </div>
     </div>
@@ -689,54 +702,52 @@ let editingId = null;
 
 // ── INLINE DATA (personal & cursos Udemy) ───────────────────────
 const personal = [
-  {user:'hchiluisa',nombre:'Chiluisa Lopez Haydi Guissela',equipo:'Planificación'},
-  {user:'raacosta',nombre:'Acosta Mato Romina Alexandra',equipo:'Planificación'},
-  {user:'cdalmeida',nombre:'Almeida Chicaiza Christian David',equipo:'Planificación'},
-  {user:'vcarrillo',nombre:'Carrillo Quezada Veronica Melina',equipo:'Planificación'},
-  {user:'vcruz',nombre:'Cruz Cargua Verónica Lucia',equipo:'Planificación'},
-  {user:'dagallardo',nombre:'Gallardo Reasco Diana Alejandra',equipo:'Planificación'},
-  {user:'wgaona',nombre:'Gaona Barba Wendy Denisse',equipo:'Planificación'},
-  {user:'ealopezt',nombre:'Lopez Topanta Erika Alexandra',equipo:'Planificación'},
-  {user:'aonate',nombre:'Oñate Campana Alexis David',equipo:'Planificación'},
-  {user:'morozco',nombre:'Orozco Vega Melany Aracely',equipo:'Planificación'},
-  {user:'sortiz',nombre:'Ortiz Granda Silvia Valeria',equipo:'Planificación'},
-  {user:'durbano',nombre:'Urbano Valverde Daisy Tatiana',equipo:'Planificación'},
-  {user:'svacacela',nombre:'Vacacela De La A Soraya Lissette',equipo:'Planificación'},
-  {user:'ggavilanez',nombre:'Gavilanez Perrazo Gabriela Fernanda',equipo:'Planificación'},
-  {user:'sbaque',nombre:'Baque Allauca Sulay Katherine',equipo:'Planificación'},
-  {user:'mydelgado',nombre:'Delgado Veliz Melany Yuleisy',equipo:'Planificación'},
-  {user:'wsalazar',nombre:'Salazar Salazar Wendy Priscilla',equipo:'Planificación'},
-  {user:'mspalma',nombre:'Palma Vargas Mery Stephanie',equipo:'Planificación'},
-  {user:'aavellan',nombre:'Avellan Arreaga Ana Paula',equipo:'Implementación'},
-  {user:'jcamalle',nombre:'Camalle Vásquez Jerson Rodrigo',equipo:'Implementación'},
-  {user:'kcorrea',nombre:'Correa Ullon Karen Gabriela',equipo:'Implementación'},
-  {user:'pluna',nombre:'Luna Valencia Pablo Mauricio',equipo:'Implementación'},
-  {user:'femoran',nombre:'Moran Muñoz Flor Esther',equipo:'Implementación'},
-  {user:'ganaranjo',nombre:'Naranjo Samaniego Geovanna Adriana',equipo:'Implementación'},
-  {user:'pjsanchezc',nombre:'Sanchez Cajamarca Pedro Jonathan',equipo:'Implementación'},
-  {user:'sntorres',nombre:'Torres Noboa Stephano Nicolas',equipo:'Implementación'},
-  {user:'dvera',nombre:'Vera Cardenas Daylin Joyce',equipo:'Implementación'},
-  {user:'lgaibor',nombre:'Gaibor Noboa Luis Alberto',equipo:'Implementación'},
-  {user:'abguallpa',nombre:'Guallpa Parra Ana Beatriz',equipo:'Implementación'},
-  {user:'mvaldez',nombre:'Valdez Mora Mirian Cecilia',equipo:'Implementación'},
-  {user:'jkleon',nombre:'Leon Gaona Jhordy Kristofer',equipo:'Implementación'},
-  {user:'echiluiza',nombre:'Chiluiza Chavez Estefania Paola',equipo:'Implementación'},
-  {user:'mamartinezv',nombre:'Martinez Vergara Milton Alfredo',equipo:'Implementación'},
-  {user:'vtacuri',nombre:'Tacuri Ordonez Victor Manuel',equipo:'Implementación'},
-  {user:'amguzman',nombre:'Guzman Araujo Adriana Mayli',equipo:'Implementación'},
-  {user:'dcoronel',nombre:'Coronel Bonifaz Diana Elizabeth',equipo:'Implementación'},
-  {user:'klmartinez',nombre:'Martinez Toapanta Katherine Lizeth',equipo:'Implementación'},
-  {user:'kremache',nombre:'Remache Santa Maria Katherine Ivanova',equipo:'Implementación'},
-  {user:'cralarcon',nombre:'Alarcon Arreaga Carmen Rosa',equipo:'O&M'},
-  {user:'erchoez',nombre:'Choez Quimis Erick Roberto',equipo:'O&M'},
-  {user:'jkguaman',nombre:'Guaman Ruiz Jennyfer Katherine',equipo:'O&M'},
-  {user:'clhidalgo',nombre:'Hidalgo Jimenez Cristina Lisbeth',equipo:'O&M'},
-  {user:'esrivera',nombre:'Rivera Castaneda Elizabeth Stephania',equipo:'O&M'},
-  {user:'ansanchez',nombre:'Sanchez Zambrano Angela Rosa',equipo:'O&M'},
-  {user:'aarroyo',nombre:'Arroyo Burgos Aura Erlinda',equipo:'O&M'},
-  {user:'jlcastillot',nombre:'Castillo Tipantasi José Luis',equipo:'O&M'},
-  {user:'aldelgado',nombre:'Delgado Simbaña Ana Laura',equipo:'O&M'},
-  {user:'bsangolqui',nombre:'Sangolqui Campoverde Byron Raul',equipo:'O&M'},
+  {user:'hchiluisa',nombre:'Chiluisa Lopez Haydi Guissela',equipo:'Planificación',ciudad:'UIO',codigo:'1810',cedula:'1719250530',celular:'995909609',mail:'hchiluisa@telconet.ec'},
+  {user:'raacosta',nombre:'Acosta Mato Romina Alexandra',equipo:'Planificación',ciudad:'GYE',codigo:'8476',cedula:'0955257902',celular:'983511029',mail:'raacosta@telconet.ec'},
+  {user:'cdalmeida',nombre:'Almeida Chicaiza Christian David',equipo:'Planificación',ciudad:'UIO',codigo:'1914',cedula:'1716632235',celular:'958879516',mail:'cdalmeida@telconet.ec'},
+  {user:'vcarrillo',nombre:'Carrillo Quezada Veronica Melina',equipo:'Planificación',ciudad:'GYE',codigo:'3624',cedula:'0922147699',celular:'995987255',mail:'vcarrillo@telconet.ec'},
+  {user:'vcruz',nombre:'Cruz Cargua Verónica Lucia',equipo:'Planificación',ciudad:'UIO',codigo:'2801',cedula:'1720215811',celular:'984363462',mail:'vcruz@telconet.ec'},
+  {user:'dagallardo',nombre:'Gallardo Reasco Diana Alejandra',equipo:'Planificación',ciudad:'UIO',codigo:'5878',cedula:'1721145736',celular:'958850812',mail:'dagallardo@telconet.ec'},
+  {user:'wgaona',nombre:'Gaona Barba Wendy Denisse',equipo:'Planificación',ciudad:'GYE',codigo:'10290',cedula:'0924698145',celular:'998361928',mail:'wgaona@telconet.ec'},
+  {user:'ealopezt',nombre:'Lopez Topanta Erika Alexandra',equipo:'Planificación',ciudad:'UIO',codigo:'12120',cedula:'1726654880',celular:'995887362',mail:'ealopezt@telconet.ec'},
+  {user:'aonate',nombre:'Oñate Campana Alexis David',equipo:'Planificación',ciudad:'UIO',codigo:'9688',cedula:'1726860552',celular:'962532969',mail:'aonate@telconet.ec'},
+  {user:'morozco',nombre:'Orozco Vega Melany Aracely',equipo:'Planificación',ciudad:'UIO',codigo:'10208',cedula:'1721895884',celular:'987504176',mail:'morozco@telconet.ec'},
+  {user:'sortiz',nombre:'Ortiz Granda Silvia Valeria',equipo:'Planificación',ciudad:'UIO',codigo:'5707',cedula:'1724441322',celular:'962907108',mail:'sortiz@telconet.ec'},
+  {user:'durbano',nombre:'Urbano Valverde Daisy Tatiana',equipo:'Planificación',ciudad:'UIO',codigo:'8463',cedula:'0202007472',celular:'983397518',mail:'durbano@telconet.ec'},
+  {user:'svacacela',nombre:'Vacacela De La A Soraya Lissette',equipo:'Planificación',ciudad:'GYE',codigo:'7813',cedula:'2400094575',celular:'958731771',mail:'svacacela@telconet.ec'},
+  {user:'ggavilanez',nombre:'Gavilanez Perrazo Gabriela Fernanda',equipo:'Planificación',ciudad:'UIO',codigo:'3957',cedula:'1714515481',celular:'984482822',mail:'ggavilanez@telconet.ec'},
+  {user:'sbaque',nombre:'Baque Allauca Sulay Katherine',equipo:'Planificación',ciudad:'GYE',codigo:'8964',cedula:'0951873652',celular:'999747054',mail:'sbaque@telconet.ec'},
+  {user:'mydelgado',nombre:'Delgado Veliz Melany Yuleisy',equipo:'Planificación',ciudad:'GYE',codigo:'9104',cedula:'0926486929',celular:'',mail:'mydelgado@telconet.ec'},
+  {user:'wsalazar',nombre:'Salazar Salazar Wendy Priscilla',equipo:'Planificación',ciudad:'GYE',codigo:'4021',cedula:'0915434989',celular:'999299226',mail:'wsalazar@telconet.ec'},
+  {user:'mspalma',nombre:'Palma Vargas Mery Stephanie',equipo:'Planificación',ciudad:'GYE',codigo:'9212',cedula:'0930501523',celular:'983376100',mail:'mspalma@telconet.ec'},
+  {user:'aavellan',nombre:'Avellan Arreaga Ana Paula',equipo:'Implementación',ciudad:'GYE',codigo:'11660',cedula:'0952806594',celular:'992534683',mail:'aavellan@telconet.ec'},
+  {user:'jcamalle',nombre:'Camalle Vásquez Jerson Rodrigo',equipo:'Implementación',ciudad:'UIO',codigo:'7924',cedula:'1723203012',celular:'958731771',mail:'jcamalle@telconet.ec'},
+  {user:'kcorrea',nombre:'Correa Ullon Karen Gabriela',equipo:'Implementación',ciudad:'UIO',codigo:'2425',cedula:'1721980199',celular:'984532931',mail:'kcorrea@telconet.ec'},
+  {user:'pluna',nombre:'Luna Valencia Pablo Mauricio',equipo:'Implementación',ciudad:'UIO',codigo:'11522',cedula:'1716394935',celular:'962684408',mail:'pluna@telconet.ec'},
+  {user:'femoran',nombre:'Moran Muñoz Flor Esther',equipo:'Implementación',ciudad:'GYE',codigo:'189990',cedula:'0954660734',celular:'998653492',mail:'femoran@telconet.ec'},
+  {user:'ganaranjo',nombre:'Naranjo Samaniego Geovanna Adriana',equipo:'Implementación',ciudad:'GYE',codigo:'7536',cedula:'0912971843',celular:'0987216010',mail:'ganaranjo@telconet.ec'},
+  {user:'dvera',nombre:'Vera Cardenas Daylin Joyce',equipo:'Implementación',ciudad:'GYE',codigo:'7918',cedula:'0925796484',celular:'987933319',mail:'dvera@telconet.ec'},
+  {user:'lgaibor',nombre:'Gaibor Noboa Luis Alberto',equipo:'Implementación',ciudad:'UIO',codigo:'3562',cedula:'1721782702',celular:'998509427',mail:'lgaibor@telconet.ec'},
+  {user:'abguallpa',nombre:'Guallpa Parra Ana Beatriz',equipo:'Implementación',ciudad:'UIO',codigo:'2942',cedula:'1718006883',celular:'963090245',mail:'abguallpa@telconet.ec'},
+  {user:'mvaldez',nombre:'Valdez Mora Mirian Cecilia',equipo:'Implementación',ciudad:'GYE',codigo:'5985',cedula:'0918418328',celular:'995907827',mail:'mvaldez@telconet.ec'},
+  {user:'jkleon',nombre:'Leon Gaona Jhordy Kristofer',equipo:'Implementación',ciudad:'UIO',codigo:'11850',cedula:'1900477082',celular:'963002369',mail:'jkleon@telconet.ec'},
+  {user:'echiluiza',nombre:'Chiluiza Chavez Estefania Paola',equipo:'Implementación',ciudad:'UIO',codigo:'9020',cedula:'1724471543',celular:'983973024',mail:'echiluiza@telconet.ec'},
+  {user:'mamartinezv',nombre:'Martinez Vergara Milton Alfredo',equipo:'Implementación',ciudad:'GYE',codigo:'8692',cedula:'0931525224',celular:'983387268',mail:'mamartinezv@telconet.ec'},
+  {user:'vtacuri',nombre:'Tacuri Ordonez Victor Manuel',equipo:'Implementación',ciudad:'GYE',codigo:'7903',cedula:'0951248699',celular:'979026388',mail:'vtacuri@telconet.ec'},
+  {user:'amguzman',nombre:'Guzman Araujo Adriana Mayli',equipo:'Implementación',ciudad:'GYE',codigo:'11647',cedula:'0929199826',celular:'987885281',mail:'amguzman@telconet.ec'},
+  {user:'dcoronel',nombre:'Coronel Bonifaz Diana Elizabeth',equipo:'Implementación',ciudad:'UIO',codigo:'188482',cedula:'1722931845',celular:'992870053',mail:'dcoronel@telconet.ec'},
+  {user:'klmartinez',nombre:'Martinez Toapanta Katherine Lizeth',equipo:'Implementación',ciudad:'UIO',codigo:'4840',cedula:'1720849072',celular:'979957207',mail:'klmartinez@telconet.ec'},
+  {user:'kremache',nombre:'Remache Santa Maria Katherine Ivanova',equipo:'Implementación',ciudad:'UIO',codigo:'11521',cedula:'1104117336',celular:'987054035',mail:'kremache@telconet.ec'},
+  {user:'cralarcon',nombre:'Alarcon Arreaga Carmen Rosa',equipo:'O&M',ciudad:'GYE',codigo:'101236',cedula:'0912112570',celular:'983323950',mail:'cralarcon@telconet.ec'},
+  {user:'erchoez',nombre:'Choez Quimis Erick Roberto',equipo:'O&M',ciudad:'GYE',codigo:'189989',cedula:'0951667229',celular:'998452128',mail:'erchoez@telconet.ec'},
+  {user:'jkguaman',nombre:'Guaman Ruiz Jennyfer Katherine',equipo:'O&M',ciudad:'GYE',codigo:'1824',cedula:'0930946280',celular:'983497098',mail:'jkguaman@telconet.ec'},
+  {user:'clhidalgo',nombre:'Hidalgo Jimenez Cristina Lisbeth',equipo:'O&M',ciudad:'GYE',codigo:'2730',cedula:'0952523835',celular:'958879284',mail:'clhidalgo@telconet.ec'},
+  {user:'esrivera',nombre:'Rivera Castaneda Elizabeth Stephania',equipo:'O&M',ciudad:'GYE',codigo:'187566',cedula:'0930538962',celular:'983439748',mail:'esrivera@telconet.ec'},
+  {user:'ansanchez',nombre:'Sanchez Zambrano Angela Rosa',equipo:'O&M',ciudad:'GYE',codigo:'1797',cedula:'0915847271',celular:'998020255',mail:'ansanchez@telconet.ec'},
+  {user:'aarroyo',nombre:'Arroyo Burgos Aura Erlinda',equipo:'O&M',ciudad:'UIO',codigo:'8987',cedula:'1002900767',celular:'983874047',mail:'aarroyo@telconet.ec'},
+  {user:'jlcastillot',nombre:'Castillo Tipantasi José Luis',equipo:'O&M',ciudad:'UIO',codigo:'4815',cedula:'1722228796',celular:'987023927',mail:'jlcastillot@telconet.ec'},
+  {user:'aldelgado',nombre:'Delgado Simbaña Ana Laura',equipo:'O&M',ciudad:'UIO',codigo:'7303',cedula:'1719041442',celular:'987613410',mail:'aldelgado@telconet.ec'},
+  {user:'bsangolqui',nombre:'Sangolqui Campoverde Byron Raul',equipo:'O&M',ciudad:'UIO',codigo:'184859',cedula:'1718905076',celular:'962890647',mail:'bsangolqui@telconet.ec'},
 ];
 
 // Cursos cargados desde Supabase (34,055 cursos catálogo Udemy)
@@ -1071,7 +1082,7 @@ function filterPersonalByEquipo() {
   sel.innerHTML = '<option value="">Seleccionar persona</option>';
   if (!eq) return;
   personal.filter(p => p.equipo === eq).forEach(p => {
-    const o = document.createElement('option'); o.value = p.user; o.textContent = p.nombre + ' (' + p.user + ')'; sel.appendChild(o);
+    const o = document.createElement('option'); o.value = p.user; o.textContent = p.nombre + ' [' + (p.ciudad||'') + '] (' + p.user + ')'; sel.appendChild(o);
   });
 }
 
@@ -1204,7 +1215,34 @@ function filterEmailPersonal() {
     o.textContent = p.nombre + ' (' + p.user + ')';
     sel.appendChild(o);
   });
+  autoFillPersonalData();
   updateEmailPreview();
+}
+
+function autoFillPersonalData() {
+  const userLogin = document.getElementById('eqPersonal').value;
+  const pers = personal.find(p => p.user === userLogin);
+  if (!pers) return;
+  // Auto-fill ciudad, código, cédula
+  document.getElementById('eqCiudad').value = pers.ciudad || 'UIO';
+  document.getElementById('eqCodigo').value = pers.codigo || '';
+  document.getElementById('eqCedula').value = pers.cedula || '';
+  // Auto-set TelcoU contact based on ciudad
+  autoSetTelcouContact(pers.ciudad);
+  updateEmailPreview();
+}
+
+function autoSetTelcouContact(ciudad) {
+  const contactEl = document.getElementById('eqTelcouContacto');
+  const mailEl = document.getElementById('eqTelcouMail');
+  if (!contactEl) return;
+  if (ciudad === 'GYE') {
+    contactEl.value = 'Carlos Ruilova';
+    if (mailEl) mailEl.value = 'cruilova@telconet.ec';
+  } else {
+    contactEl.value = 'Melissa Zurita';
+    if (mailEl) mailEl.value = 'mdzurita@telconet.ec';
+  }
 }
 
 async function renderEmailCursos() {
@@ -1238,7 +1276,94 @@ function getEmailPersonaData() {
   return pers;
 }
 
-function buildEmailText() {
+function getAprobadoEmail(nombre) {
+  const map = {
+    'Haydi Chiluisa': 'hchiluisa@telconet.ec',
+    'Eduardo Nuñez': 'bnunez@telconet.ec',
+    'Geovanna Naranjo': 'ganaranjo@telconet.ec',
+    'Carmen Alarcón': 'cralarcon@telconet.ec'
+  };
+  return map[nombre] || '';
+}
+
+function buildEmailHTML() {
+  const pers = getEmailPersonaData();
+  const ciudad = document.getElementById('eqCiudad').value || 'UIO';
+  const codigo = document.getElementById('eqCodigo').value || '&nbsp;';
+  const cedula = document.getElementById('eqCedula').value || '&nbsp;';
+  const aprobado = document.getElementById('eqAprobado').value || '';
+  const justif = (document.getElementById('eqJustificacion').value || '').replace(/
+/g,'<br>');
+  const curso = selectedEmailCurso;
+  const nombre = pers ? pers.nombre.toUpperCase() : '&nbsp;';
+  const userLogin = pers ? pers.user : '&nbsp;';
+  const mail = pers ? userLogin + '@telconet.ec' : '&nbsp;';
+  const aprobadoEmail = getAprobadoEmail(aprobado);
+
+  const thStyle = 'border:1px solid #ddd;padding:7px 10px;background:#0d1b2e;color:#ffffff;font-size:12px;text-align:left;white-space:nowrap';
+  const tdStyle = 'border:1px solid #ddd;padding:7px 10px;font-size:12px;white-space:nowrap';
+
+  const cursoRows = curso ? `
+    <tr>
+      <td style="${tdStyle}">CCID:4-CID:${curso.id}</td>
+      <td style="${tdStyle}">${curso.id}</td>
+      <td style="${tdStyle}">${curso.titulo}</td>
+      <td style="${tdStyle}">${curso.idioma||'English'}</td>
+    </tr>` : `<tr><td colspan="4" style="${tdStyle}">Sin curso seleccionado</td></tr>`;
+
+  return `<div style="font-family:Segoe UI,Arial,sans-serif;font-size:14px;color:#1a1a1a;line-height:1.6">
+<p>Estimad${(document.getElementById('eqTelcouContacto')?.value||'').includes('Carlos')?'o':'a'} ${(()=>{const n=(document.getElementById('eqTelcouContacto')?.value||'Melissa Zurita').split(' ');return n[0];})()},</p>
+<p>Por medio de la presente, solicito su valioso apoyo con la asignación de una licencia de Udemy para el siguiente personal:</p>
+
+<table style="border-collapse:collapse;margin:12px 0">
+  <thead>
+    <tr>
+      <th style="${thStyle}">CIUDAD</th>
+      <th style="${thStyle}">CÓDIGO</th>
+      <th style="${thStyle}">CÉDULA</th>
+      <th style="${thStyle}">USER</th>
+      <th style="${thStyle}">APELLIDOS Y NOMBRES</th>
+      <th style="${thStyle}">MAIL EMPRESA</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="${tdStyle}">${ciudad}</td>
+      <td style="${tdStyle}">${codigo}</td>
+      <td style="${tdStyle}">${cedula}</td>
+      <td style="${tdStyle}">${userLogin}</td>
+      <td style="${tdStyle}">${nombre}</td>
+      <td style="${tdStyle}">${mail}</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>CURSO SOLICITADO:</strong></p>
+<table style="border-collapse:collapse;margin:12px 0">
+  <thead>
+    <tr>
+      <th style="${thStyle}">content_collection_course_identifier</th>
+      <th style="${thStyle}">UB Course ID</th>
+      <th style="${thStyle}">Course title</th>
+      <th style="${thStyle}">Course Language</th>
+    </tr>
+  </thead>
+  <tbody>${cursoRows}</tbody>
+</table>
+
+<p>${justif}</p>
+<p>Agradezco su gentil ayuda.</p>
+<p>Saludos cordiales,</p>
+<br>
+<strong>${aprobado}</strong><br>
+Coordinador Nacional – Proyectos e Implementación<br>
+TELCONET LATAM<br>
+<a href="mailto:${aprobadoEmail}">${aprobadoEmail}</a><br>
+Quito - Ecuador | <a href="http://www.telconet.net">www.telconet.net</a>
+</div>`;
+}
+
+function buildEmailPlain() {
   const pers = getEmailPersonaData();
   const ciudad = document.getElementById('eqCiudad').value || 'UIO';
   const codigo = document.getElementById('eqCodigo').value || '______';
@@ -1246,25 +1371,16 @@ function buildEmailText() {
   const aprobado = document.getElementById('eqAprobado').value || '______';
   const justif = document.getElementById('eqJustificacion').value;
   const curso = selectedEmailCurso;
-
   const nombre = pers ? pers.nombre.toUpperCase() : '______';
   const userLogin = pers ? pers.user : '______';
-  const mail = pers ? userLogin + '@telconet.ec' : '______@telconet.ec';
-
-  const cursoInfo = curso
-    ? `CCID:4-CID:${curso.id}   |   ${curso.id}   |   ${curso.titulo}   |   ${curso.idioma||'English'}`
-    : '______   |   ______   |   ______';
-
-  return `Para: mdzurita@telconet.ec; telcou_uio@telconet.ec
-CC: bnunez@telconet.ec; ganaranjo@telconet.ec; cralarcon@telconet.ec
-Asunto: PEI: ${ciudad} - ASIGNACIÓN LICENCIA UDEMY - ${userLogin}
-
-Estimada Melissita,
+  const mail = pers ? userLogin + '@telconet.ec' : '______';
+  const cursoInfo = curso ? `CCID:4-CID:${curso.id} | ${curso.id} | ${curso.titulo} | ${curso.idioma||'English'}` : '______';
+  return `Estimada Melissita,
 
 Por medio de la presente, solicito su valioso apoyo con la asignación de una licencia de Udemy para el siguiente personal:
 
-CIUDAD  | CÓDIGO  | CÉDULA       | USER         | APELLIDOS Y NOMBRES          | MAIL EMPRESA
-${ciudad}     | ${codigo}   | ${cedula} | ${userLogin.padEnd(12)} | ${nombre.substring(0,30).padEnd(30)} | ${mail}
+CIUDAD | CÓDIGO | CÉDULA | USER | APELLIDOS Y NOMBRES | MAIL EMPRESA
+${ciudad} | ${codigo} | ${cedula} | ${userLogin} | ${nombre} | ${mail}
 
 CURSO SOLICITADO:
 content_collection_course_identifier | UB Course ID | Course title | Course Language
@@ -1275,32 +1391,56 @@ ${justif}
 Agradezco su gentil ayuda.
 
 Saludos cordiales,
-
 ${aprobado}
-Coordinador Nacional - Proyectos e Implementación
+Coordinador Nacional – Proyectos e Implementación
 TELCONET LATAM
-${aprobado === 'Haydi Chiluisa' ? 'hchiluisa@telconet.ec' : aprobado === 'Eduardo Nuñez' ? 'bnunez@telconet.ec' : aprobado === 'Geovanna Naranjo' ? 'ganaranjo@telconet.ec' : 'cralarcon@telconet.ec'}
 Quito - Ecuador | www.telconet.net`;
 }
 
 function updateEmailPreview() {
-  document.getElementById('emailPreview').textContent = buildEmailText();
+  // Show HTML preview in the panel
+  document.getElementById('emailPreview').innerHTML = buildEmailHTML();
 }
 
-function copyEmailText() {
-  const text = buildEmailText();
-  navigator.clipboard.writeText(text).then(() => showToast('Correo copiado al portapapeles ✓'));
+async function copyEmailText() {
+  const html = buildEmailHTML();
+  const plain = buildEmailPlain();
+  try {
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([plain], { type: 'text/plain' })
+      })
+    ]);
+    showToast('Correo copiado con formato ✓ — pega en Outlook');
+  } catch(e) {
+    navigator.clipboard.writeText(plain);
+    showToast('Copiado como texto plano ✓');
+  }
 }
 
 function openInOutlook() {
   const pers = getEmailPersonaData();
   const ciudad = document.getElementById('eqCiudad').value || 'UIO';
   const userLogin = pers ? pers.user : 'colaborador';
-  const subject = encodeURIComponent('PEI: ' + ciudad + ' - ASIGNACIÓN LICENCIA UDEMY - ' + userLogin);
-  const body = encodeURIComponent(buildEmailText());
-  const to = 'mdzurita@telconet.ec;telcou_uio@telconet.ec';
-  const cc = 'bnunez@telconet.ec;ganaranjo@telconet.ec;cralarcon@telconet.ec';
-  window.open('mailto:' + to + '?cc=' + cc + '&subject=' + subject + '&body=' + body);
+  const subject = 'PEI: ' + ciudad + ' - ASIGNACIÓN LICENCIA UDEMY - ' + userLogin;
+  const to = 'mdzurita@telconet.ec';
+  const cc = 'telcou_uio@telconet.ec;bnunez@telconet.ec;ganaranjo@telconet.ec;cralarcon@telconet.ec';
+
+  // Try opening Outlook desktop via mailto (works with Outlook as default mail client)
+  // Build a minimal body since mailto doesn't support HTML
+  const plain = buildEmailPlain();
+
+  // Create a temporary form to POST to outlook protocol
+  const mailtoLink = `mailto:${to}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(plain)}`;
+  
+  // Copy HTML to clipboard so user can paste in Outlook body
+  copyEmailText();
+  
+  // Open outlook new message window
+  window.location.href = mailtoLink;
+  
+  showToast('Outlook abierto · Pega (Ctrl+V) el cuerpo con formato de tabla');
 }
 
 // ── WORKFLOW HELPERS ─────────────────────────────────────────────
@@ -1327,7 +1467,7 @@ function openEmailFromRow(id) {
       filterEmailPersonal();
       setTimeout(() => {
         document.getElementById('eqPersonal').value = a.user_login || '';
-        updateEmailPreview();
+        autoFillPersonalData();
       }, 50);
     }
     // If course is known, try to show it
