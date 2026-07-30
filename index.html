@@ -1292,8 +1292,7 @@ function buildEmailHTML() {
   const codigo = document.getElementById('eqCodigo').value || '&nbsp;';
   const cedula = document.getElementById('eqCedula').value || '&nbsp;';
   const aprobado = document.getElementById('eqAprobado').value || '';
-  const justif = (document.getElementById('eqJustificacion').value || '').replace(/
-/g,'<br>');
+  const justif = (document.getElementById('eqJustificacion').value || '').split(String.fromCharCode(10)).join('<br>');
   const curso = selectedEmailCurso;
   const nombre = pers ? pers.nombre.toUpperCase() : '&nbsp;';
   const userLogin = pers ? pers.user : '&nbsp;';
