@@ -1125,7 +1125,7 @@ async function selectCurso(id) {
   renderModalCursos();
   document.getElementById('cursoSelBox').style.display = 'block';
   document.getElementById('csTitulo').textContent = found.titulo;
-  document.getElementById('csMeta').textContent = (found.instructor||'') + ' · ' + Number(found.horas||0).toFixed(0) + 'h · ⭐' + (found.rating||'');
+  document.getElementById('csMeta').textContent = (found.instructor||'') + ' · ⏱ ' + Number(found.horas||0).toFixed(1) + ' h · ⭐' + (found.rating||'') + ' · ' + (found.idioma||'') + ' · ' + (found.nivel||'');
 }
 
 function asignarCursoDirecto(id) {
@@ -1154,6 +1154,7 @@ async function guardarAsignacion(abrirCorreo = false) {
     equipo,
     curso_id: selectedCurso ? selectedCurso.id : (editingId ? asignaciones.find(a=>a.id===editingId)?.curso_id : null),
     curso_titulo: selectedCurso ? selectedCurso.titulo : (editingId ? asignaciones.find(a=>a.id===editingId)?.curso_titulo : null),
+    horas_curso: selectedCurso ? Number(selectedCurso.horas||0) : (editingId ? asignaciones.find(a=>a.id===editingId)?.horas_curso : null),
     institucion: document.getElementById('fInstitucion').value,
     licencia: document.getElementById('fLicencia').value,
     fecha_inicio: document.getElementById('fInicio').value || null,
