@@ -136,13 +136,19 @@
   .toolbar input:focus, .toolbar select:focus { border-color: var(--border-accent); }
 
   /* ── TABLE ── */
-  .table-wrap { overflow-x: auto; border: 1px solid var(--gray-bd); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .table-wrap { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 320px); border: 1px solid var(--gray-bd); border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06); scrollbar-width: thin; scrollbar-color: var(--orange) var(--gray-bd); }
+  .table-wrap::-webkit-scrollbar { width: 7px; height: 7px; }
+  .table-wrap::-webkit-scrollbar-track { background: var(--gray-bd); border-radius: 4px; }
+  .table-wrap::-webkit-scrollbar-thumb { background: var(--orange); border-radius: 4px; }
+  .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--orange-dk); }
+  .table-wrap::-webkit-scrollbar-corner { background: var(--gray-bd); }
   table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
-  thead { background: var(--navy); }
+  thead { background: var(--navy); position: sticky; top: 0; z-index: 3; }
   th { padding: 9px 12px; text-align: left; font-weight: 700; color: #8ba3c4; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,.08); text-transform: uppercase; letter-spacing: .05em; }
   td { padding: 9px 12px; border-bottom: 1px solid var(--gray-bd); vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: var(--gray-bg); }
+  tr:hover td[style*="sticky"] { background: #eef0f4; }
   .empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; }
 
   /* ── BADGES ── */
@@ -420,7 +426,7 @@
         <table>
           <thead>
             <tr>
-              <th>Personal</th><th>Equipo</th><th>Curso</th><th>Duración</th><th>Institución</th>
+              <th style="position:sticky;left:0;z-index:2;background:var(--navy)">Personal</th><th>Equipo</th><th>Curso</th><th>Duración</th><th>Institución</th>
               <th>Inicio</th><th>Fin</th><th>Avance</th><th>Estado</th>
               <th>Prioridad</th><th>Certificado</th><th>Licencia</th><th>Hereda de</th><th></th>
             </tr>
@@ -951,7 +957,7 @@ function renderAsignaciones() {
   const tb = document.getElementById('tbAsig');
   if (!data.length) { tb.innerHTML = '<tr><td colspan="12" class="empty">No hay asignaciones</td></tr>'; return; }
   tb.innerHTML = data.map(a => `<tr>
-    <td><div style="font-weight:500">${a.nombre||''}</div><div style="font-size:11px;color:var(--text-secondary)">${a.user_login||''}</div></td>
+    <td style="position:sticky;left:0;background:var(--surface-2);z-index:1;min-width:160px"><div style="font-weight:500">${a.nombre||''}</div><div style="font-size:11px;color:var(--text-secondary)">${a.user_login||''}</div></td>
     <td>${equipoBadge(a.equipo)}</td>
     <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${a.curso_titulo||''}">${a.curso_titulo||'<span style="color:var(--text-muted)">Sin asignar</span>'}</td>
     <td style="font-size:12px;white-space:nowrap;color:var(--text2)">${a.horas_curso ? '⏱ ' + Number(a.horas_curso).toFixed(0) + ' h' : '—'}</td>
