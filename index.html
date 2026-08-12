@@ -415,11 +415,11 @@ let currentEmailAsigId = null;
 //  SUPABASE INIT
 // ═══════════════════════════════════════════════════════════════
 async function initSupabase() {
-  const url = localStorage.getItem(STORAGE_KEY_URL);
-  const key = localStorage.getItem(STORAGE_KEY_KEY);
-  if (!url || !key) return false;
+  // Credentials hardcoded — no setup needed on any device
+  const SUPABASE_URL = 'https://kpdcggekcoxagufymgvr.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwZGNnZ2VrY294YWd1ZnltZ3ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzNTAyNTYsImV4cCI6MjEwMDkyNjI1Nn0.2B0GbUC8Vkw_yM7C0B9eXozOirWy5FyGfOxL6nhtLPY';
   try {
-    sb = window.supabase.createClient(url, key);
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     return true;
   } catch(e) { return false; }
 }
@@ -438,6 +438,8 @@ async function connectSupabase() {
     if (error && error.code === '42P01') { throw new Error('Tabla no encontrada. Ejecuta schema.sql primero.'); }
     localStorage.setItem(STORAGE_KEY_URL, url);
     localStorage.setItem(STORAGE_KEY_KEY, key);
+    sessionStorage.setItem(STORAGE_KEY_URL, url);
+    sessionStorage.setItem(STORAGE_KEY_KEY, key);
     document.getElementById('setupScreen').style.display = 'none';
     startAuth();
   } catch(e) {
@@ -457,6 +459,8 @@ function startAuth() {
       await resolveUser(session.user);
     } else {
       hide('loadingOverlay');
+      // Clear hash from URL if present
+      if (window.location.hash) history.replaceState(null, '', window.location.pathname);
       show('authScreen');
     }
   });
@@ -1593,12 +1597,7 @@ function showToast(msg) {
 //  INIT
 // ═══════════════════════════════════════════════════════════════
 (async function init() {
-  const ok = await initSupabase();
-  if (!ok) {
-    hide('loadingOverlay');
-    document.getElementById('setupScreen').style.display = 'flex';
-    return;
-  }
+  await initSupabase();
   startAuth();
 })();
 </script>
