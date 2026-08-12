@@ -6,237 +6,214 @@
 <title>Proyectos Corporativos · Capacitaciones</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  /* ── RESET & BASE ── */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    /* Brand palette — Proyectos Corporativos */
-    --navy:        #0d1b2e;
-    --navy2:       #162236;
-    --orange:      #f5a623;
-    --orange-dk:   #e0941a;
-    --blue:        #1a73c8;
-    --blue-lt:     #e8f1fb;
-    --green:       #1b7a3e;
-    --green-lt:    #e6f4ec;
-    --red:         #c0392b;
-    --red-lt:      #fdecea;
-    --amber:       #e07b00;
-    --amber-lt:    #fff3e0;
-    --gray-bg:     #f2f4f7;
-    --gray-bd:     #dde1e8;
-    --text:        #0d1b2e;
-    --text2:       #4a5568;
-    --text3:       #7a8599;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0d1b2e;--navy2:#162236;--orange:#f5a623;--orange-dk:#e0941a;
+  --blue:#1a73c8;--blue-lt:#e8f1fb;--green:#1b7a3e;--green-lt:#e6f4ec;
+  --red:#c0392b;--red-lt:#fdecea;--amber:#e07b00;--amber-lt:#fff3e0;
+  --gray-bg:#f2f4f7;--gray-bd:#dde1e8;--text:#0d1b2e;--text2:#4a5568;--text3:#7a8599;
+  --surface-0:var(--gray-bg);--surface-1:#f8f9fc;--surface-2:#ffffff;
+  --text-primary:var(--text);--text-secondary:var(--text2);--text-muted:var(--text3);
+  --border:var(--gray-bd);--border-strong:#c5ccd8;--radius:10px;
+  --bg-accent:rgba(245,166,35,.13);--text-accent:#c27800;--border-accent:var(--orange);
+  --fill-accent:var(--orange);--on-accent:#ffffff;
+  --bg-success:var(--green-lt);--text-success:var(--green);--border-success:#6bbf8a;--fill-success:var(--green);
+  --bg-warning:var(--amber-lt);--text-warning:var(--amber);--border-warning:#f5c87a;
+  --bg-danger:var(--red-lt);--text-danger:var(--red);--border-danger:#e8a09a;--fill-danger:var(--red);--on-danger:#fff;
+}
+body{font-family:'Segoe UI','Inter',Arial,sans-serif;font-size:14px;color:var(--text);background:var(--gray-bg);min-height:100vh}
 
-    /* App tokens mapped to palette */
-    --surface-0:      var(--gray-bg);
-    --surface-1:      #f8f9fc;
-    --surface-2:      #ffffff;
-    --text-primary:   var(--text);
-    --text-secondary: var(--text2);
-    --text-muted:     var(--text3);
-    --border:         var(--gray-bd);
-    --border-strong:  #c5ccd8;
-    --radius:         10px;
+/* ── AUTH SCREEN ── */
+#authScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--navy);padding:24px}
+.auth-card{background:var(--surface-2);border-radius:16px;padding:36px;width:100%;max-width:400px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.auth-logo{width:56px;height:56px;background:var(--orange);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px}
+.auth-card h1{font-size:20px;font-weight:700;margin-bottom:6px}
+.auth-card p{font-size:13px;color:var(--text2);margin-bottom:28px;line-height:1.6}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px;background:#fff;border:1.5px solid var(--gray-bd);border-radius:var(--radius);font-size:14px;font-weight:600;color:var(--text);cursor:pointer;transition:box-shadow .15s}
+.btn-google:hover{box-shadow:0 2px 12px rgba(0,0,0,.15)}
+.btn-google img{width:20px;height:20px}
+.auth-error{font-size:12px;color:var(--red);background:var(--red-lt);border:1px solid var(--border-danger);border-radius:var(--radius);padding:8px 12px;margin-top:14px;display:none}
 
-    /* Accent = orange brand */
-    --bg-accent:      rgba(245,166,35,.13);
-    --text-accent:    #c27800;
-    --border-accent:  var(--orange);
-    --fill-accent:    var(--orange);
-    --on-accent:      #ffffff;
+/* ── SETUP SCREEN ── */
+#setupScreen{display:none;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:var(--navy)}
+.setup-card{background:var(--surface-2);border:1px solid var(--gray-bd);border-top:4px solid var(--orange);border-radius:16px;padding:32px;width:100%;max-width:440px;box-shadow:0 8px 32px rgba(0,0,0,.12)}
+.setup-logo{width:48px;height:48px;background:var(--orange);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;font-size:24px}
+.setup-card h1{font-size:20px;font-weight:700;margin-bottom:6px}
+.setup-card p{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6}
+.form-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.form-field label{font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.form-field input{font-size:13px;border:1px solid var(--border-strong);border-radius:var(--radius);padding:9px 11px;background:var(--surface-1);color:var(--text);outline:none}
+.form-field input:focus{border-color:var(--orange);box-shadow:0 0 0 3px var(--bg-accent)}
+.hint{font-size:12px;color:var(--text3);margin-top:4px;line-height:1.5}
+.hint a{color:var(--blue);text-decoration:none}
+.err-msg{font-size:12px;color:var(--red);background:var(--red-lt);border:1px solid var(--border-danger);border-radius:var(--radius);padding:8px 12px;margin-bottom:14px;display:none}
 
-    /* Success = green */
-    --bg-success:     var(--green-lt);
-    --text-success:   var(--green);
-    --border-success: #6bbf8a;
-    --fill-success:   var(--green);
+/* ── LOADING ── */
+#loadingOverlay{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:999}
+#loadingOverlay .spinner{width:32px;height:32px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite}
+#loadingOverlay p{font-size:13px;color:#8ba3c4}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-    /* Warning = amber */
-    --bg-warning:     var(--amber-lt);
-    --text-warning:   var(--amber);
-    --border-warning: #f5c87a;
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-size:13px;border:1px solid var(--gray-bd);border-radius:var(--radius);background:var(--surface-2);color:var(--text);cursor:pointer;white-space:nowrap;font-family:inherit;font-weight:600;transition:background .12s}
+.btn:hover{background:var(--gray-bg)}
+.btn.primary{background:var(--orange);border-color:var(--orange);color:#fff}
+.btn.primary:hover{background:var(--orange-dk);border-color:var(--orange-dk)}
+.btn.navy{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.navy:hover{background:var(--navy2)}
+.btn.success{background:var(--green);border-color:var(--green);color:#fff}
+.btn-full{width:100%;justify-content:center;padding:10px}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--gray-bd);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite}
 
-    /* Danger = red */
-    --bg-danger:      var(--red-lt);
-    --text-danger:    var(--red);
-    --border-danger:  #e8a09a;
-    --fill-danger:    var(--red);
-    --on-danger:      #ffffff;
-  }
-  body { font-family: 'Segoe UI', 'Inter', Arial, sans-serif; font-size: 14px; color: var(--text); background: var(--gray-bg); min-height: 100vh; }
+/* ── APP ── */
+#app{display:none;flex-direction:column;min-height:100vh}
+.header{background:var(--navy);border-bottom:1px solid rgba(255,255,255,.08);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.header-left{display:flex;align-items:center;gap:10px}
+.logo{width:32px;height:32px;background:var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.header-title{font-size:15px;font-weight:700;color:#fff}
+.header-meta{font-size:12px;color:#8ba3c4}
+.header-right{display:flex;align-items:center;gap:10px}
+.user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:5px 12px;font-size:13px;color:#fff}
+.avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.avatar img{width:26px;height:26px;border-radius:50%;object-fit:cover}
+.role-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;text-transform:uppercase;letter-spacing:.04em}
+.role-admin{background:var(--orange);color:#fff}
+.role-user{background:var(--blue);color:#fff}
 
-  /* ── SETUP SCREEN ── */
-  #setupScreen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; background: var(--navy); }
-  .setup-card { background: var(--surface-2); border: 1px solid var(--gray-bd); border-top: 4px solid var(--orange); border-radius: 16px; padding: 32px; width: 100%; max-width: 440px; box-shadow: 0 8px 32px rgba(0,0,0,.12); }
-  .setup-logo { width: 48px; height: 48px; background: var(--orange); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
-  .setup-logo svg { width: 26px; height: 26px; stroke: #fff; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .setup-card h1 { font-size: 20px; font-weight: 500; margin-bottom: 6px; }
-  .setup-card p { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.6; }
-  .form-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
-  .form-field label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
-  .form-field input { font-size: 13px; border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 9px 11px; background: var(--surface-1); color: var(--text-primary); outline: none; }
-  .form-field input:focus { border-color: var(--border-accent); box-shadow: 0 0 0 3px var(--bg-accent); }
-  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 13px; border: 1px solid var(--gray-bd); border-radius: var(--radius); background: var(--surface-2); color: var(--text); cursor: pointer; white-space: nowrap; font-family: inherit; font-weight: 600; transition: background 0.12s; }
-  .btn:hover { background: var(--gray-bg); }
-  .btn.primary { background: var(--orange); border-color: var(--orange); color: #fff; }
-  .btn.primary:hover { background: var(--orange-dk); border-color: var(--orange-dk); }
-  .btn.danger { background: var(--red-lt); border-color: #e8a09a; color: var(--red); }
-  .btn-full { width: 100%; justify-content: center; padding: 10px; }
-  .hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
-  .hint a { color: var(--text-accent); text-decoration: none; }
-  .hint a:hover { text-decoration: underline; }
-  .err-msg { font-size: 12px; color: var(--text-danger); background: var(--bg-danger); border: 0.5px solid var(--border-danger); border-radius: var(--radius); padding: 8px 12px; margin-bottom: 14px; display: none; }
+/* ── NAV ── */
+.nav{display:flex;border-bottom:1px solid rgba(255,255,255,.08);background:var(--navy2);padding:0 20px;overflow-x:auto}
+.nav-tab{padding:10px 14px;font-size:13px;color:#8ba3c4;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .12s}
+.nav-tab:hover{color:#fff}
+.nav-tab.active{color:var(--orange);border-bottom-color:var(--orange);font-weight:600}
+.content{padding:20px;flex:1}
 
-  /* ── APP ── */
-  #app { display: none; flex-direction: column; min-height: 100vh; }
-  .header { background: var(--navy); border-bottom: 1px solid rgba(255,255,255,.08); padding: 13px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
-  .header-left { display: flex; align-items: center; gap: 10px; }
-  .logo { width: 32px; height: 32px; background: var(--orange); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-  .logo svg { width: 18px; height: 18px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .header h1 { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: .2px; }
-  .header-meta { font-size: 12px; color: #8ba3c4; }
-  .profile-badge { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.15); border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 13px; position: relative; color: #fff; }
-  .profile-badge:hover { background: rgba(255,255,255,.16); }
-  .avatar { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; }
-  .nav { display: flex; border-bottom: 1px solid rgba(255,255,255,.08); background: var(--navy2); padding: 0 20px; overflow-x: auto; }
-  .nav-tab { padding: 10px 14px; font-size: 13px; color: #8ba3c4; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.12s; }
-  .nav-tab:hover { color: #fff; }
-  .nav-tab.active { color: var(--orange); border-bottom-color: var(--orange); font-weight: 600; }
-  .content { padding: 20px; flex: 1; }
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+@media(max-width:600px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--surface-2);border:1px solid var(--gray-bd);border-top:3px solid var(--orange);border-radius:var(--radius);padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.stat-label{font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.stat-value{font-size:26px;font-weight:700;color:var(--navy)}
+.stat-value.accent{color:var(--blue)}
+.stat-value.success{color:var(--green)}
+.stat-value.warn{color:var(--amber)}
 
-  /* ── STATS ── */
-  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-  @media (max-width: 600px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
-  .stat-card { background: var(--surface-2); border: 1px solid var(--gray-bd); border-top: 3px solid var(--orange); border-radius: var(--radius); padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
-  .stat-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
-  .stat-value { font-size: 26px; font-weight: 700; color: var(--navy); }
-  .stat-value.accent { color: var(--blue); }
-  .stat-value.success { color: var(--green); }
+/* ── TEAM CARDS ── */
+.teams-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:700px){.teams-grid{grid-template-columns:1fr}}
+.team-card{background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.team-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.team-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.team-name{font-size:14px;font-weight:600}
+.team-email{font-size:11px;color:var(--text3)}
+.team-stats{display:flex;gap:14px}
+.ts-item{display:flex;flex-direction:column;align-items:center}
+.ts-num{font-size:18px;font-weight:600}
+.ts-lab{font-size:11px;color:var(--text3)}
+.progress-bar-bg{height:5px;background:var(--gray-bg);border-radius:3px;overflow:hidden;margin-top:10px}
+.progress-bar-fill{height:100%;border-radius:3px;transition:width .5s}
 
-  /* ── TEAM CARDS ── */
-  .teams-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
-  @media (max-width: 700px) { .teams-grid { grid-template-columns: 1fr; } }
-  .team-card { background: var(--surface-2); border: 1px solid var(--gray-bd); border-radius: 12px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
-  .team-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  .team-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-  .team-icon svg { width: 20px; height: 20px; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; fill: none; }
-  .team-name { font-size: 14px; font-weight: 500; }
-  .team-email { font-size: 11px; color: var(--text-secondary); }
-  .team-stats { display: flex; gap: 14px; }
-  .ts-item { display: flex; flex-direction: column; align-items: center; }
-  .ts-num { font-size: 18px; font-weight: 500; }
-  .ts-lab { font-size: 11px; color: var(--text-secondary); }
-  .progress-bar-bg { height: 5px; background: var(--surface-1); border-radius: 3px; overflow: hidden; margin-top: 10px; }
-  .progress-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+/* ── SUB-TABS ── */
+.sub-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:2px solid var(--gray-bd);padding-bottom:0}
+.sub-tab{padding:8px 16px;font-size:13px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;border-radius:6px 6px 0 0;transition:all .12s;font-weight:600}
+.sub-tab:hover{color:var(--navy);background:var(--gray-bg)}
+.sub-tab.active{color:var(--orange);border-bottom-color:var(--orange);background:var(--amber-lt)}
 
-  /* ── TOOLBAR ── */
-  .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
-  .toolbar input, .toolbar select { flex: 1; min-width: 130px; max-width: 200px; font-size: 13px; border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 7px 10px; background: var(--surface-2); color: var(--text-primary); outline: none; font-family: inherit; }
-  .toolbar input:focus, .toolbar select:focus { border-color: var(--border-accent); }
+/* ── WORKFLOW BANNER ── */
+.workflow-banner{display:flex;align-items:center;gap:4px;background:var(--navy);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;flex-wrap:wrap}
+.wf-step{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;color:#8ba3c4;text-transform:uppercase;letter-spacing:.04em;transition:all .12s;white-space:nowrap}
+.wf-step span{font-size:10px}
+.wf-step:hover,.wf-step.active-wf{background:rgba(245,166,35,.2);color:var(--orange)}
+.wf-arrow{color:#4a6080;font-size:14px}
 
-  /* ── TABLE ── */
-  .table-wrap { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 320px); border: 1px solid var(--gray-bd); border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06); scrollbar-width: thin; scrollbar-color: var(--orange) var(--gray-bd); }
-  .table-wrap::-webkit-scrollbar { width: 7px; height: 7px; }
-  .table-wrap::-webkit-scrollbar-track { background: var(--gray-bd); border-radius: 4px; }
-  .table-wrap::-webkit-scrollbar-thumb { background: var(--orange); border-radius: 4px; }
-  .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--orange-dk); }
-  .table-wrap::-webkit-scrollbar-corner { background: var(--gray-bd); }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
-  thead { background: var(--navy); position: sticky; top: 0; z-index: 3; }
-  th { padding: 9px 12px; text-align: left; font-weight: 700; color: #8ba3c4; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,.08); text-transform: uppercase; letter-spacing: .05em; }
-  td { padding: 9px 12px; border-bottom: 1px solid var(--gray-bd); vertical-align: middle; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--gray-bg); }
-  tr:hover td[style*="sticky"] { background: #eef0f4; }
-  .empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; }
+/* ── ALERT BANNER ── */
+.alert-banner{display:flex;align-items:flex-start;gap:10px;background:var(--red-lt);border:1px solid #e8a09a;border-left:4px solid var(--red);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--red)}
 
-  /* ── BADGES ── */
-  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
-  .badge-plan { background: var(--blue-lt); color: var(--blue); }
-  .badge-impl { background: var(--green-lt); color: var(--green); }
-  .badge-om   { background: var(--amber-lt); color: var(--amber); }
-  .badge-done { background: var(--green-lt); color: var(--green); }
-  .badge-curso { background: var(--blue-lt); color: var(--blue); }
-  .badge-pend { background: var(--amber-lt); color: var(--amber); }
-  .badge-inicia { background: var(--gray-bg); color: var(--text3); border: 1px solid var(--gray-bd); }
-  .badge-alta { background: var(--red-lt); color: var(--red); }
-  .badge-media { background: var(--amber-lt); color: var(--amber); }
-  .badge-baja { background: var(--green-lt); color: var(--green); }
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.toolbar input,.toolbar select{flex:1;min-width:130px;max-width:200px;font-size:13px;border:1px solid var(--border-strong);border-radius:var(--radius);padding:7px 10px;background:var(--surface-2);color:var(--text);outline:none;font-family:inherit}
+.toolbar input:focus,.toolbar select:focus{border-color:var(--orange)}
 
-  /* ── PROGRESS BAR INLINE ── */
-  .pct-bar { width: 56px; height: 5px; background: var(--surface-1); border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; margin-left: 5px; }
-  .pct-fill { height: 100%; background: var(--orange); border-radius: 3px; }
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 320px);border:1px solid var(--gray-bd);border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);scrollbar-width:thin;scrollbar-color:var(--orange) var(--gray-bd)}
+.table-wrap::-webkit-scrollbar{width:7px;height:7px}
+.table-wrap::-webkit-scrollbar-track{background:var(--gray-bd);border-radius:4px}
+.table-wrap::-webkit-scrollbar-thumb{background:var(--orange);border-radius:4px}
+.table-wrap::-webkit-scrollbar-corner{background:var(--gray-bd)}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:700px}
+thead{background:var(--navy);position:sticky;top:0;z-index:3}
+th{padding:9px 12px;text-align:left;font-weight:700;color:#8ba3c4;font-size:11px;border-bottom:1px solid rgba(255,255,255,.08);text-transform:uppercase;letter-spacing:.05em}
+td{padding:9px 12px;border-bottom:1px solid var(--gray-bd);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--gray-bg)}
+.empty{text-align:center;padding:40px;color:var(--text3);font-size:13px}
 
-  /* ── MODAL ── */
-  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.40); display: flex; align-items: center; justify-content: center; z-index: 200; }
-  .modal { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 16px; width: 94%; max-width: 560px; max-height: 92vh; overflow-y: auto; }
-  .modal-header { padding: 18px 20px 14px; border-bottom: 1px solid var(--gray-bd); background: var(--navy); display: flex; align-items: center; justify-content: space-between; }
-  .modal-header h2 { font-size: 15px; font-weight: 700; color: #fff; }
-  .modal-body { padding: 20px; }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-  @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
-  .form-field.full { grid-column: 1 / -1; }
-  .form-field select, .form-field textarea { font-size: 13px; border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 8px 10px; background: var(--surface-1); color: var(--text-primary); outline: none; font-family: inherit; }
-  .form-field select:focus, .form-field input:focus, .form-field textarea:focus { border-color: var(--border-accent); }
-  .form-field textarea { resize: vertical; min-height: 60px; }
-  .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 0.5px solid var(--border); }
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-plan{background:var(--blue-lt);color:var(--blue)}
+.badge-impl{background:var(--green-lt);color:var(--green)}
+.badge-om{background:var(--amber-lt);color:var(--amber)}
+.badge-pendiente{background:#f3f0fa;color:#5b2d8e}
+.badge-autorizado{background:var(--green-lt);color:var(--green)}
+.badge-encurso{background:var(--blue-lt);color:var(--blue)}
+.badge-culminado{background:var(--green-lt);color:var(--green)}
+.badge-certpend{background:var(--red-lt);color:var(--red)}
+.badge-alta{background:var(--red-lt);color:var(--red)}
+.badge-media{background:var(--amber-lt);color:var(--amber)}
+.badge-baja{background:var(--green-lt);color:var(--green)}
+.pct-bar{width:56px;height:5px;background:var(--gray-bg);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:5px}
+.pct-fill{height:100%;background:var(--orange);border-radius:3px}
 
-  /* ── CURSO ITEM ── */
-  .search-curso { width: 100%; font-size: 13px; border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 8px 10px; background: var(--surface-1); color: var(--text-primary); margin-bottom: 8px; outline: none; font-family: inherit; }
-  .search-curso:focus { border-color: var(--border-accent); }
-  .curso-list { max-height: 200px; overflow-y: auto; margin-bottom: 12px; display: flex; flex-direction: column; gap: 5px; }
-  .curso-item { padding: 9px 11px; border-radius: var(--radius); border: 0.5px solid var(--border); background: var(--surface-1); cursor: pointer; transition: border-color 0.12s; }
-  .curso-item:hover { border-color: var(--border-accent); }
-  .curso-item.selected { border-color: var(--fill-accent); background: var(--bg-accent); }
-  .curso-title { font-size: 12px; font-weight: 500; }
-  .curso-meta { font-size: 11px; color: var(--text-secondary); margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap; }
-  .curso-selected-box { display: none; background: var(--bg-accent); border: 0.5px solid var(--border-accent); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 14px; font-size: 13px; }
+/* ── MODAL ── */
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal{background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:16px;width:94%;max-width:580px;max-height:92vh;overflow-y:auto}
+.modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--gray-bd);background:var(--navy);display:flex;align-items:flex-start;justify-content:space-between;border-radius:16px 16px 0 0}
+.modal-header h2{font-size:15px;font-weight:700;color:#fff}
+.modal-header p{font-size:11px;color:#8ba3c4;margin-top:3px}
+.modal-body{padding:20px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:500px){.form-row{grid-template-columns:1fr}}
+.form-field.full{grid-column:1/-1}
+.form-field select,.form-field textarea,.form-field input[type=date],.form-field input[type=number],.form-field input[type=text]{font-size:13px;border:1px solid var(--border-strong);border-radius:var(--radius);padding:8px 10px;background:var(--surface-1);color:var(--text);outline:none;font-family:inherit;width:100%}
+.form-field select:focus,.form-field input:focus,.form-field textarea:focus{border-color:var(--orange)}
+.form-field textarea{resize:vertical;min-height:60px}
+.form-field select:disabled,.form-field input:disabled,.form-field textarea:disabled{opacity:.55;cursor:not-allowed;background:var(--gray-bg)}
+.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-bd)}
+.section-label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;margin-top:4px}
 
-  /* ── PROFILE MENU ── */
-  .profile-menu { display: none; position: absolute; top: calc(100% + 8px); right: 0; background: var(--navy2); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 8px; z-index: 300; min-width: 230px; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
-  .pm-item { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: var(--radius); cursor: pointer; font-size: 13px; color: #c8d8ee; }
-  .pm-item:hover { background: rgba(255,255,255,.07); color: #fff; }
-  .pm-divider { border: none; border-top: 1px solid rgba(255,255,255,.08); margin: 6px 0; }
-  .pm-label { font-size: 11px; color: #4a6080; padding: 4px 8px 2px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+/* ── CURSO PICKER ── */
+.search-curso{width:100%;font-size:13px;border:1px solid var(--border-strong);border-radius:var(--radius);padding:8px 10px;background:var(--surface-1);color:var(--text);margin-bottom:8px;outline:none;font-family:inherit}
+.search-curso:focus{border-color:var(--orange)}
+.curso-list{max-height:200px;overflow-y:auto;margin-bottom:12px;display:flex;flex-direction:column;gap:5px}
+.curso-item{padding:9px 11px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-1);cursor:pointer;transition:border-color .12s}
+.curso-item:hover{border-color:var(--orange)}
+.curso-item.selected{border-color:var(--orange);background:var(--amber-lt)}
+.curso-title{font-size:12px;font-weight:600}
+.curso-meta{font-size:11px;color:var(--text3);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+.curso-sel-box{display:none;background:var(--amber-lt);border:1px solid var(--orange);border-radius:var(--radius);padding:10px 12px;margin-bottom:14px;font-size:13px}
 
-  /* ── SPINNER ── */
-  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--gray-bd); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.7s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* ── SOLICITUD VIEW (solicitante) ── */
+.sol-card{background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.sol-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap}
+.sol-curso{font-size:14px;font-weight:600}
+.sol-meta{font-size:12px;color:var(--text3);margin-top:3px}
+.sol-actions{display:flex;gap:6px;flex-wrap:wrap}
+.locked-notice{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px;margin-top:8px;background:var(--gray-bg);padding:6px 10px;border-radius:6px}
 
-  /* ── LOADING OVERLAY ── */
-  #loadingOverlay { position: fixed; inset: 0; background: var(--navy); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; z-index: 999; }
-  #loadingOverlay .spinner { width: 32px; height: 32px; border-width: 3px; border-color: rgba(255,255,255,.2); border-top-color: var(--orange); }
-  #loadingOverlay p { font-size: 13px; color: #8ba3c4; }
+/* ── EMAIL MODAL ── */
+.email-preview-box{background:#fff;border:1px solid var(--gray-bd);border-radius:var(--radius);padding:16px;font-size:13px;line-height:1.7;max-height:300px;overflow-y:auto;color:var(--text)}
 
-  /* ── WORKFLOW BANNER ── */
-  .workflow-banner { display:flex; align-items:center; gap:4px; background:var(--navy); border-radius:var(--radius); padding:10px 14px; margin-bottom:14px; flex-wrap:wrap; }
-  .wf-step { display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:700; color:#8ba3c4; text-transform:uppercase; letter-spacing:.04em; transition:all .12s; white-space:nowrap; }
-  .wf-step span { font-size:10px; }
-  .wf-step:hover { background:rgba(245,166,35,.2); color:var(--orange); }
-  .wf-step.active-wf { background:rgba(245,166,35,.2); color:var(--orange); }
-  .wf-arrow { color:#4a6080; font-size:14px; }
+/* ── PROFILE MENU ── */
+.profile-menu{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--navy2);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px;z-index:300;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.pm-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--radius);cursor:pointer;font-size:13px;color:#c8d8ee}
+.pm-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.pm-divider{border:none;border-top:1px solid rgba(255,255,255,.08);margin:6px 0}
 
-  /* ── ALERT BANNER ── */
-  .alert-banner { display:flex; align-items:center; gap:10px; background:var(--red-lt); border:1px solid #e8a09a; border-left:4px solid var(--red); border-radius:var(--radius); padding:10px 14px; margin-bottom:14px; font-size:13px; color:var(--red); }
-  .alert-banner strong { font-weight:700; }
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;font-size:13px;font-weight:500;padding:10px 20px;border-radius:var(--radius);border-left:4px solid var(--orange);opacity:0;transform:translateY(8px);transition:all .2s;z-index:500;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+#toast.show{opacity:1;transform:translateY(0)}
 
-  /* ── SUB-TABS ── */
-  .sub-tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 2px solid var(--gray-bd); padding-bottom: 0; }
-  .sub-tab { padding: 8px 16px; font-size: 13px; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; border-radius: 6px 6px 0 0; transition: all 0.12s; font-weight: 600; }
-  .sub-tab:hover { color: var(--navy); background: var(--gray-bg); }
-  .sub-tab.active { color: var(--orange); border-bottom-color: var(--orange); background: var(--amber-lt); }
-
-  /* ── TOAST ── */
-  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--navy); color: #fff; font-size: 13px; font-weight: 500; padding: 10px 20px; border-radius: var(--radius); border-left: 4px solid var(--orange); opacity: 0; transform: translateY(8px); transition: all 0.2s; z-index: 500; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,.2); }
-  #toast.show { opacity: 1; transform: translateY(0); }
-
-  /* ── SECTION TITLE ── */
-  .section-title { font-size: 14px; font-weight: 500; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; color: var(--text-secondary); }
-
-  /* ── INFO BOX ── */
-  .info-box { background: var(--bg-accent); border: 0.5px solid var(--border-accent); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; font-size: 13px; color: var(--text-accent); line-height: 1.6; }
-  .info-box ul { margin-top: 6px; padding-left: 18px; display: flex; flex-direction: column; gap: 2px; }
+.section-title{font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text2)}
+.info-box{background:var(--blue-lt);border:1px solid #85b7eb;border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--blue)}
 </style>
 </head>
 <body>
@@ -244,369 +221,94 @@
 <!-- LOADING -->
 <div id="loadingOverlay">
   <div class="spinner"></div>
-  <p>Cargando sistema...</p>
+  <p id="loadingMsg">Iniciando sesión...</p>
+</div>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen" style="display:none">
+  <div class="auth-card">
+    <div class="auth-logo">🎓</div>
+    <h1>Proyectos Corporativos</h1>
+    <p>Portal de Capacitaciones · Telconet<br>Ingresa con tu cuenta Gmail corporativa</p>
+    <button class="btn-google" onclick="signInGoogle()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+      Continuar con Google
+    </button>
+    <div id="authError" class="auth-error"></div>
+  </div>
 </div>
 
 <!-- SETUP SCREEN -->
 <div id="setupScreen" style="display:none">
   <div class="setup-card">
-    <div class="setup-logo">
-      <svg viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
-    </div>
-    <h1>Proyectos Corporativos · Capacitaciones</h1>
-    <p>Conecta tu proyecto de Supabase para comenzar. Los datos se guardarán en tu base de datos.</p>
+    <div class="setup-logo">🎓</div>
+    <h1>Configurar Supabase</h1>
+    <p>Conecta el proyecto de Supabase para continuar.</p>
     <div id="setupErr" class="err-msg"></div>
     <div class="form-field">
-      <label>URL del proyecto Supabase</label>
-      <input type="url" id="sbUrl" placeholder="https://xxxxxxxxxxxx.supabase.co" autocomplete="off">
-      <span class="hint">Proyecto → Settings → API → Project URL</span>
+      <label>URL del proyecto</label>
+      <input type="url" id="sbUrl" placeholder="https://xxxx.supabase.co" autocomplete="off">
     </div>
     <div class="form-field">
       <label>Anon / Public Key</label>
-      <input type="text" id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." autocomplete="off">
-      <span class="hint">Proyecto → Settings → API → <code>anon public</code> key</span>
+      <input type="text" id="sbKey" placeholder="eyJhbGci..." autocomplete="off">
     </div>
     <button class="btn primary btn-full" onclick="connectSupabase()" id="btnConnect">Conectar</button>
-    <hr style="border:none;border-top:0.5px solid var(--border);margin:20px 0">
-    <p class="hint">
-      ¿Nuevo en Supabase? <a href="https://supabase.com" target="_blank">Crear cuenta gratis →</a><br><br>
-      Después de conectar, abre la consola SQL de Supabase y ejecuta el script <code>schema.sql</code> incluido en este repositorio para crear las tablas necesarias.
-    </p>
   </div>
 </div>
 
-<!-- MAIN APP -->
+<!-- APP -->
 <div id="app">
   <div class="header">
     <div class="header-left">
-      <div class="logo">
-        <svg viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
-      </div>
+      <div class="logo">🎓</div>
       <div>
-        <div style="font-size:15px;font-weight:700;color:#fff">Proyectos Corporativos · Capacitaciones</div>
-        <div class="header-meta" id="headerMeta">Portal de gestión de formación</div>
+        <div class="header-title">Proyectos Corporativos · Capacitaciones</div>
+        <div class="header-meta">Portal de gestión de formación</div>
       </div>
     </div>
-    <div style="position:relative">
-      <div class="profile-badge" id="profileBadge" onclick="toggleProfileMenu()">
-        <div class="avatar" id="avatarEl" style="background:var(--bg-accent);color:var(--text-accent)">TU</div>
-        <span id="profileName">Admin</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
-      </div>
-      <div class="profile-menu" id="profileMenu">
-        <div class="pm-label">Cambiar perfil</div>
-        <div class="pm-item" onclick="setProfile('admin')">
-          <div class="avatar" style="width:28px;height:28px;background:var(--bg-accent);color:var(--text-accent)">TU</div>
-          <div><div style="font-weight:500">Admin</div><div style="font-size:11px;color:var(--text-secondary)">Vista completa</div></div>
+    <div class="header-right">
+      <span class="role-badge" id="roleBadge"></span>
+      <div style="position:relative">
+        <div class="user-pill" id="userPill" onclick="toggleProfileMenu()" style="cursor:pointer">
+          <div id="userAvatar" class="avatar" style="background:var(--orange);color:#fff">?</div>
+          <span id="userName">...</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
         </div>
-        <div class="pm-item" onclick="setProfile('plan')">
-          <div class="avatar" style="width:28px;height:28px;background:var(--bg-accent);color:var(--text-accent)">PL</div>
-          <div><div style="font-weight:500">Planificación</div><div style="font-size:11px;color:var(--text-secondary)">hchiluisatn2209@gmail.com</div></div>
-        </div>
-        <div class="pm-item" onclick="setProfile('impl')">
-          <div class="avatar" style="width:28px;height:28px;background:var(--bg-success);color:var(--text-success)">IM</div>
-          <div><div style="font-weight:500">Implementación</div><div style="font-size:11px;color:var(--text-secondary)">geovanna.naranjo23@gmail.com</div></div>
-        </div>
-        <div class="pm-item" onclick="setProfile('om')">
-          <div class="avatar" style="width:28px;height:28px;background:var(--bg-warning);color:var(--text-warning)">OM</div>
-          <div><div style="font-weight:500">O&amp;M</div><div style="font-size:11px;color:var(--text-secondary)">cralarcontn1607@gmail.com</div></div>
-        </div>
-        <hr class="pm-divider">
-        <div class="pm-item" onclick="desconectar()" style="color:var(--text-danger)">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-          Desconectar Supabase
+        <div class="profile-menu" id="profileMenu">
+          <div class="pm-item" id="menuUserInfo" style="flex-direction:column;align-items:flex-start;gap:2px;pointer-events:none">
+            <span id="menuUserName" style="font-weight:700;color:#fff"></span>
+            <span id="menuUserEmail" style="font-size:11px;color:#8ba3c4"></span>
+          </div>
+          <hr class="pm-divider">
+          <div class="pm-item" onclick="signOut()" style="color:var(--red-lt)">
+            🚪 Cerrar sesión
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="nav">
-    <div class="nav-tab active" onclick="switchTab(this,'dashboard')">📊 Dashboard</div>
-    <div class="nav-tab" onclick="switchTab(this,'asignaciones')">📋 Asignaciones</div>
-    <div class="nav-tab" onclick="switchTab(this,'cursos')">🎓 Catálogo Udemy</div>
-    <div class="nav-tab" onclick="switchTab(this,'personal')">👥 Personal</div>
+  <div class="nav" id="mainNav">
+    <!-- tabs injected by JS based on role -->
   </div>
 
-  <div class="content">
-
-    <!-- DASHBOARD -->
-    <div id="tab-dashboard">
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Personal total</div><div class="stat-value" id="s-total">—</div></div>
-        <div class="stat-card"><div class="stat-label">Cursos en curso</div><div class="stat-value accent" id="s-active">—</div></div>
-        <div class="stat-card"><div class="stat-label">Culminados</div><div class="stat-value success" id="s-done">—</div></div>
-        <div class="stat-card"><div class="stat-label">Cursos disponibles</div><div class="stat-value" id="s-udemy">—</div></div>
-      </div>
-      <div class="section-title">Equipos</div>
-      <div class="teams-grid">
-        <div class="team-card">
-          <div class="team-header">
-            <div class="team-icon" style="background:var(--bg-accent)">
-              <svg viewBox="0 0 24 24" style="stroke:var(--text-accent)"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-            </div>
-            <div><div class="team-name">Planificación</div><div class="team-email">hchiluisatn2209@gmail.com</div></div>
-          </div>
-          <div class="team-stats">
-            <div class="ts-item"><span class="ts-num" id="tp-total">—</span><span class="ts-lab">personas</span></div>
-            <div class="ts-item"><span class="ts-num accent" id="tp-en">—</span><span class="ts-lab">en curso</span></div>
-            <div class="ts-item"><span class="ts-num success" id="tp-done">—</span><span class="ts-lab">culminados</span></div>
-          </div>
-          <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-plan" style="width:0%;background:var(--fill-accent)"></div></div>
-        </div>
-        <div class="team-card">
-          <div class="team-header">
-            <div class="team-icon" style="background:var(--bg-success)">
-              <svg viewBox="0 0 24 24" style="stroke:var(--text-success)"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
-            </div>
-            <div><div class="team-name">Implementación</div><div class="team-email">geovanna.naranjo23@gmail.com</div></div>
-          </div>
-          <div class="team-stats">
-            <div class="ts-item"><span class="ts-num" id="ti-total">—</span><span class="ts-lab">personas</span></div>
-            <div class="ts-item"><span class="ts-num accent" id="ti-en">—</span><span class="ts-lab">en curso</span></div>
-            <div class="ts-item"><span class="ts-num success" id="ti-done">—</span><span class="ts-lab">culminados</span></div>
-          </div>
-          <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-impl" style="width:0%;background:var(--fill-success)"></div></div>
-        </div>
-        <div class="team-card">
-          <div class="team-header">
-            <div class="team-icon" style="background:var(--bg-warning)">
-              <svg viewBox="0 0 24 24" style="stroke:var(--text-warning)"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-            </div>
-            <div><div class="team-name">O&amp;M</div><div class="team-email">cralarcontn1607@gmail.com</div></div>
-          </div>
-          <div class="team-stats">
-            <div class="ts-item"><span class="ts-num" id="to-total">—</span><span class="ts-lab">personas</span></div>
-            <div class="ts-item"><span class="ts-num accent" id="to-en">—</span><span class="ts-lab">en curso</span></div>
-            <div class="ts-item"><span class="ts-num success" id="to-done">—</span><span class="ts-lab">culminados</span></div>
-          </div>
-          <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-om" style="width:0%;background:var(--fill-warning)"></div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ASIGNACIONES -->
-    <div id="tab-asignaciones" style="display:none">
-      <div class="sub-tabs">
-        <div class="sub-tab active" onclick="switchSubTab(this,'Todos')">🗂 Todos</div>
-        <div class="sub-tab" onclick="switchSubTab(this,'Planificación')">📐 Planificación</div>
-        <div class="sub-tab" onclick="switchSubTab(this,'Implementación')">⚙️ Implementación</div>
-        <div class="sub-tab" onclick="switchSubTab(this,'O&amp;M')">🖥 O&amp;M</div>
-      </div>
-      <div id="workflowBanner" class="workflow-banner">
-        <div class="wf-step" id="wf0" onclick="setFiltroEstado('')">📋 <span>Registrado</span></div>
-        <div class="wf-arrow">→</div>
-        <div class="wf-step" id="wf1" onclick="setFiltroEstado('Solicitud enviada')">📤 <span>Solicitud enviada</span></div>
-        <div class="wf-arrow">→</div>
-        <div class="wf-step" id="wf2" onclick="setFiltroEstado('Licencia confirmada')">✔ <span>Licencia confirmada</span></div>
-        <div class="wf-arrow">→</div>
-        <div class="wf-step" id="wf3" onclick="setFiltroEstado('En curso')">▶ <span>En curso</span></div>
-        <div class="wf-arrow">→</div>
-        <div class="wf-step" id="wf4" onclick="setFiltroEstado('Certificado pendiente')">📄 <span>Cert. pendiente</span></div>
-        <div class="wf-arrow">→</div>
-        <div class="wf-step" id="wf5" onclick="setFiltroEstado('Culminado')">✅ <span>Culminado</span></div>
-      </div>
-      <div id="alertBanner" style="display:none" class="alert-banner">
-        ⚠️ <span id="alertBannerMsg"></span>
-      </div>
-      <div class="toolbar">
-        <input type="text" id="filtroNombre" placeholder="Buscar nombre o usuario..." oninput="renderAsignaciones()">
-        <select id="filtroEstado" onchange="renderAsignaciones()">
-          <option value="">Todos los estados</option>
-          <option>Registrado</option>
-          <option>Solicitud enviada</option>
-          <option>Licencia confirmada</option>
-          <option>En curso</option>
-          <option>Certificado pendiente</option>
-          <option>Culminado</option>
-          <option>Vencido</option>
-        </select>
-        <button class="btn primary" onclick="openModal()">+ Nueva asignación</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th style="position:sticky;left:0;z-index:2;background:var(--navy)">Personal</th><th>Equipo</th><th>Curso</th><th>Duración</th><th>Institución</th>
-              <th>Inicio</th><th>Fin</th><th>Avance</th><th>Estado</th>
-              <th>Prioridad</th><th>Certificado</th><th>Licencia</th><th>Hereda de</th><th></th>
-            </tr>
-          </thead>
-          <tbody id="tbAsig"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- CATÁLOGO UDEMY -->
-    <div id="tab-cursos" style="display:none">
-      <div class="toolbar">
-        <input type="text" id="filtroCurso" placeholder="Buscar curso, instructor, tema..." oninput="debounceCursos()">
-        <select id="filtroCat" onchange="renderCursos()">
-          <option value="">Todas las categorías</option>
-        </select>
-        <select id="filtroNivel" onchange="renderCursos()">
-          <option value="">Todos los niveles</option>
-          <option>All Levels</option><option>Beginner</option><option>Intermediate</option>
-        </select>
-        <select id="filtroIdioma" onchange="renderCursos()">
-          <option value="">Todos los idiomas</option>
-          <option>Arabic</option><option>English</option><option>French</option>
-          <option>German</option><option>Hindi</option><option>Indonesian</option>
-          <option>Italian</option><option>Japanese</option><option>Korean</option>
-          <option>Polish</option><option>Portuguese</option><option>Russian</option>
-          <option>Simplified Chinese</option><option>Spanish</option>
-          <option>Traditional Chinese</option><option>Turkish</option><option>Vietnamese</option>
-        </select>
-      </div>
-      <div id="listaCursos"></div>
-    </div>
-
-    <!-- PERSONAL -->
-    <div id="tab-personal" style="display:none">
-      <div class="sub-tabs">
-        <div class="sub-tab active" onclick="switchSubTabP(this,'Todos')">🗂 Todos</div>
-        <div class="sub-tab" onclick="switchSubTabP(this,'Planificación')">📐 Planificación</div>
-        <div class="sub-tab" onclick="switchSubTabP(this,'Implementación')">⚙️ Implementación</div>
-        <div class="sub-tab" onclick="switchSubTabP(this,'O&amp;M')">🖥 O&amp;M</div>
-      </div>
-      <div class="toolbar">
-        <input type="text" id="filtroPersonal" placeholder="Buscar..." oninput="renderPersonal()">
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Usuario</th><th>Nombre</th><th>Ciudad</th><th>Código</th><th>Cédula</th><th>Celular</th><th>Mail</th><th>Equipo</th><th>Asignados</th><th>Culminados</th><th>Avance</th></tr></thead>
-          <tbody id="tbPersonal"></tbody>
-        </table>
-      </div>
-    </div>
-
+  <div class="content" id="mainContent">
+    <!-- content injected by JS -->
   </div>
 </div>
 
-<!-- MODAL NUEVA ASIGNACIÓN -->
+<!-- MODAL ASIGNACIÓN/SOLICITUD -->
 <div id="modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-header">
       <div>
-        <h2 id="modalTitle">Nueva asignación</h2>
-        <div style="font-size:11px;color:#8ba3c4;margin-top:3px">Paso 1 de 2 · Registro → Paso 2: Correo de solicitud</div>
+        <h2 id="modalTitle">Solicitar curso</h2>
+        <p id="modalSubtitle"></p>
       </div>
-      <button onclick="closeModal()" style="background:none;border:none;color:#8ba3c4;font-size:18px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
+      <button onclick="closeModal()" style="background:none;border:none;color:#8ba3c4;font-size:20px;cursor:pointer;line-height:1">✕</button>
     </div>
-    <div class="modal-body">
-      <div class="section-title" style="font-size:13px;margin-bottom:8px">Seleccionar curso del catálogo</div>
-      <input class="search-curso" type="text" id="searchModalCurso" placeholder="Buscar curso..." oninput="renderModalCursos()">
-      <div class="curso-list" id="listModalCursos"></div>
-      <div class="curso-selected-box" id="cursoSelBox">
-        <strong id="csTitulo"></strong><br>
-        <span style="color:var(--text-accent);font-size:11px" id="csMeta"></span>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label>Equipo</label>
-          <select id="fEquipo" onchange="filterPersonalByEquipo()">
-            <option value="">Seleccionar...</option>
-            <option>Planificación</option><option>Implementación</option><option>O&amp;M</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label>Personal</label>
-          <select id="fPersonal"><option value="">Selecciona equipo primero</option></select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label>Institución</label>
-          <select id="fInstitucion"><option>UDEMY</option><option>Coursera</option><option>Interna</option><option>Otra</option></select>
-        </div>
-        <div class="form-field">
-          <label>Tipo de licencia</label>
-          <select id="fLicencia"><option>Telco U</option><option>Interna</option><option>Externa</option></select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field full">
-          <label>Hereda licencia de <span style="font-weight:400;color:var(--text3)">(opcional — persona que cede su licencia)</span></label>
-          <select id="fHeredaDe">
-            <option value="">— No aplica —</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label>Fecha inicio</label>
-          <input type="date" id="fInicio">
-        </div>
-        <div class="form-field">
-          <label>Fecha fin estimada</label>
-          <input type="date" id="fFin">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label>Prioridad</label>
-          <select id="fPrioridad"><option>Alta</option><option selected>Media</option><option>Baja</option></select>
-        </div>
-        <div class="form-field">
-          <label>Modalidad</label>
-          <select id="fModalidad"><option selected>Online</option><option>Presencial</option><option>Blended</option></select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label>Objetivo</label>
-          <select id="fObjetivo"><option>Técnico</option><option>Certificación</option><option>Gestión</option><option>Habilidades blandas</option></select>
-        </div>
-        <div class="form-field">
-          <label>Aprobado por</label>
-          <select id="fAprobado">
-            <option value="">Seleccionar...</option>
-            <option>Carmen Alarcón</option>
-            <option>Geovanna Naranjo</option>
-            <option>Haydi Chiluisa</option>
-            <option>Eduardo Nuñez</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label>Estado</label>
-          <select id="fEstado">
-            <option>Registrado</option>
-            <option>Solicitud enviada</option>
-            <option>Licencia confirmada</option>
-            <option>En curso</option>
-            <option>Certificado pendiente</option>
-            <option>Culminado</option>
-            <option>Vencido</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label>% Avance</label>
-          <input type="number" id="fAvance" min="0" max="100" value="0" placeholder="0-100">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label>Presentó certificado</label>
-          <select id="fCertificado"><option value="">—</option><option>SI</option><option>NO</option></select>
-        </div>
-        <div class="form-field">
-          <label>Costo (USD)</label>
-          <input type="number" id="fCosto" min="0" placeholder="0.00">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field full">
-          <label>Observaciones</label>
-          <textarea id="fObs" placeholder="Notas adicionales..."></textarea>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button class="btn" onclick="closeModal()">Cancelar</button>
-        <button class="btn" id="btnGuardar" onclick="guardarAsignacion(false)" style="background:var(--navy);border-color:var(--navy);color:#fff">Guardar</button>
-        <button class="btn primary" id="btnGuardarCorreo" onclick="guardarAsignacion(true)">✉️ Guardar y generar correo</button>
-      </div>
-    </div>
+    <div class="modal-body" id="modalBody"></div>
   </div>
 </div>
 
@@ -614,432 +316,992 @@
 <div id="emailModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeEmailModal()">
   <div class="modal" style="max-width:640px">
     <div class="modal-header">
-      <h2>✉️ Generar correo de asignación Udemy</h2>
-      <button onclick="closeEmailModal()" style="background:none;border:none;color:#8ba3c4;font-size:18px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
+      <div><h2>✉️ Generar correo de solicitud Udemy</h2><p>Completa los datos y envía a Telco U</p></div>
+      <button onclick="closeEmailModal()" style="background:none;border:none;color:#8ba3c4;font-size:20px;cursor:pointer;line-height:1">✕</button>
     </div>
-    <div class="modal-body">
-      <div class="form-row">
-        <div class="form-field">
-          <label>Equipo</label>
-          <select id="eqEquipo" onchange="filterEmailPersonal()">
-            <option value="">Seleccionar equipo</option>
-            <option>Planificación</option><option>Implementación</option><option>O&amp;M</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label>Personal</label>
-          <select id="eqPersonal" onchange="autoFillPersonalData()">
-            <option value="">Selecciona equipo primero</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field full">
-          <label>Buscar curso en catálogo</label>
-          <input class="search-curso" type="text" id="eqSearchCurso" placeholder="Escribe el nombre del curso..." oninput="renderEmailCursos()">
-          <div class="curso-list" id="eqListCursos" style="max-height:160px"></div>
-          <div id="eqCursoSelBox" style="display:none;background:var(--amber-lt);border:1px solid var(--orange);border-radius:var(--radius);padding:9px 12px;font-size:13px;margin-top:6px">
-            <strong id="eqCsTitulo"></strong><br>
-            <span style="font-size:11px;color:var(--amber)" id="eqCsMeta"></span>
-          </div>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field full">
-          <label>Justificación del curso</label>
-          <textarea id="eqJustificacion" rows="2" placeholder="Esta capacitación fortalecerá competencias clave...">Esta capacitación fortalecerá competencias clave relacionadas con el pensamiento crítico, el análisis de situaciones, la priorización de actividades y la toma de decisiones efectivas, habilidades que contribuirán positivamente a su desempeño profesional y al logro de los objetivos del área.</textarea>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label>Ciudad</label>
-          <select id="eqCiudad" onchange="autoSetTelcouContact(this.value);updateEmailPreview()">
-            <option>UIO</option><option>GYE</option><option>CUE</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label>Código colaborador</label>
-          <input type="text" id="eqCodigo" placeholder="5878" oninput="updateEmailPreview()">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label>Contacto Telco U</label>
-          <select id="eqTelcouContacto" onchange="updateEmailPreview()">
-            <option value="Melissa Zurita">Melissa Zurita (UIO) — mdzurita@telconet.ec</option>
-            <option value="Carlos Ruilova">Carlos Ruilova (GYE) — cruilova@telconet.ec</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label>Mail Telco U destino</label>
-          <input type="text" id="eqTelcouMail" value="mdzurita@telconet.ec" readonly style="background:var(--gray-bg);color:var(--text3);font-size:12px">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label>Cédula</label>
-          <input type="text" id="eqCedula" placeholder="1721145736" oninput="updateEmailPreview()">
-        </div>
-        <div class="form-field">
-          <label>Aprobado por</label>
-          <select id="eqAprobado" onchange="updateEmailPreview()">
-            <option value="">Seleccionar...</option>
-            <option>Carmen Alarcón</option>
-            <option>Geovanna Naranjo</option>
-            <option>Haydi Chiluisa</option>
-            <option>Eduardo Nuñez</option>
-          </select>
-        </div>
-      </div>
-      <div style="margin-top:14px">
-        <label style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:8px">Vista previa del correo</label>
-        <div id="emailPreview" style="background:#ffffff;border:1px solid var(--gray-bd);border-radius:var(--radius);padding:16px;font-size:13px;line-height:1.7;max-height:300px;overflow-y:auto;color:var(--text)"></div>
-      </div>
-      <div class="form-actions">
-        <button class="btn" onclick="closeEmailModal()">Cancelar</button>
-        <button class="btn" onclick="guardarSolicitudEnviada()" style="background:var(--navy);border-color:var(--navy);color:#fff">Guardar</button>
-        <button class="btn primary" onclick="guardarYEnviarCorreo()">✉️ Guardar y Correo</button>
-      </div>
-    </div>
+    <div class="modal-body" id="emailModalBody"></div>
   </div>
 </div>
 
-<!-- TOAST -->
 <div id="toast"></div>
 
 <script>
-// ── CONFIG ──────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  CONFIG & CONSTANTS
+// ═══════════════════════════════════════════════════════════════
 const STORAGE_KEY_URL = 'proycorp_sb_url';
 const STORAGE_KEY_KEY = 'proycorp_sb_key';
 
-let sb = null;
-let currentProfile = 'admin';
-let selectedCurso = null;
-let editingId = null;
-
-// ── INLINE DATA (personal & cursos Udemy) ───────────────────────
-const personal = [
-  {user:'hchiluisa',nombre:'Chiluisa Lopez Haydi Guissela',equipo:'Planificación',ciudad:'UIO',codigo:'1810',cedula:'1719250530',celular:'995909609',mail:'hchiluisa@telconet.ec'},
-  {user:'raacosta',nombre:'Acosta Mato Romina Alexandra',equipo:'Planificación',ciudad:'GYE',codigo:'8476',cedula:'0955257902',celular:'983511029',mail:'raacosta@telconet.ec'},
-  {user:'cdalmeida',nombre:'Almeida Chicaiza Christian David',equipo:'Planificación',ciudad:'UIO',codigo:'1914',cedula:'1716632235',celular:'958879516',mail:'cdalmeida@telconet.ec'},
-  {user:'vcarrillo',nombre:'Carrillo Quezada Veronica Melina',equipo:'Planificación',ciudad:'GYE',codigo:'3624',cedula:'0922147699',celular:'995987255',mail:'vcarrillo@telconet.ec'},
-  {user:'vcruz',nombre:'Cruz Cargua Verónica Lucia',equipo:'Planificación',ciudad:'UIO',codigo:'2801',cedula:'1720215811',celular:'984363462',mail:'vcruz@telconet.ec'},
-  {user:'dagallardo',nombre:'Gallardo Reasco Diana Alejandra',equipo:'Planificación',ciudad:'UIO',codigo:'5878',cedula:'1721145736',celular:'958850812',mail:'dagallardo@telconet.ec'},
-  {user:'wgaona',nombre:'Gaona Barba Wendy Denisse',equipo:'Planificación',ciudad:'GYE',codigo:'10290',cedula:'0924698145',celular:'998361928',mail:'wgaona@telconet.ec'},
-  {user:'ealopezt',nombre:'Lopez Topanta Erika Alexandra',equipo:'Planificación',ciudad:'UIO',codigo:'12120',cedula:'1726654880',celular:'995887362',mail:'ealopezt@telconet.ec'},
-  {user:'aonate',nombre:'Oñate Campana Alexis David',equipo:'Planificación',ciudad:'UIO',codigo:'9688',cedula:'1726860552',celular:'962532969',mail:'aonate@telconet.ec'},
-  {user:'morozco',nombre:'Orozco Vega Melany Aracely',equipo:'Planificación',ciudad:'UIO',codigo:'10208',cedula:'1721895884',celular:'987504176',mail:'morozco@telconet.ec'},
-  {user:'sortiz',nombre:'Ortiz Granda Silvia Valeria',equipo:'Planificación',ciudad:'UIO',codigo:'5707',cedula:'1724441322',celular:'962907108',mail:'sortiz@telconet.ec'},
-  {user:'durbano',nombre:'Urbano Valverde Daisy Tatiana',equipo:'Planificación',ciudad:'UIO',codigo:'8463',cedula:'0202007472',celular:'983397518',mail:'durbano@telconet.ec'},
-  {user:'svacacela',nombre:'Vacacela De La A Soraya Lissette',equipo:'Planificación',ciudad:'GYE',codigo:'7813',cedula:'2400094575',celular:'958731771',mail:'svacacela@telconet.ec'},
-  {user:'ggavilanez',nombre:'Gavilanez Perrazo Gabriela Fernanda',equipo:'Planificación',ciudad:'UIO',codigo:'3957',cedula:'1714515481',celular:'984482822',mail:'ggavilanez@telconet.ec'},
-  {user:'sbaque',nombre:'Baque Allauca Sulay Katherine',equipo:'Planificación',ciudad:'GYE',codigo:'8964',cedula:'0951873652',celular:'999747054',mail:'sbaque@telconet.ec'},
-  {user:'mydelgado',nombre:'Delgado Veliz Melany Yuleisy',equipo:'Planificación',ciudad:'GYE',codigo:'9104',cedula:'0926486929',celular:'',mail:'mydelgado@telconet.ec'},
-  {user:'wsalazar',nombre:'Salazar Salazar Wendy Priscilla',equipo:'Planificación',ciudad:'GYE',codigo:'4021',cedula:'0915434989',celular:'999299226',mail:'wsalazar@telconet.ec'},
-  {user:'mspalma',nombre:'Palma Vargas Mery Stephanie',equipo:'Planificación',ciudad:'GYE',codigo:'9212',cedula:'0930501523',celular:'983376100',mail:'mspalma@telconet.ec'},
-  {user:'aavellan',nombre:'Avellan Arreaga Ana Paula',equipo:'Implementación',ciudad:'GYE',codigo:'11660',cedula:'0952806594',celular:'992534683',mail:'aavellan@telconet.ec'},
-  {user:'jcamalle',nombre:'Camalle Vásquez Jerson Rodrigo',equipo:'Implementación',ciudad:'UIO',codigo:'7924',cedula:'1723203012',celular:'958731771',mail:'jcamalle@telconet.ec'},
-  {user:'kcorrea',nombre:'Correa Ullon Karen Gabriela',equipo:'Implementación',ciudad:'UIO',codigo:'2425',cedula:'1721980199',celular:'984532931',mail:'kcorrea@telconet.ec'},
-  {user:'pluna',nombre:'Luna Valencia Pablo Mauricio',equipo:'Implementación',ciudad:'UIO',codigo:'11522',cedula:'1716394935',celular:'962684408',mail:'pluna@telconet.ec'},
-  {user:'femoran',nombre:'Moran Muñoz Flor Esther',equipo:'Implementación',ciudad:'GYE',codigo:'189990',cedula:'0954660734',celular:'998653492',mail:'femoran@telconet.ec'},
-  {user:'ganaranjo',nombre:'Naranjo Samaniego Geovanna Adriana',equipo:'Implementación',ciudad:'GYE',codigo:'7536',cedula:'0912971843',celular:'0987216010',mail:'ganaranjo@telconet.ec'},
-  {user:'dvera',nombre:'Vera Cardenas Daylin Joyce',equipo:'Implementación',ciudad:'GYE',codigo:'7918',cedula:'0925796484',celular:'987933319',mail:'dvera@telconet.ec'},
-  {user:'lgaibor',nombre:'Gaibor Noboa Luis Alberto',equipo:'Implementación',ciudad:'UIO',codigo:'3562',cedula:'1721782702',celular:'998509427',mail:'lgaibor@telconet.ec'},
-  {user:'abguallpa',nombre:'Guallpa Parra Ana Beatriz',equipo:'Implementación',ciudad:'UIO',codigo:'2942',cedula:'1718006883',celular:'963090245',mail:'abguallpa@telconet.ec'},
-  {user:'mvaldez',nombre:'Valdez Mora Mirian Cecilia',equipo:'Implementación',ciudad:'GYE',codigo:'5985',cedula:'0918418328',celular:'995907827',mail:'mvaldez@telconet.ec'},
-  {user:'jkleon',nombre:'Leon Gaona Jhordy Kristofer',equipo:'Implementación',ciudad:'UIO',codigo:'11850',cedula:'1900477082',celular:'963002369',mail:'jkleon@telconet.ec'},
-  {user:'echiluiza',nombre:'Chiluiza Chavez Estefania Paola',equipo:'Implementación',ciudad:'UIO',codigo:'9020',cedula:'1724471543',celular:'983973024',mail:'echiluiza@telconet.ec'},
-  {user:'mamartinezv',nombre:'Martinez Vergara Milton Alfredo',equipo:'Implementación',ciudad:'GYE',codigo:'8692',cedula:'0931525224',celular:'983387268',mail:'mamartinezv@telconet.ec'},
-  {user:'vtacuri',nombre:'Tacuri Ordonez Victor Manuel',equipo:'Implementación',ciudad:'GYE',codigo:'7903',cedula:'0951248699',celular:'979026388',mail:'vtacuri@telconet.ec'},
-  {user:'amguzman',nombre:'Guzman Araujo Adriana Mayli',equipo:'Implementación',ciudad:'GYE',codigo:'11647',cedula:'0929199826',celular:'987885281',mail:'amguzman@telconet.ec'},
-  {user:'dcoronel',nombre:'Coronel Bonifaz Diana Elizabeth',equipo:'Implementación',ciudad:'UIO',codigo:'188482',cedula:'1722931845',celular:'992870053',mail:'dcoronel@telconet.ec'},
-  {user:'klmartinez',nombre:'Martinez Toapanta Katherine Lizeth',equipo:'Implementación',ciudad:'UIO',codigo:'4840',cedula:'1720849072',celular:'979957207',mail:'klmartinez@telconet.ec'},
-  {user:'kremache',nombre:'Remache Santa Maria Katherine Ivanova',equipo:'Implementación',ciudad:'UIO',codigo:'11521',cedula:'1104117336',celular:'987054035',mail:'kremache@telconet.ec'},
-  {user:'cralarcon',nombre:'Alarcon Arreaga Carmen Rosa',equipo:'O&M',ciudad:'GYE',codigo:'101236',cedula:'0912112570',celular:'983323950',mail:'cralarcon@telconet.ec'},
-  {user:'erchoez',nombre:'Choez Quimis Erick Roberto',equipo:'O&M',ciudad:'GYE',codigo:'189989',cedula:'0951667229',celular:'998452128',mail:'erchoez@telconet.ec'},
-  {user:'jkguaman',nombre:'Guaman Ruiz Jennyfer Katherine',equipo:'O&M',ciudad:'GYE',codigo:'1824',cedula:'0930946280',celular:'983497098',mail:'jkguaman@telconet.ec'},
-  {user:'clhidalgo',nombre:'Hidalgo Jimenez Cristina Lisbeth',equipo:'O&M',ciudad:'GYE',codigo:'2730',cedula:'0952523835',celular:'958879284',mail:'clhidalgo@telconet.ec'},
-  {user:'esrivera',nombre:'Rivera Castaneda Elizabeth Stephania',equipo:'O&M',ciudad:'GYE',codigo:'187566',cedula:'0930538962',celular:'983439748',mail:'esrivera@telconet.ec'},
-  {user:'ansanchez',nombre:'Sanchez Zambrano Angela Rosa',equipo:'O&M',ciudad:'GYE',codigo:'1797',cedula:'0915847271',celular:'998020255',mail:'ansanchez@telconet.ec'},
-  {user:'aarroyo',nombre:'Arroyo Burgos Aura Erlinda',equipo:'O&M',ciudad:'UIO',codigo:'8987',cedula:'1002900767',celular:'983874047',mail:'aarroyo@telconet.ec'},
-  {user:'jlcastillot',nombre:'Castillo Tipantasi José Luis',equipo:'O&M',ciudad:'UIO',codigo:'4815',cedula:'1722228796',celular:'987023927',mail:'jlcastillot@telconet.ec'},
-  {user:'aldelgado',nombre:'Delgado Simbaña Ana Laura',equipo:'O&M',ciudad:'UIO',codigo:'7303',cedula:'1719041442',celular:'987613410',mail:'aldelgado@telconet.ec'},
-  {user:'bsangolqui',nombre:'Sangolqui Campoverde Byron Raul',equipo:'O&M',ciudad:'UIO',codigo:'184859',cedula:'1718905076',celular:'962890647',mail:'bsangolqui@telconet.ec'},
+const ADMIN_EMAILS = [
+  'bnuneztn0904@gmail.com',
+  'hchiluisatn2209@gmail.com',
+  'geovanna.naranjo23@gmail.com',
+  'cralarcontn1607@gmail.com'
 ];
 
-// Cursos cargados desde Supabase (34,055 cursos catálogo Udemy)
+const USER_MAP = {
+  'aavellantn2105@gmail.com':    {user:'aavellan',  nombre:'Avellan Arreaga Ana Paula',           equipo:'Implementación',ciudad:'GYE',codigo:'11660',cedula:'0952806594',celular:'992534683',mail:'aavellan@telconet.ec'},
+  'raacostatn0603@gmail.com':    {user:'raacosta',  nombre:'Acosta Mato Romina Alexandra',         equipo:'Planificación', ciudad:'GYE',codigo:'8476',  cedula:'0955257902',celular:'983511029',mail:'raacosta@telconet.ec'},
+  'calmeidatn3011@gmail.com':    {user:'cdalmeida', nombre:'Almeida Chicaiza Christian David',      equipo:'Planificación', ciudad:'UIO',codigo:'1914',  cedula:'1716632235',celular:'958879516',mail:'cdalmeida@telconet.ec'},
+  'vcarrillotn0807@gmail.com':   {user:'vcarrillo', nombre:'Carrillo Quezada Veronica Melina',     equipo:'Planificación', ciudad:'GYE',codigo:'3624',  cedula:'0922147699',celular:'995987255',mail:'vcarrillo@telconet.ec'},
+  'vcruztn2204@gmail.com':       {user:'vcruz',     nombre:'Cruz Cargua Verónica Lucia',           equipo:'Planificación', ciudad:'UIO',codigo:'2801',  cedula:'1720215811',celular:'984363462',mail:'vcruz@telconet.ec'},
+  'dagallardotn1903@gmail.com':  {user:'dagallardo',nombre:'Gallardo Reasco Diana Alejandra',      equipo:'Planificación', ciudad:'UIO',codigo:'5878',  cedula:'1721145736',celular:'958850812',mail:'dagallardo@telconet.ec'},
+  'ealopezttn0503@gmail.com':    {user:'ealopezt',  nombre:'Lopez Topanta Erika Alexandra',        equipo:'Planificación', ciudad:'UIO',codigo:'12120', cedula:'1726654880',celular:'995887362',mail:'ealopezt@telconet.ec'},
+  'aonatetn2112@gmail.com':      {user:'aonate',    nombre:'Oñate Campana Alexis David',           equipo:'Planificación', ciudad:'UIO',codigo:'9688',  cedula:'1726860552',celular:'962532969',mail:'aonate@telconet.ec'},
+  'morozcotn2401@gmail.com':     {user:'morozco',   nombre:'Orozco Vega Melany Aracely',           equipo:'Planificación', ciudad:'UIO',codigo:'10208', cedula:'1721895884',celular:'987504176',mail:'morozco@telconet.ec'},
+  'sortiztn0922@gmail.com':      {user:'sortiz',    nombre:'Ortiz Granda Silvia Valeria',          equipo:'Planificación', ciudad:'UIO',codigo:'5707',  cedula:'1724441322',celular:'962907108',mail:'sortiz@telconet.ec'},
+  'durbanotn2401@gmail.com':     {user:'durbano',   nombre:'Urbano Valverde Daisy Tatiana',        equipo:'Planificación', ciudad:'UIO',codigo:'8463',  cedula:'0202007472',celular:'983397518',mail:'durbano@telconet.ec'},
+  'svacacelatn2910@gmail.com':   {user:'svacacela', nombre:'Vacacela De La A Soraya Lissette',     equipo:'Planificación', ciudad:'GYE',codigo:'7813',  cedula:'2400094575',celular:'958731771',mail:'svacacela@telconet.ec'},
+  'ggavilaneztn0603@gmail.com':  {user:'ggavilanez',nombre:'Gavilanez Perrazo Gabriela Fernanda',  equipo:'Planificación', ciudad:'UIO',codigo:'3957',  cedula:'1714515481',celular:'984482822',mail:'ggavilanez@telconet.ec'},
+  'sbaquetn1307@gmail.com':      {user:'sbaque',    nombre:'Baque Allauca Sulay Katherine',        equipo:'Planificación', ciudad:'GYE',codigo:'8964',  cedula:'0951873652',celular:'999747054',mail:'sbaque@telconet.ec'},
+  'mydelgadotn0822@gmail.com':   {user:'mydelgado', nombre:'Delgado Veliz Melany Yuleisy',         equipo:'Planificación', ciudad:'GYE',codigo:'9104',  cedula:'0926486929',celular:'',          mail:'mydelgado@telconet.ec'},
+  'wsalazartn91323@gmail.com':   {user:'wsalazar',  nombre:'Salazar Salazar Wendy Priscilla',      equipo:'Planificación', ciudad:'GYE',codigo:'4021',  cedula:'0915434989',celular:'999299226',mail:'wsalazar@telconet.ec'},
+  'mspalmatn2023@gmail.com':     {user:'mspalma',   nombre:'Palma Vargas Mery Stephanie',          equipo:'Planificación', ciudad:'GYE',codigo:'9212',  cedula:'0930501523',celular:'983376100',mail:'mspalma@telconet.ec'},
+  'jcamalletn0605@gmail.com':    {user:'jcamalle',  nombre:'Camalle Vásquez Jerson Rodrigo',       equipo:'Implementación',ciudad:'UIO',codigo:'7924',  cedula:'1723203012',celular:'958731771',mail:'jcamalle@telconet.ec'},
+  'kcorreatn2002@gmail.com':     {user:'kcorrea',   nombre:'Correa Ullon Karen Gabriela',          equipo:'Implementación',ciudad:'UIO',codigo:'2425',  cedula:'1721980199',celular:'984532931',mail:'kcorrea@telconet.ec'},
+  'plunatn2404@gmail.com':       {user:'pluna',     nombre:'Luna Valencia Pablo Mauricio',         equipo:'Implementación',ciudad:'UIO',codigo:'11522', cedula:'1716394935',celular:'962684408',mail:'pluna@telconet.ec'},
+  'femorantn1005@gmail.com':     {user:'femoran',   nombre:'Moran Muñoz Flor Esther',              equipo:'Implementación',ciudad:'GYE',codigo:'189990',cedula:'0954660734',celular:'998653492',mail:'femoran@telconet.ec'},
+  'pjsanchezctn2812@gmail.com':  {user:'pjsanchezc',nombre:'Sanchez Cajamarca Pedro Jonathan',     equipo:'Implementación',ciudad:'UIO',codigo:'',     cedula:'',          celular:'',          mail:'pjsanchezc@telconet.ec'},
+  'sntorrestn1803@gmail.com':    {user:'sntorres',  nombre:'Torres Noboa Stephano Nicolas',        equipo:'Implementación',ciudad:'UIO',codigo:'',     cedula:'',          celular:'',          mail:'sntorres@telconet.ec'},
+  'dveratn2608@gmail.com':       {user:'dvera',     nombre:'Vera Cardenas Daylin Joyce',           equipo:'Implementación',ciudad:'GYE',codigo:'7918', cedula:'0925796484',celular:'987933319',mail:'dvera@telconet.ec'},
+  'lgaibortn0101@gmail.com':     {user:'lgaibor',   nombre:'Gaibor Noboa Luis Alberto',            equipo:'Implementación',ciudad:'UIO',codigo:'3562', cedula:'1721782702',celular:'998509427',mail:'lgaibor@telconet.ec'},
+  'abguallpatn2907@gmail.com':   {user:'abguallpa', nombre:'Guallpa Parra Ana Beatriz',            equipo:'Implementación',ciudad:'UIO',codigo:'2942', cedula:'1718006883',celular:'963090245',mail:'abguallpa@telconet.ec'},
+  'mvaldeztn0107@gmail.com':     {user:'mvaldez',   nombre:'Valdez Mora Mirian Cecilia',           equipo:'Implementación',ciudad:'GYE',codigo:'5985', cedula:'0918418328',celular:'995907827',mail:'mvaldez@telconet.ec'},
+  'jkleontn2006@gmail.com':      {user:'jkleon',    nombre:'Leon Gaona Jhordy Kristofer',          equipo:'Implementación',ciudad:'UIO',codigo:'11850',cedula:'1900477082',celular:'963002369',mail:'jkleon@telconet.ec'},
+  'echiluizatn1911@gmail.com':   {user:'echiluiza', nombre:'Chiluiza Chavez Estefania Paola',      equipo:'Implementación',ciudad:'UIO',codigo:'9020', cedula:'1724471543',celular:'983973024',mail:'echiluiza@telconet.ec'},
+  'mamartinezvtn0718@gmail.com': {user:'mamartinezv',nombre:'Martinez Vergara Milton Alfredo',     equipo:'Implementación',ciudad:'GYE',codigo:'8692', cedula:'0931525224',celular:'983387268',mail:'mamartinezv@telconet.ec'},
+  'vtacuritn2711@gmail.com':     {user:'vtacuri',   nombre:'Tacuri Ordonez Victor Manuel',         equipo:'Implementación',ciudad:'GYE',codigo:'7903', cedula:'0951248699',celular:'979026388',mail:'vtacuri@telconet.ec'},
+  'amguzmantn1605@gmail.com':    {user:'amguzman',  nombre:'Guzman Araujo Adriana Mayli',          equipo:'Implementación',ciudad:'GYE',codigo:'11647',cedula:'0929199826',celular:'987885281',mail:'amguzman@telconet.ec'},
+  'dcoroneltn1006@gmail.com':    {user:'dcoronel',  nombre:'Coronel Bonifaz Diana Elizabeth',      equipo:'Implementación',ciudad:'UIO',codigo:'188482',cedula:'1722931845',celular:'992870053',mail:'dcoronel@telconet.ec'},
+  'klmartineztn2404@gmail.com':  {user:'klmartinez',nombre:'Martinez Toapanta Katherine Lizeth',   equipo:'Implementación',ciudad:'UIO',codigo:'4840', cedula:'1720849072',celular:'979957207',mail:'klmartinez@telconet.ec'},
+  'kremachetn0211@gmail.com':    {user:'kremache',  nombre:'Remache Santa Maria Katherine Ivanova',equipo:'Implementación',ciudad:'UIO',codigo:'11521',cedula:'1104117336',celular:'987054035',mail:'kremache@telconet.ec'},
+  'erchoeztn1005@gmail.com':     {user:'erchoez',   nombre:'Choez Quimis Erick Roberto',           equipo:'O&M',           ciudad:'GYE',codigo:'189989',cedula:'0951667229',celular:'998452128',mail:'erchoez@telconet.ec'},
+  'jkguamantn1002@gmail.com':    {user:'jkguaman',  nombre:'Guaman Ruiz Jennyfer Katherine',       equipo:'O&M',           ciudad:'GYE',codigo:'1824', cedula:'0930946280',celular:'983497098',mail:'jkguaman@telconet.ec'},
+  'clhidalgotn1304@gmail.com':   {user:'clhidalgo', nombre:'Hidalgo Jimenez Cristina Lisbeth',     equipo:'O&M',           ciudad:'GYE',codigo:'2730', cedula:'0952523835',celular:'958879284',mail:'clhidalgo@telconet.ec'},
+  'esriveratn0702@gmail.com':    {user:'esrivera',  nombre:'Rivera Castaneda Elizabeth Stephania', equipo:'O&M',           ciudad:'GYE',codigo:'187566',cedula:'0930538962',celular:'983439748',mail:'esrivera@telconet.ec'},
+  'asancheztn0308@gmail.com':    {user:'ansanchez', nombre:'Sanchez Zambrano Angela Rosa',         equipo:'O&M',           ciudad:'GYE',codigo:'1797', cedula:'0915847271',celular:'998020255',mail:'ansanchez@telconet.ec'},
+  'aarroyotn2206@gmail.com':     {user:'aarroyo',   nombre:'Arroyo Burgos Aura Erlinda',           equipo:'O&M',           ciudad:'UIO',codigo:'8987', cedula:'1002900767',celular:'983874047',mail:'aarroyo@telconet.ec'},
+  'jlcastillottn0107@gmail.com': {user:'jlcastillot',nombre:'Castillo Tipantasi José Luis',        equipo:'O&M',           ciudad:'UIO',codigo:'4815', cedula:'1722228796',celular:'987023927',mail:'jlcastillot@telconet.ec'},
+  'aldelgadotn1002@gmail.com':   {user:'aldelgado', nombre:'Delgado Simbaña Ana Laura',            equipo:'O&M',           ciudad:'UIO',codigo:'7303', cedula:'1719041442',celular:'987613410',mail:'aldelgado@telconet.ec'},
+  'bsangolquitn3103@gmail.com':  {user:'bsangolqui',nombre:'Sangolqui Campoverde Byron Raul',      equipo:'O&M',           ciudad:'UIO',codigo:'184859',cedula:'1718905076',celular:'962890647',mail:'bsangolqui@telconet.ec'},
+};
+
+const ADMIN_MAP = {
+  'bnuneztn0904@gmail.com':       {user:'bnunez',    nombre:'Eduardo Nuñez',                       equipo:null,            ciudad:'UIO',codigo:'',cedula:'',celular:'',mail:'bnunez@telconet.ec'},
+  'hchiluisatn2209@gmail.com':    {user:'hchiluisa', nombre:'Chiluisa Lopez Haydi Guissela',       equipo:'Planificación', ciudad:'UIO',codigo:'1810',cedula:'1719250530',celular:'995909609',mail:'hchiluisa@telconet.ec'},
+  'geovanna.naranjo23@gmail.com': {user:'ganaranjo', nombre:'Naranjo Samaniego Geovanna Adriana',  equipo:'Implementación',ciudad:'GYE',codigo:'7536',cedula:'0912971843',celular:'0987216010',mail:'ganaranjo@telconet.ec'},
+  'cralarcontn1607@gmail.com':    {user:'cralarcon', nombre:'Alarcon Arreaga Carmen Rosa',         equipo:'O&M',           ciudad:'GYE',codigo:'101236',cedula:'0912112570',celular:'983323950',mail:'cralarcon@telconet.ec'},
+};
+
+const personal = Object.values({...USER_MAP, ...ADMIN_MAP}).filter(p => p.user);
+
+const CATEGORIAS_UDEMY = ['Business Operations','Cloud Computing','Communication','Cybersecurity','Data Science','Design Tools','Development','Finance & Accounting','Generative AI','IT Operations','Language Learning','Leadership & Management','Marketing','Personal Development','Productivity','Project & Product Management','Sales & Customer Service','UX','Workplace & Human Resources'];
+
+// ═══════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════
+let sb = null;
+let currentUser = null; // {email, nombre, user, equipo, ciudad, codigo, cedula, mail, rol}
+let asignaciones = [];
 let cursosCache = [];
 let cursosSearchTimer = null;
-const CATEGORIAS_UDEMY = [
-  'Business Operations','Cloud Computing','Communication','Continuing Education Units',
-  'Cybersecurity','Data Science','Design Tools','Development','Finance & Accounting',
-  'Generative AI','IT Operations','Language Learning','Leadership & Management',
-  'Marketing','Personal Development','Productivity','Project & Product Management',
-  'Sales & Customer Service','UX','Workplace & Human Resources'
-];
+let currentSubTab = 'Todos';
+let editingId = null;
+let selectedCurso = null;
+let currentEmailAsigId = null;
 
-// ── SUPABASE CONNECT ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  SUPABASE INIT
+// ═══════════════════════════════════════════════════════════════
+async function initSupabase() {
+  const url = localStorage.getItem(STORAGE_KEY_URL);
+  const key = localStorage.getItem(STORAGE_KEY_KEY);
+  if (!url || !key) return false;
+  try {
+    sb = window.supabase.createClient(url, key);
+    return true;
+  } catch(e) { return false; }
+}
+
 async function connectSupabase() {
   const url = document.getElementById('sbUrl').value.trim();
   const key = document.getElementById('sbKey').value.trim();
   const errEl = document.getElementById('setupErr');
   const btn = document.getElementById('btnConnect');
   errEl.style.display = 'none';
-  if (!url || !key) { showSetupErr('Completa ambos campos.'); return; }
-  btn.innerHTML = '<span class="spinner"></span> Conectando...';
-  btn.disabled = true;
+  if (!url || !key) { errEl.textContent = 'Completa ambos campos.'; errEl.style.display = 'block'; return; }
+  btn.innerHTML = '<span class="spinner"></span> Conectando...'; btn.disabled = true;
   try {
     sb = window.supabase.createClient(url, key);
     const { error } = await sb.from('asignaciones').select('id').limit(1);
-    if (error && error.code === '42P01') {
-      showSetupErr('Tabla "asignaciones" no encontrada. Ejecuta el schema.sql en Supabase primero.');
-      sb = null; btn.innerHTML = 'Conectar'; btn.disabled = false; return;
-    }
+    if (error && error.code === '42P01') { throw new Error('Tabla no encontrada. Ejecuta schema.sql primero.'); }
     localStorage.setItem(STORAGE_KEY_URL, url);
     localStorage.setItem(STORAGE_KEY_KEY, key);
-    showApp();
+    document.getElementById('setupScreen').style.display = 'none';
+    startAuth();
   } catch(e) {
-    showSetupErr('No se pudo conectar: ' + e.message);
+    errEl.textContent = e.message; errEl.style.display = 'block';
     btn.innerHTML = 'Conectar'; btn.disabled = false;
   }
 }
 
-function showSetupErr(msg) {
-  const el = document.getElementById('setupErr');
-  el.textContent = msg; el.style.display = 'block';
+// ═══════════════════════════════════════════════════════════════
+//  AUTH - Google OAuth via Supabase
+// ═══════════════════════════════════════════════════════════════
+function startAuth() {
+  document.getElementById('loadingMsg').textContent = 'Verificando sesión...';
+  document.getElementById('loadingOverlay').style.display = 'flex';
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (session) {
+      await resolveUser(session.user);
+    } else {
+      hide('loadingOverlay');
+      show('authScreen');
+    }
+  });
 }
 
-let currentSubTab = 'Todos';
-let currentSubTabP = 'Todos';
-
-function switchSubTabP(el, equipo) {
-  currentSubTabP = equipo;
-  document.querySelectorAll('#tab-personal .sub-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  renderPersonal();
+async function signInGoogle() {
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
+  });
+  if (error) {
+    document.getElementById('authError').textContent = error.message;
+    document.getElementById('authError').style.display = 'block';
+  }
 }
 
-function switchSubTab(el, equipo) {
-  currentSubTab = equipo;
-  document.querySelectorAll('#tab-asignaciones .sub-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  renderAsignaciones();
-  checkAlerts();
-}
-
-function debounceCursos() {
-  clearTimeout(cursosSearchTimer);
-  cursosSearchTimer = setTimeout(renderCursos, 400);
-}
-
-async function showApp() {
-  document.getElementById('setupScreen').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
-  populateCatFilter();
-  await loadAll();
-  // Show catalog hint on load
-  document.getElementById('listaCursos').innerHTML = '<div class="empty">Escribe al menos 2 caracteres para buscar en 34,055 cursos del catálogo Udemy</div>';
-  document.getElementById('loadingOverlay').style.display = 'none';
-}
-
-function desconectar() {
-  localStorage.removeItem(STORAGE_KEY_URL);
-  localStorage.removeItem(STORAGE_KEY_KEY);
+async function signOut() {
+  await sb.auth.signOut();
   location.reload();
 }
 
-// ── DATA LOAD ────────────────────────────────────────────────────
-let asignaciones = [];
+async function resolveUser(supabaseUser) {
+  const email = supabaseUser.email.toLowerCase();
+  let userData = null;
+  let rol = 'user';
 
-async function loadAll() {
-  const { data, error } = await sb.from('asignaciones').select('*').order('id', { ascending: false });
-  if (!error) asignaciones = data || [];
-  renderAll();
-  checkAlerts();
+  if (ADMIN_MAP[email]) {
+    userData = { ...ADMIN_MAP[email], email, rol: 'admin' };
+    rol = 'admin';
+  } else if (USER_MAP[email]) {
+    userData = { ...USER_MAP[email], email, rol: 'user' };
+  } else {
+    hide('loadingOverlay');
+    document.getElementById('authError').textContent = 'Tu cuenta (' + email + ') no está registrada en el sistema. Contacta al administrador.';
+    document.getElementById('authError').style.display = 'block';
+    show('authScreen');
+    return;
+  }
+
+  currentUser = userData;
+  renderApp();
 }
 
-// ── PROFILE ──────────────────────────────────────────────────────
-const profileMap = {
-  admin: { name:'Admin', initials:'TU', bg:'var(--bg-accent)', color:'var(--text-accent)', equipo:null },
-  plan:  { name:'Planificación', initials:'PL', bg:'var(--bg-accent)', color:'var(--text-accent)', equipo:'Planificación' },
-  impl:  { name:'Implementación', initials:'IM', bg:'var(--bg-success)', color:'var(--text-success)', equipo:'Implementación' },
-  om:    { name:'O&M', initials:'OM', bg:'var(--bg-warning)', color:'var(--text-warning)', equipo:'O&M' },
-};
+// ═══════════════════════════════════════════════════════════════
+//  RENDER APP
+// ═══════════════════════════════════════════════════════════════
+function renderApp() {
+  hide('loadingOverlay'); hide('authScreen'); hide('setupScreen');
+  document.getElementById('app').style.display = 'flex';
 
-function setProfile(p) {
-  currentProfile = p;
-  const prof = profileMap[p];
-  document.getElementById('avatarEl').textContent = prof.initials;
-  document.getElementById('avatarEl').style.background = prof.bg;
-  document.getElementById('avatarEl').style.color = prof.color;
-  document.getElementById('profileName').textContent = prof.name;
-  document.getElementById('profileMenu').style.display = 'none';
-  renderAll();
+  // User pill
+  const initials = currentUser.nombre.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('userAvatar').textContent = initials;
+  document.getElementById('userName').textContent = currentUser.nombre.split(' ').slice(0,2).join(' ');
+  document.getElementById('menuUserName').textContent = currentUser.nombre;
+  document.getElementById('menuUserEmail').textContent = currentUser.email;
+  const roleBadge = document.getElementById('roleBadge');
+  roleBadge.textContent = currentUser.rol === 'admin' ? 'Administrador' : 'Colaborador';
+  roleBadge.className = 'role-badge ' + (currentUser.rol === 'admin' ? 'role-admin' : 'role-user');
+
+  if (currentUser.rol === 'admin') renderAdminApp();
+  else renderUserApp();
 }
 
+// ── PROFILE MENU ──────────────────────────────────────────────
 function toggleProfileMenu() {
   const m = document.getElementById('profileMenu');
-  m.style.display = m.style.display === 'none' || !m.style.display ? 'block' : 'none';
+  m.style.display = m.style.display === 'block' ? 'none' : 'block';
 }
 document.addEventListener('click', e => {
-  if (!e.target.closest('#profileBadge') && !e.target.closest('.profile-menu'))
+  if (!e.target.closest('#userPill') && !e.target.closest('#profileMenu'))
     document.getElementById('profileMenu').style.display = 'none';
 });
 
-// ── TABS ─────────────────────────────────────────────────────────
-function switchTab(el, tab) {
+// ═══════════════════════════════════════════════════════════════
+//  ADMIN APP
+// ═══════════════════════════════════════════════════════════════
+function renderAdminApp() {
+  document.getElementById('mainNav').innerHTML = `
+    <div class="nav-tab active" onclick="adminTab(this,'dashboard')">📊 Dashboard</div>
+    <div class="nav-tab" onclick="adminTab(this,'solicitudes')">📥 Solicitudes</div>
+    <div class="nav-tab" onclick="adminTab(this,'asignaciones')">📋 Asignaciones</div>
+    <div class="nav-tab" onclick="adminTab(this,'catalogo')">🎓 Catálogo</div>
+    <div class="nav-tab" onclick="adminTab(this,'personal')">👥 Personal</div>
+  `;
+  loadAll().then(() => renderAdminDashboard());
+}
+
+function adminTab(el, tab) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  ['dashboard','asignaciones','cursos','personal'].forEach(t => {
-    document.getElementById('tab-'+t).style.display = t === tab ? 'block' : 'none';
-  });
+  if (tab === 'dashboard') renderAdminDashboard();
+  else if (tab === 'solicitudes') renderSolicitudes();
+  else if (tab === 'asignaciones') renderAdminAsignaciones();
+  else if (tab === 'catalogo') renderCatalogo();
+  else if (tab === 'personal') renderPersonal();
 }
 
-// ── RENDER ───────────────────────────────────────────────────────
-function getFilteredAsig() {
-  const eq = profileMap[currentProfile].equipo;
-  return eq ? asignaciones.filter(a => a.equipo === eq) : asignaciones;
+async function loadAll() {
+  const { data } = await sb.from('asignaciones').select('*').order('id', { ascending: false });
+  asignaciones = data || [];
 }
 
-function renderAll() { updateDashboard(); renderAsignaciones(); renderPersonal(); }
+function renderAdminDashboard() {
+  const pendientes = asignaciones.filter(a => a.estado === 'Pendiente').length;
+  const encurso = asignaciones.filter(a => a.estado === 'En curso').length;
+  const culminados = asignaciones.filter(a => a.estado === 'Culminado').length;
+  const autorizados = asignaciones.filter(a => a.estado === 'Autorizado').length;
 
-function updateDashboard() {
-  const data = getFilteredAsig();
-  const done = data.filter(a => a.estado === 'Culminado').length;
-  const active = data.filter(a => a.estado === 'En curso').length;
-  const p = profileMap[currentProfile];
-  document.getElementById('s-total').textContent = p.equipo ? personal.filter(x => x.equipo === p.equipo).length : personal.length;
-  const vencidos = data.filter(a => a.estado === 'Vencido' || (a.fecha_fin && new Date(a.fecha_fin) < new Date() && a.estado === 'En curso')).length;
-  document.getElementById('s-active').textContent = active;
-  document.getElementById('s-done').textContent = done;
-  document.getElementById('s-udemy').textContent = '34,055';
+  const byEquipo = (eq) => {
+    const d = asignaciones.filter(a => a.equipo === eq);
+    return {total: personal.filter(p=>p.equipo===eq).length, culminados: d.filter(a=>a.estado==='Culminado').length, encurso: d.filter(a=>a.estado==='En curso').length, pendientes: d.filter(a=>a.estado==='Pendiente').length};
+  };
+  const pl = byEquipo('Planificación'), im = byEquipo('Implementación'), om = byEquipo('O&M');
 
-  ['Planificación','Implementación','O&M'].forEach(eq => {
-    const pd = asignaciones.filter(a => a.equipo === eq);
-    const pc = personal.filter(x => x.equipo === eq).length;
-    const prefix = eq === 'Planificación' ? 'tp' : eq === 'Implementación' ? 'ti' : 'to';
-    document.getElementById(prefix+'-total').textContent = pc;
-    document.getElementById(prefix+'-en').textContent = pd.filter(a => a.estado === 'En curso').length;
-    document.getElementById(prefix+'-done').textContent = pd.filter(a => a.estado === 'Culminado').length;
-    const pct = Math.round(pd.filter(a => a.estado === 'Culminado').length / Math.max(pc,1) * 100);
-    const barId = eq === 'Planificación' ? 'prog-plan' : eq === 'Implementación' ? 'prog-impl' : 'prog-om';
-    document.getElementById(barId).style.width = pct + '%';
-  });
+  document.getElementById('mainContent').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Solicitudes pendientes</div><div class="stat-value warn">${pendientes}</div></div>
+      <div class="stat-card"><div class="stat-label">Autorizados</div><div class="stat-value accent">${autorizados}</div></div>
+      <div class="stat-card"><div class="stat-label">En curso</div><div class="stat-value accent">${encurso}</div></div>
+      <div class="stat-card"><div class="stat-label">Culminados</div><div class="stat-value success">${culminados}</div></div>
+    </div>
+    <div class="section-title">Equipos</div>
+    <div class="teams-grid">
+      ${teamCard('📐','Planificación','hchiluisatn2209@gmail.com','var(--blue-lt)','var(--blue)',pl,'var(--blue)')}
+      ${teamCard('⚙️','Implementación','geovanna.naranjo23@gmail.com','var(--green-lt)','var(--green)',im,'var(--green)')}
+      ${teamCard('🖥','O&M','cralarcontn1607@gmail.com','var(--amber-lt)','var(--amber)',om,'var(--amber)')}
+    </div>
+    ${pendientes > 0 ? `<div class="alert-banner">⚠️ <span><strong>${pendientes} solicitud(es) pendiente(s)</strong> de aprobación — ve a la pestaña Solicitudes</span></div>` : ''}
+  `;
 }
 
-function estadoBadge(e) {
-  if (e === 'Culminado')           return '<span class="badge" style="background:#e6f4ec;color:#1b7a3e">✅ Culminado</span>';
-  if (e === 'En curso')            return '<span class="badge" style="background:#e8f1fb;color:#1a73c8">▶ En curso</span>';
-  if (e === 'Solicitud enviada')   return '<span class="badge" style="background:#fff3e0;color:#e07b00">📤 Solicitud enviada</span>';
-  if (e === 'Licencia confirmada') return '<span class="badge" style="background:#f0eaf8;color:#5b2d8e">✔ Licencia confirmada</span>';
-  if (e === 'Certificado pendiente') return '<span class="badge" style="background:#fdecea;color:#c0392b">📄 Cert. pendiente</span>';
-  if (e === 'Vencido')             return '<span class="badge" style="background:#fdecea;color:#c0392b">⚠ Vencido</span>';
-  return '<span class="badge badge-inicia">📝 Registrado</span>';
-}
-function equipoBadge(e) {
-  if (e === 'Planificación') return '<span class="badge badge-plan">Planificación</span>';
-  if (e === 'Implementación') return '<span class="badge badge-impl">Implementación</span>';
-  return '<span class="badge badge-om">O&amp;M</span>';
-}
-function prioridadBadge(p) {
-  if (p === 'Alta') return '<span class="badge badge-alta">Alta</span>';
-  if (p === 'Baja') return '<span class="badge badge-baja">Baja</span>';
-  return '<span class="badge badge-media">Media</span>';
+function teamCard(icon, name, email, bg, color, d, barColor) {
+  const pct = d.total ? Math.round(d.culminados/d.total*100) : 0;
+  return `<div class="team-card">
+    <div class="team-header">
+      <div class="team-icon" style="background:${bg};font-size:18px">${icon}</div>
+      <div><div class="team-name">${name}</div><div class="team-email">${email}</div></div>
+    </div>
+    <div class="team-stats">
+      <div class="ts-item"><span class="ts-num">${d.total}</span><span class="ts-lab">personas</span></div>
+      <div class="ts-item"><span class="ts-num" style="color:var(--amber)">${d.pendientes}</span><span class="ts-lab">pendientes</span></div>
+      <div class="ts-item"><span class="ts-num" style="color:var(--blue)">${d.encurso}</span><span class="ts-lab">en curso</span></div>
+      <div class="ts-item"><span class="ts-num" style="color:var(--green)">${d.culminados}</span><span class="ts-lab">culminados</span></div>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+  </div>`;
 }
 
-function renderAsignaciones() {
-  const q = (document.getElementById('filtroNombre').value || '').toLowerCase();
-  const est = document.getElementById('filtroEstado').value;
-  let data = getFilteredAsig();
-  if (currentSubTab !== 'Todos') data = data.filter(a => a.equipo === currentSubTab);
+// ── SOLICITUDES (Admin review) ────────────────────────────────
+function renderSolicitudes() {
+  const pendientes = asignaciones.filter(a => a.estado === 'Pendiente');
+  let html = `<div class="section-title">Solicitudes pendientes de aprobación (${pendientes.length})</div>`;
+  if (!pendientes.length) {
+    html += '<div class="empty">✅ No hay solicitudes pendientes</div>';
+  } else {
+    html += pendientes.map(a => `
+      <div class="sol-card" style="border-left:4px solid var(--amber)">
+        <div class="sol-card-header">
+          <div>
+            <div class="sol-curso">${a.curso_titulo||'Sin curso'}</div>
+            <div class="sol-meta">👤 <strong>${a.nombre}</strong> · ${equipoBadgeStr(a.equipo)} · ⏱ ${a.horas_curso ? Number(a.horas_curso).toFixed(0)+'h' : '—'} · ${a.fecha_inicio||'—'} → ${a.fecha_fin||'—'}</div>
+            ${a.observaciones ? `<div class="sol-meta" style="margin-top:4px;color:var(--text2)">💬 ${a.observaciones}</div>` : ''}
+          </div>
+          <div class="sol-actions">
+            <button class="btn success" onclick="aprobarSolicitud(${a.id})">✔ Autorizar</button>
+            <button class="btn" onclick="rechazarSolicitud(${a.id})" style="color:var(--red);border-color:var(--border-danger)">✕ Rechazar</button>
+            <button class="btn navy" onclick="openEmailFromRow(${a.id})" title="Generar correo Telco U">✉️</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  // Also show recently authorized
+  const autorizados = asignaciones.filter(a => a.estado === 'Autorizado').slice(0,5);
+  if (autorizados.length) {
+    html += `<div class="section-title" style="margin-top:20px">Autorizados recientemente</div>`;
+    html += autorizados.map(a => `
+      <div class="sol-card" style="border-left:4px solid var(--green)">
+        <div class="sol-card-header">
+          <div>
+            <div class="sol-curso">${a.curso_titulo||'Sin curso'}</div>
+            <div class="sol-meta">👤 <strong>${a.nombre}</strong> · ${equipoBadgeStr(a.equipo)}</div>
+          </div>
+          <div class="sol-actions">
+            <span class="badge badge-autorizado">✔ Autorizado</span>
+            <button class="btn navy" onclick="openEmailFromRow(${a.id})">✉️</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+async function aprobarSolicitud(id) {
+  const { error } = await sb.from('asignaciones').update({ estado: 'Autorizado' }).eq('id', id);
+  if (!error) { showToast('Solicitud autorizada ✓'); await loadAll(); renderSolicitudes(); }
+  else showToast('Error: ' + error.message);
+}
+
+async function rechazarSolicitud(id) {
+  const motivo = prompt('Motivo del rechazo (opcional):') ?? '';
+  const { error } = await sb.from('asignaciones').update({ estado: 'Rechazado', observaciones_admin: motivo }).eq('id', id);
+  if (!error) { showToast('Solicitud rechazada'); await loadAll(); renderSolicitudes(); }
+  else showToast('Error: ' + error.message);
+}
+
+// ── ADMIN ASIGNACIONES ────────────────────────────────────────
+function renderAdminAsignaciones() {
+  const subTabsHtml = `
+    <div class="sub-tabs">
+      <div class="sub-tab active" onclick="switchSubTab(this,'Todos')">🗂 Todos</div>
+      <div class="sub-tab" onclick="switchSubTab(this,'Planificación')">📐 Planificación</div>
+      <div class="sub-tab" onclick="switchSubTab(this,'Implementación')">⚙️ Implementación</div>
+      <div class="sub-tab" onclick="switchSubTab(this,'O&M')">🖥 O&M</div>
+    </div>
+    <div id="workflowBanner" class="workflow-banner">
+      <div class="wf-step" id="wf0" onclick="setFiltroEstado('Pendiente')">🕐 <span>Pendiente</span></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step" id="wf1" onclick="setFiltroEstado('Autorizado')">✔ <span>Autorizado</span></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step" id="wf2" onclick="setFiltroEstado('En curso')">▶ <span>En curso</span></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step" id="wf3" onclick="setFiltroEstado('Culminado')">✅ <span>Culminado</span></div>
+    </div>
+    <div id="alertBanner" style="display:none" class="alert-banner">⚠️ <span id="alertBannerMsg"></span></div>
+    <div class="toolbar">
+      <input type="text" id="filtroNombre" placeholder="Buscar nombre o usuario..." oninput="renderAdminTabla()">
+      <select id="filtroEstado" onchange="renderAdminTabla()">
+        <option value="">Todos los estados</option>
+        <option>Pendiente</option><option>Autorizado</option><option>En curso</option>
+        <option>Culminado</option><option>Rechazado</option>
+      </select>
+      <button class="btn primary" onclick="openAdminModal()">+ Nueva asignación</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th style="position:sticky;left:0;z-index:2;background:var(--navy)">Personal</th>
+          <th>Equipo</th><th>Curso</th><th>Duración</th><th>Inicio</th><th>Fin</th>
+          <th>Avance</th><th>Estado</th><th>Prioridad</th><th>Certificado</th><th></th>
+        </tr></thead>
+        <tbody id="tbAsig"></tbody>
+      </table>
+    </div>`;
+  document.getElementById('mainContent').innerHTML = subTabsHtml;
+  currentSubTab = 'Todos';
+  renderAdminTabla();
+  checkAlerts();
+}
+
+function renderAdminTabla() {
+  const q = (document.getElementById('filtroNombre')?.value || '').toLowerCase();
+  const est = document.getElementById('filtroEstado')?.value || '';
+  let data = currentSubTab === 'Todos' ? asignaciones : asignaciones.filter(a => a.equipo === currentSubTab);
   if (q) data = data.filter(a => (a.nombre||'').toLowerCase().includes(q) || (a.user_login||'').toLowerCase().includes(q));
   if (est) data = data.filter(a => a.estado === est);
   const tb = document.getElementById('tbAsig');
-  if (!data.length) { tb.innerHTML = '<tr><td colspan="12" class="empty">No hay asignaciones</td></tr>'; return; }
+  if (!tb) return;
+  if (!data.length) { tb.innerHTML = '<tr><td colspan="11" class="empty">No hay asignaciones</td></tr>'; return; }
   tb.innerHTML = data.map(a => `<tr>
-    <td style="position:sticky;left:0;background:var(--surface-2);z-index:1;min-width:160px"><div style="font-weight:500">${a.nombre||''}</div><div style="font-size:11px;color:var(--text-secondary)">${a.user_login||''}</div></td>
-    <td>${equipoBadge(a.equipo)}</td>
-    <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${a.curso_titulo||''}">${a.curso_titulo||'<span style="color:var(--text-muted)">Sin asignar</span>'}</td>
-    <td style="font-size:12px;white-space:nowrap;color:var(--text2)">${a.horas_curso ? '⏱ ' + Number(a.horas_curso).toFixed(0) + ' h' : '—'}</td>
-    <td style="font-size:12px">${a.institucion||''}</td>
+    <td style="position:sticky;left:0;background:var(--surface-2);z-index:1;min-width:150px">
+      <div style="font-weight:600">${a.nombre||''}</div>
+      <div style="font-size:11px;color:var(--text3)">${a.user_login||''}</div>
+    </td>
+    <td>${equipoBadgeStr(a.equipo)}</td>
+    <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${a.curso_titulo||''}">${a.curso_titulo||'<span style="color:var(--text3)">Sin asignar</span>'}</td>
+    <td style="font-size:12px;white-space:nowrap">${a.horas_curso ? '⏱ '+Number(a.horas_curso).toFixed(0)+'h' : '—'}</td>
     <td style="font-size:12px">${a.fecha_inicio||'—'}</td>
     <td style="font-size:12px">${a.fecha_fin||'—'}</td>
     <td><span style="font-size:12px">${a.avance||0}%</span><div class="pct-bar"><div class="pct-fill" style="width:${a.avance||0}%"></div></div></td>
     <td>${estadoBadge(a.estado)}</td>
     <td>${prioridadBadge(a.prioridad)}</td>
-    <td style="font-size:13px">${a.certificado==='SI'?'✅':a.certificado==='NO'?'❌':'—'}</td>
-    <td style="font-size:12px">${a.licencia||'—'}</td>
-    <td style="font-size:11px;color:var(--text3)">${a.heredada_de ? '↩ ' + a.heredada_de : ''}</td>
+    <td style="font-size:13px">${a.certificado_enviado?'✅':a.certificado_enviado===false?'❌':'—'}</td>
     <td style="white-space:nowrap">
       <button class="btn" style="padding:4px 7px;font-size:12px" onclick="editAsig(${a.id})" title="Editar">✏️</button>
-      <button class="btn" style="padding:4px 7px;font-size:12px;margin-left:3px;background:var(--navy);color:#fff;border-color:var(--navy)" onclick="openEmailFromRow(${a.id})" title="Reenviar correo solicitud">✉️</button>
+      <button class="btn navy" style="padding:4px 7px;font-size:12px;margin-left:3px" onclick="openEmailFromRow(${a.id})" title="Correo Telco U">✉️</button>
     </td>
   </tr>`).join('');
+  updateWorkflowCounts();
 }
 
-async function renderCursos() {
-  const q = document.getElementById('filtroCurso').value.trim();
-  const cat = document.getElementById('filtroCat').value;
-  const niv = document.getElementById('filtroNivel').value;
-  const idioma = document.getElementById('filtroIdioma').value;
-  const el = document.getElementById('listaCursos');
-  if (!q && !cat && !niv && !idioma) {
-    el.innerHTML = '<div class="empty">Escribe al menos 2 caracteres para buscar entre 34,055 cursos</div>';
-    return;
+function switchSubTab(el, equipo) {
+  currentSubTab = equipo;
+  document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderAdminTabla();
+  checkAlerts();
+}
+
+function setFiltroEstado(val) {
+  const sel = document.getElementById('filtroEstado');
+  if (sel) sel.value = val;
+  document.querySelectorAll('.wf-step').forEach(s => s.classList.remove('active-wf'));
+  renderAdminTabla();
+}
+
+// ── ADMIN MODAL (nueva/editar asignación) ─────────────────────
+function openAdminModal(asig = null) {
+  editingId = asig ? asig.id : null;
+  selectedCurso = null;
+  const isEdit = !!asig;
+  const locked = isEdit && ['En curso','Culminado'].includes(asig?.estado);
+
+  document.getElementById('modalTitle').textContent = isEdit ? 'Editar asignación' : 'Nueva asignación';
+  document.getElementById('modalSubtitle').textContent = 'Paso 1 de 2 · Registro → Paso 2: Correo';
+
+  // Build personal options
+  const persOptions = [...personal].sort((a,b)=>a.nombre.localeCompare(b.nombre))
+    .map(p => `<option value="${p.user}" ${asig?.user_login===p.user?'selected':''}>${p.nombre} [${p.equipo}·${p.ciudad||''}]</option>`).join('');
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="section-label">Seleccionar curso del catálogo</div>
+    <input class="search-curso" type="text" id="searchModalCurso" placeholder="Buscar curso..." oninput="renderModalCursos()" ${locked?'disabled':''}>
+    <div class="curso-list" id="listModalCursos"></div>
+    <div class="curso-sel-box" id="cursoSelBox">
+      <strong id="csTitulo">${asig?.curso_titulo||''}</strong><br>
+      <span style="font-size:11px;color:var(--amber)" id="csMeta">${asig?.horas_curso?'⏱ '+Number(asig.horas_curso).toFixed(0)+'h':''}</span>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Equipo</label>
+        <select id="fEquipo" onchange="filterPersonalByEquipo()" ${locked?'disabled':''}>
+          <option value="">Seleccionar...</option>
+          <option ${asig?.equipo==='Planificación'?'selected':''}>Planificación</option>
+          <option ${asig?.equipo==='Implementación'?'selected':''}>Implementación</option>
+          <option ${asig?.equipo==='O&M'?'selected':''}>O&amp;M</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Personal</label>
+        <select id="fPersonal" ${locked?'disabled':''}><option value="">Selecciona equipo primero</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Fecha inicio</label>
+        <input type="date" id="fInicio" value="${asig?.fecha_inicio||''}">
+      </div>
+      <div class="form-field">
+        <label>Fecha fin estimada</label>
+        <input type="date" id="fFin" value="${asig?.fecha_fin||''}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Prioridad</label>
+        <select id="fPrioridad">
+          <option ${asig?.prioridad==='Alta'?'selected':''}>Alta</option>
+          <option ${!asig||asig?.prioridad==='Media'?'selected':''}>Media</option>
+          <option ${asig?.prioridad==='Baja'?'selected':''}>Baja</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Estado</label>
+        <select id="fEstado">
+          <option ${asig?.estado==='Pendiente'||!asig?'selected':''}>Pendiente</option>
+          <option ${asig?.estado==='Autorizado'?'selected':''}>Autorizado</option>
+          <option ${asig?.estado==='En curso'?'selected':''}>En curso</option>
+          <option ${asig?.estado==='Culminado'?'selected':''}>Culminado</option>
+          <option ${asig?.estado==='Rechazado'?'selected':''}>Rechazado</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>% Avance</label>
+        <input type="number" id="fAvance" min="0" max="100" value="${asig?.avance||0}">
+      </div>
+      <div class="form-field">
+        <label>Certificado enviado a Telco U</label>
+        <select id="fCertificado">
+          <option value="">—</option>
+          <option value="true" ${asig?.certificado_enviado===true?'selected':''}>Sí</option>
+          <option value="false" ${asig?.certificado_enviado===false?'selected':''}>No</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Aprobado por</label>
+        <select id="fAprobado">
+          <option value="">Seleccionar...</option>
+          <option ${asig?.aprobado_por==='Carmen Alarcón'?'selected':''}>Carmen Alarcón</option>
+          <option ${asig?.aprobado_por==='Geovanna Naranjo'?'selected':''}>Geovanna Naranjo</option>
+          <option ${asig?.aprobado_por==='Haydi Chiluisa'?'selected':''}>Haydi Chiluisa</option>
+          <option ${asig?.aprobado_por==='Eduardo Nuñez'?'selected':''}>Eduardo Nuñez</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Tipo de licencia</label>
+        <select id="fLicencia">
+          <option ${asig?.licencia==='Telco U'||!asig?'selected':''}>Telco U</option>
+          <option ${asig?.licencia==='Interna'?'selected':''}>Interna</option>
+          <option ${asig?.licencia==='Externa'?'selected':''}>Externa</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field full">
+        <label>Observaciones</label>
+        <textarea id="fObs" rows="2">${asig?.observaciones||''}</textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn navy" onclick="guardarAsignacion(false)" id="btnGuardar">Guardar</button>
+      <button class="btn primary" onclick="guardarAsignacion(true)" id="btnGuardarCorreo">✉️ Guardar y correo</button>
+    </div>`;
+
+  if (asig?.equipo) {
+    document.getElementById('fEquipo').value = asig.equipo;
+    filterPersonalByEquipo();
+    document.getElementById('fPersonal').value = asig.user_login || '';
   }
-  el.innerHTML = '<div class="empty"><span class="spinner"></span> Buscando...</div>';
-  try {
-    let query = sb.from('cursos_udemy').select('*');
-    if (q && q.length >= 2) query = query.ilike('titulo', '%' + q + '%');
-    if (cat) query = query.eq('categoria', cat);
-    if (niv) query = query.eq('nivel', niv);
-    if (idioma) query = query.eq('idioma', idioma);
-    query = query.order('rating', { ascending: false }).limit(50);
-    const { data, error } = await query;
-    if (error) { el.innerHTML = '<div class="empty">Error al buscar: ' + error.message + '</div>'; return; }
-    cursosCache = data || [];
-    if (!cursosCache.length) { el.innerHTML = '<div class="empty">No se encontraron cursos</div>'; return; }
-    el.innerHTML = cursosCache.map(c => `<div class="curso-item" onclick="asignarCursoDirecto('${c.id}')">
-      <div style="display:flex;align-items:baseline;gap:10px">
-        <span style="font-size:11px;color:var(--text-muted);font-family:monospace;white-space:nowrap">ID: ${c.id}</span>
-        <div class="curso-title">${c.titulo}</div>
-      </div>
-      <div class="curso-meta">
-        <span>👤 ${c.instructor||''}</span>
-        <span>🏷 ${c.categoria||''}</span>
-        <span>⏱ <strong>${Number(c.horas||0).toFixed(1)} hrs</strong></span>
-        <span>⭐ ${c.rating||''}</span>
-        <span>${c.nivel||''}</span>
-        <span>🌐 ${c.idioma||''}</span>
-        ${c.practica ? '<span style="color:var(--text-success)">✓ práctica</span>' : ''}
-      </div>
-    </div>`).join('') + (cursosCache.length===50 ? '<div style="text-align:center;padding:10px;font-size:12px;color:var(--text-muted)">Mostrando los 50 mejores resultados — refina la búsqueda para ver más</div>' : '');
-  } catch(e) {
-    el.innerHTML = '<div class="empty">Error: ' + e.message + '</div>';
+  if (asig?.curso_titulo) {
+    document.getElementById('cursoSelBox').style.display = 'block';
+    selectedCurso = { id: asig.curso_id, titulo: asig.curso_titulo, horas: asig.horas_curso };
+  }
+  if (currentSubTab !== 'Todos' && !asig) {
+    document.getElementById('fEquipo').value = currentSubTab;
+    filterPersonalByEquipo();
+  }
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function editAsig(id) {
+  const a = asignaciones.find(x => x.id === id);
+  if (a) openAdminModal(a);
+}
+
+function filterPersonalByEquipo() {
+  const eq = document.getElementById('fEquipo')?.value;
+  const sel = document.getElementById('fPersonal');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Seleccionar persona</option>';
+  if (!eq) return;
+  personal.filter(p => p.equipo === eq).forEach(p => {
+    const o = document.createElement('option');
+    o.value = p.user;
+    o.textContent = p.nombre + ' [' + (p.ciudad||'') + '] (' + p.user + ')';
+    sel.appendChild(o);
+  });
+}
+
+async function guardarAsignacion(abrirCorreo = false) {
+  const userLogin = document.getElementById('fPersonal')?.value;
+  const equipo = document.getElementById('fEquipo')?.value;
+  if (!equipo) { showToast('Selecciona el equipo'); return; }
+  if (!editingId && !userLogin) { showToast('Selecciona la persona'); return; }
+  const pers = personal.find(p => p.user === userLogin);
+  const prev = editingId ? asignaciones.find(a => a.id === editingId) : null;
+  const certVal = document.getElementById('fCertificado')?.value;
+  const payload = {
+    user_login: userLogin || prev?.user_login,
+    nombre: pers?.nombre || prev?.nombre,
+    equipo: equipo || prev?.equipo,
+    curso_id: selectedCurso ? String(selectedCurso.id) : prev?.curso_id,
+    curso_titulo: selectedCurso ? selectedCurso.titulo : prev?.curso_titulo,
+    horas_curso: selectedCurso ? Number(selectedCurso.horas||0) : prev?.horas_curso,
+    fecha_inicio: document.getElementById('fInicio')?.value || null,
+    fecha_fin: document.getElementById('fFin')?.value || null,
+    prioridad: document.getElementById('fPrioridad')?.value,
+    estado: document.getElementById('fEstado')?.value || 'Pendiente',
+    avance: parseInt(document.getElementById('fAvance')?.value)||0,
+    certificado_enviado: certVal === 'true' ? true : certVal === 'false' ? false : null,
+    aprobado_por: document.getElementById('fAprobado')?.value || null,
+    licencia: document.getElementById('fLicencia')?.value,
+    observaciones: document.getElementById('fObs')?.value,
+  };
+  const btnG = document.getElementById('btnGuardar');
+  const btnGC = document.getElementById('btnGuardarCorreo');
+  if (btnG) { btnG.innerHTML = '<span class="spinner"></span>'; btnG.disabled = true; }
+  if (btnGC) btnGC.disabled = true;
+  let error;
+  if (editingId) {
+    ({ error } = await sb.from('asignaciones').update(payload).eq('id', editingId));
+  } else {
+    ({ error } = await sb.from('asignaciones').insert([payload]));
+  }
+  if (btnG) { btnG.innerHTML = 'Guardar'; btnG.disabled = false; }
+  if (btnGC) btnGC.disabled = false;
+  if (error) { showToast('Error: ' + error.message); return; }
+  const savedUser = payload.user_login;
+  const savedEquipo = payload.equipo;
+  closeModal();
+  showToast(editingId ? 'Actualizado ✓' : 'Guardado ✓');
+  await loadAll();
+  renderAdminTabla();
+  if (abrirCorreo) {
+    const saved = asignaciones.find(a => a.user_login === savedUser && a.equipo === savedEquipo);
+    if (saved) { currentEmailAsigId = saved.id; openEmailFromRow(saved.id); }
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  USER APP (solicitante)
+// ═══════════════════════════════════════════════════════════════
+function renderUserApp() {
+  document.getElementById('mainNav').innerHTML = `
+    <div class="nav-tab active" onclick="userTab(this,'miscursos')">📋 Mis solicitudes</div>
+    <div class="nav-tab" onclick="userTab(this,'solicitar')">🔍 Solicitar curso</div>
+  `;
+  loadUserData().then(() => renderMisSolicitudes());
+}
+
+function userTab(el, tab) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  if (tab === 'miscursos') renderMisSolicitudes();
+  else if (tab === 'solicitar') renderSolicitarCurso();
+}
+
+async function loadUserData() {
+  const { data } = await sb.from('asignaciones').select('*')
+    .eq('user_login', currentUser.user).order('id', { ascending: false });
+  asignaciones = data || [];
+}
+
+function renderMisSolicitudes() {
+  let html = `<div class="section-title">Mis solicitudes de capacitación</div>`;
+  if (!asignaciones.length) {
+    html += `<div class="info-box">ℹ️ Aún no tienes cursos solicitados. Ve a <strong>Solicitar curso</strong> para buscar en el catálogo Udemy y enviar tu solicitud al administrador.</div>`;
+  } else {
+    html += asignaciones.map(a => {
+      const locked = ['Pendiente','Rechazado'].includes(a.estado);
+      const canProgress = ['Autorizado','En curso'].includes(a.estado);
+      const isCulminado = a.estado === 'Culminado';
+      return `<div class="sol-card" style="border-left:4px solid ${estadoColor(a.estado)}">
+        <div class="sol-card-header">
+          <div style="flex:1">
+            <div class="sol-curso">${a.curso_titulo||'Sin curso asignado'}</div>
+            <div class="sol-meta">⏱ ${a.horas_curso?Number(a.horas_curso).toFixed(0)+'h':'—'} · 📅 ${a.fecha_inicio||'—'} → ${a.fecha_fin||'—'}</div>
+            <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              ${estadoBadge(a.estado)}
+              ${a.avance ? `<span style="font-size:12px">${a.avance}% <div class="pct-bar" style="display:inline-block"><div class="pct-fill" style="width:${a.avance}%"></div></div></span>` : ''}
+            </div>
+            ${a.estado === 'Rechazado' && a.observaciones_admin ? `<div class="locked-notice">❌ Motivo rechazo: ${a.observaciones_admin}</div>` : ''}
+            ${locked ? `<div class="locked-notice">🔒 ${a.estado === 'Pendiente' ? 'En espera de aprobación del administrador' : 'Solicitud rechazada — puedes hacer una nueva solicitud'}</div>` : ''}
+          </div>
+          <div class="sol-actions">
+            ${canProgress ? `<button class="btn primary" onclick="openUserProgress(${a.id})">📝 Actualizar avance</button>` : ''}
+            ${isCulminado ? `<button class="btn" onclick="openUserProgress(${a.id})" style="background:var(--green-lt);color:var(--green);border-color:var(--green-lt)">✅ Ver detalle</button>` : ''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function openUserProgress(id) {
+  const a = asignaciones.find(x => x.id === id);
+  if (!a) return;
+  editingId = id;
+  const isCulminado = a.estado === 'Culminado';
+  document.getElementById('modalTitle').textContent = isCulminado ? 'Detalle del curso' : 'Actualizar avance';
+  document.getElementById('modalSubtitle').textContent = a.curso_titulo || '';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="sol-card" style="background:var(--gray-bg);border:none;margin-bottom:14px">
+      <div class="sol-curso">${a.curso_titulo||''}</div>
+      <div class="sol-meta">⏱ ${a.horas_curso?Number(a.horas_curso).toFixed(0)+'h':'—'} · ${a.fecha_inicio||'—'} → ${a.fecha_fin||'—'} · ${estadoBadge(a.estado)}</div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>% de avance</label>
+        <input type="number" id="uAvance" min="0" max="100" value="${a.avance||0}" ${isCulminado?'disabled':''}>
+      </div>
+      <div class="form-field">
+        <label>Estado</label>
+        <select id="uEstado" ${isCulminado?'disabled':''}>
+          <option value="Autorizado" ${a.estado==='Autorizado'?'selected':''}>Autorizado (no iniciado)</option>
+          <option value="En curso" ${a.estado==='En curso'?'selected':''}>En curso</option>
+          <option value="Culminado" ${a.estado==='Culminado'?'selected':''}>Culminado</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field full">
+        <label>¿Enviaste el certificado a Telco U?</label>
+        <select id="uCertificado" ${isCulminado&&a.certificado_enviado!==null?'disabled':''}>
+          <option value="">—</option>
+          <option value="true" ${a.certificado_enviado===true?'selected':''}>Sí, lo envié</option>
+          <option value="false" ${a.certificado_enviado===false?'selected':''}>No aún</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field full">
+        <label>Observaciones / notas de avance</label>
+        <textarea id="uObs" rows="3" ${isCulminado?'disabled':''}>${a.observaciones||''}</textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      ${!isCulminado ? `<button class="btn primary" onclick="guardarProgreso()">Guardar avance</button>` : ''}
+    </div>`;
+  document.getElementById('modal').style.display = 'flex';
+}
+
+async function guardarProgreso() {
+  const avance = parseInt(document.getElementById('uAvance')?.value)||0;
+  const estado = document.getElementById('uEstado')?.value;
+  const certVal = document.getElementById('uCertificado')?.value;
+  const obs = document.getElementById('uObs')?.value;
+  const finalEstado = avance === 100 && estado !== 'Culminado' ? 'Culminado' : estado;
+  const payload = {
+    avance,
+    estado: finalEstado,
+    certificado_enviado: certVal === 'true' ? true : certVal === 'false' ? false : null,
+    observaciones: obs,
+  };
+  const { error } = await sb.from('asignaciones').update(payload).eq('id', editingId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Avance guardado ✓');
+  closeModal();
+  await loadUserData();
+  renderMisSolicitudes();
+}
+
+// ── SOLICITAR CURSO (User) ────────────────────────────────────
+function renderSolicitarCurso() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="section-title">Buscar y solicitar un curso de Udemy</div>
+    <div class="info-box">🔍 Busca el curso que necesitas, selecciónalo y envía tu solicitud. El administrador recibirá tu solicitud y la aprobará.</div>
+    <div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;padding:20px;margin-bottom:16px">
+      <div class="section-label">Filtros de búsqueda</div>
+      <div class="toolbar" style="margin-bottom:12px">
+        <input type="text" id="userFiltroCurso" placeholder="Buscar curso, instructor..." oninput="debounceCursos()" style="max-width:300px;flex:2">
+        <select id="userFiltroCat" onchange="renderCatalogo()" style="max-width:200px">
+          <option value="">Todas las categorías</option>
+          ${CATEGORIAS_UDEMY.map(c=>`<option>${c}</option>`).join('')}
+        </select>
+        <select id="userFiltroIdioma" onchange="renderCatalogo()">
+          <option value="">Todos los idiomas</option>
+          <option>English</option><option>Spanish</option><option>Portuguese</option>
+          <option>French</option><option>German</option><option>Italian</option>
+        </select>
+      </div>
+      <div id="listaCursosUser"></div>
+    </div>
+    <div id="solicitudFormArea" style="display:none;background:var(--surface-2);border:1px solid var(--orange);border-radius:12px;padding:20px">
+      <div class="section-label">Completa tu solicitud</div>
+      <div class="curso-sel-box" id="cursoSelBoxUser" style="display:block;margin-bottom:14px">
+        <strong id="csTituloUser"></strong><br>
+        <span style="font-size:11px;color:var(--amber)" id="csMetaUser"></span>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Fecha inicio deseada</label>
+          <input type="date" id="uSolInicio">
+        </div>
+        <div class="form-field">
+          <label>Fecha fin estimada</label>
+          <input type="date" id="uSolFin">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field full">
+          <label>Justificación / motivo de la solicitud</label>
+          <textarea id="uSolObs" rows="3" placeholder="¿Por qué necesitas este curso? ¿Cómo aportará a tu trabajo?"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="cancelarSolicitud()">Cancelar</button>
+        <button class="btn primary" onclick="enviarSolicitud()">📤 Enviar solicitud</button>
+      </div>
+    </div>`;
+  document.getElementById('listaCursosUser').innerHTML = '<div class="empty">Escribe para buscar entre 34,055 cursos</div>';
+}
+
+function cancelarSolicitud() {
+  selectedCurso = null;
+  document.getElementById('solicitudFormArea').style.display = 'none';
+}
+
+function selectUserCurso(id) {
+  const c = cursosCache.find(x => String(x.id) === String(id));
+  if (!c) return;
+  selectedCurso = c;
+  document.getElementById('csTituloUser').textContent = c.titulo;
+  document.getElementById('csMetaUser').textContent = (c.instructor||'') + ' · ⏱ ' + Number(c.horas||0).toFixed(0) + 'h · ⭐' + (c.rating||'') + ' · ' + (c.idioma||'') + ' · ' + (c.nivel||'');
+  document.getElementById('solicitudFormArea').style.display = 'block';
+  document.getElementById('solicitudFormArea').scrollIntoView({ behavior: 'smooth' });
+  renderCatalogoList();
+}
+
+async function renderCatalogo() {
+  const q = (document.getElementById('userFiltroCurso')?.value || document.getElementById('filtroCurso')?.value || '').trim();
+  const cat = document.getElementById('userFiltroCat')?.value || document.getElementById('filtroCat')?.value || '';
+  const idioma = document.getElementById('userFiltroIdioma')?.value || document.getElementById('filtroIdioma')?.value || '';
+  const listEl = document.getElementById('listaCursosUser') || document.getElementById('listaCursos');
+  if (!listEl) return;
+  if (!q && !cat && !idioma) { listEl.innerHTML = '<div class="empty">Escribe al menos 2 caracteres para buscar</div>'; return; }
+  listEl.innerHTML = '<div class="empty"><span class="spinner"></span> Buscando...</div>';
+  let query = sb.from('cursos_udemy').select('*');
+  if (q && q.length >= 2) query = query.ilike('titulo', '%'+q+'%');
+  if (cat) query = query.eq('categoria', cat);
+  if (idioma) query = query.eq('idioma', idioma);
+  query = query.order('rating', { ascending: false }).limit(50);
+  const { data, error } = await query;
+  if (error) { listEl.innerHTML = '<div class="empty">Error: ' + error.message + '</div>'; return; }
+  cursosCache = data || [];
+  renderCatalogoList();
+}
+
+function renderCatalogoList() {
+  const listEl = document.getElementById('listaCursosUser') || document.getElementById('listaCursos');
+  if (!listEl) return;
+  if (!cursosCache.length) { listEl.innerHTML = '<div class="empty">No se encontraron cursos</div>'; return; }
+  const isAdmin = currentUser.rol === 'admin';
+  listEl.innerHTML = cursosCache.map(c => `<div class="curso-item ${selectedCurso&&String(selectedCurso.id)===String(c.id)?'selected':''}" onclick="${isAdmin?`asignarCursoDirecto('${c.id}')`:`selectUserCurso('${c.id}')`}">
+    <div style="display:flex;align-items:baseline;gap:8px">
+      <span style="font-size:10px;color:var(--text3);font-family:monospace">ID:${c.id}</span>
+      <div class="curso-title">${c.titulo}</div>
+    </div>
+    <div class="curso-meta">
+      <span>👤 ${c.instructor||''}</span><span>🏷 ${c.categoria||''}</span>
+      <span>⏱ <strong>${Number(c.horas||0).toFixed(0)}h</strong></span>
+      <span>⭐${c.rating||''}</span><span>${c.nivel||''}</span>
+      <span>🌐 ${c.idioma||''}</span>
+      ${c.practica?'<span style="color:var(--green)">✓ práctica</span>':''}
+    </div>
+  </div>`).join('') + (cursosCache.length===50?'<div style="text-align:center;padding:8px;font-size:11px;color:var(--text3)">Mostrando 50 resultados — refina la búsqueda</div>':'');
+}
+
+function debounceCursos() {
+  clearTimeout(cursosSearchTimer);
+  cursosSearchTimer = setTimeout(renderCatalogo, 400);
+}
+
+async function enviarSolicitud() {
+  if (!selectedCurso) { showToast('Selecciona un curso primero'); return; }
+  const inicio = document.getElementById('uSolInicio')?.value;
+  const fin = document.getElementById('uSolFin')?.value;
+  const obs = document.getElementById('uSolObs')?.value;
+  const payload = {
+    user_login: currentUser.user,
+    nombre: currentUser.nombre,
+    equipo: currentUser.equipo,
+    curso_id: String(selectedCurso.id),
+    curso_titulo: selectedCurso.titulo,
+    horas_curso: Number(selectedCurso.horas||0),
+    fecha_inicio: inicio || null,
+    fecha_fin: fin || null,
+    observaciones: obs,
+    estado: 'Pendiente',
+    avance: 0,
+    prioridad: 'Media',
+    licencia: 'Telco U',
+  };
+  const { error } = await sb.from('asignaciones').insert([payload]);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('¡Solicitud enviada! El administrador la revisará pronto ✓');
+  selectedCurso = null;
+  await loadUserData();
+  // Go to mis solicitudes
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.nav-tab').classList.add('active');
+  renderMisSolicitudes();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ADMIN CATALOGO TAB
+// ═══════════════════════════════════════════════════════════════
+function renderCatalogo() {
+  if (currentUser.rol !== 'admin') return;
+  document.getElementById('mainContent').innerHTML = `
+    <div class="toolbar">
+      <input type="text" id="filtroCurso" placeholder="Buscar curso, instructor..." oninput="debounceCursos()" style="max-width:280px;flex:2">
+      <select id="filtroCat" onchange="renderCatalogo()">
+        <option value="">Todas las categorías</option>
+        ${CATEGORIAS_UDEMY.map(c=>`<option>${c}</option>`).join('')}
+      </select>
+      <select id="filtroIdioma" onchange="renderCatalogo()">
+        <option value="">Todos los idiomas</option>
+        <option>English</option><option>Spanish</option><option>Portuguese</option>
+        <option>French</option><option>German</option><option>Italian</option>
+        <option>Japanese</option><option>Korean</option><option>Arabic</option>
+      </select>
+    </div>
+    <div id="listaCursos"><div class="empty">Escribe para buscar en 34,055 cursos</div></div>`;
+}
+
+function asignarCursoDirecto(id) {
+  const c = cursosCache.find(x => String(x.id) === String(id));
+  if (c) selectedCurso = c;
+  openAdminModal();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ADMIN PERSONAL TAB
+// ═══════════════════════════════════════════════════════════════
 function renderPersonal() {
-  const q = (document.getElementById('filtroPersonal').value || '').toLowerCase();
-  const p = profileMap[currentProfile];
+  let subTabP = 'Todos';
+  const html = `
+    <div class="sub-tabs" id="subTabsP">
+      <div class="sub-tab active" onclick="switchSubTabP(this,'Todos')">🗂 Todos</div>
+      <div class="sub-tab" onclick="switchSubTabP(this,'Planificación')">📐 Planificación</div>
+      <div class="sub-tab" onclick="switchSubTabP(this,'Implementación')">⚙️ Implementación</div>
+      <div class="sub-tab" onclick="switchSubTabP(this,'O&M')">🖥 O&M</div>
+    </div>
+    <div class="toolbar"><input type="text" id="filtroPersonal" placeholder="Buscar..." oninput="renderPersonalTabla()"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th style="position:sticky;left:0;z-index:2;background:var(--navy)">Usuario</th>
+          <th>Nombre</th><th>Ciudad</th><th>Código</th><th>Cédula</th><th>Celular</th><th>Mail</th><th>Equipo</th><th>Asignados</th><th>Culminados</th><th>Avance</th>
+        </tr></thead>
+        <tbody id="tbPersonal"></tbody>
+      </table>
+    </div>`;
+  document.getElementById('mainContent').innerHTML = html;
+  window._subTabP = 'Todos';
+  renderPersonalTabla();
+}
+
+function switchSubTabP(el, eq) {
+  window._subTabP = eq;
+  document.querySelectorAll('#subTabsP .sub-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderPersonalTabla();
+}
+
+function renderPersonalTabla() {
+  const q = (document.getElementById('filtroPersonal')?.value||'').toLowerCase();
+  const eq = window._subTabP || 'Todos';
   let data = personal;
-  if (p.equipo) data = data.filter(x => x.equipo === p.equipo);
-  if (currentSubTabP !== 'Todos') data = data.filter(x => x.equipo === currentSubTabP);
-  if (q) data = data.filter(x => x.nombre.toLowerCase().includes(q) || x.user.toLowerCase().includes(q));
+  if (eq !== 'Todos') data = data.filter(p => p.equipo === eq);
+  if (q) data = data.filter(p => p.nombre.toLowerCase().includes(q) || p.user.toLowerCase().includes(q));
   const tb = document.getElementById('tbPersonal');
+  if (!tb) return;
   tb.innerHTML = data.map(per => {
     const asig = asignaciones.filter(a => a.user_login === per.user);
     const done = asig.filter(a => a.estado === 'Culminado').length;
-    const avg = asig.length ? Math.round(asig.reduce((s,a) => s+(a.avance||0), 0) / asig.length) : 0;
+    const avg = asig.length ? Math.round(asig.reduce((s,a)=>s+(a.avance||0),0)/asig.length) : 0;
     return `<tr>
-      <td style="font-size:12px;color:var(--text3);white-space:nowrap">${per.user}</td>
-      <td style="font-weight:500;font-size:13px">${per.nombre}</td>
+      <td style="position:sticky;left:0;background:var(--surface-2);z-index:1;font-size:12px;color:var(--text3)">${per.user}</td>
+      <td style="font-weight:600">${per.nombre}</td>
       <td><span class="badge" style="background:${per.ciudad==='UIO'?'var(--blue-lt)':'var(--green-lt)'};color:${per.ciudad==='UIO'?'var(--blue)':'var(--green)'}">${per.ciudad||'—'}</span></td>
       <td style="font-size:12px">${per.codigo||'—'}</td>
       <td style="font-size:12px">${per.cedula||'—'}</td>
       <td style="font-size:12px">${per.celular||'—'}</td>
       <td style="font-size:12px"><a href="mailto:${per.mail}" style="color:var(--blue);text-decoration:none">${per.mail||'—'}</a></td>
-      <td>${equipoBadge(per.equipo)}</td>
+      <td>${equipoBadgeStr(per.equipo)}</td>
       <td style="text-align:center">${asig.length}</td>
       <td style="text-align:center">${done}</td>
       <td><span style="font-size:12px">${avg}%</span><div class="pct-bar"><div class="pct-fill" style="width:${avg}%"></div></div></td>
@@ -1047,624 +1309,296 @@ function renderPersonal() {
   }).join('');
 }
 
-function populateCatFilter() {
-  const sel = document.getElementById('filtroCat');
-  CATEGORIAS_UDEMY.forEach(c => { const o = document.createElement('option'); o.textContent = c; sel.appendChild(o); });
-}
-
-// ── MODAL ────────────────────────────────────────────────────────
-function openModal(asig = null) {
-  editingId = asig ? asig.id : null;
-  selectedCurso = null;
-  document.getElementById('cursoSelBox').style.display = 'none';
-  document.getElementById('searchModalCurso').value = '';
-  renderModalCursos();
-
-  if (asig) {
-    document.getElementById('modalTitle').textContent = 'Editar asignación';
-    document.getElementById('fEquipo').value = asig.equipo || '';
-    filterPersonalByEquipo();
-    document.getElementById('fPersonal').value = asig.user_login || '';
-    document.getElementById('fInstitucion').value = asig.institucion || 'UDEMY';
-    document.getElementById('fLicencia').value = asig.licencia || 'Telco U';
-    document.getElementById('fInicio').value = asig.fecha_inicio || '';
-    document.getElementById('fFin').value = asig.fecha_fin || '';
-    document.getElementById('fPrioridad').value = asig.prioridad || 'Media';
-    document.getElementById('fModalidad').value = asig.modalidad || 'Online';
-    document.getElementById('fObjetivo').value = asig.objetivo || 'Técnico';
-    document.getElementById('fAprobado').value = asig.aprobado_por || '';
-    document.getElementById('fEstado').value = asig.estado || 'En curso';
-    document.getElementById('fAvance').value = asig.avance || 0;
-    document.getElementById('fCertificado').value = asig.certificado || '';
-    document.getElementById('fCosto').value = asig.costo || '';
-    document.getElementById('fObs').value = asig.observaciones || '';
-    populateHeredaDe();
-    if (asig.heredada_de) document.getElementById('fHeredaDe').value = asig.heredada_de;
-    if (asig.curso_titulo) {
-      document.getElementById('cursoSelBox').style.display = 'block';
-      document.getElementById('csTitulo').textContent = asig.curso_titulo;
-      document.getElementById('csMeta').textContent = '';
-    }
-  } else {
-    document.getElementById('modalTitle').textContent = 'Nueva asignación';
-    ['fInstitucion','fLicencia','fPrioridad','fModalidad','fObjetivo','fEstado'].forEach(id => document.getElementById(id).selectedIndex = 0);
-    ['fInicio','fFin','fObs','fCosto'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('fAprobado').selectedIndex = 0;
-    document.getElementById('fAvance').value = 0;
-    document.getElementById('fCertificado').value = '';
-    document.getElementById('fEquipo').value = '';
-    document.getElementById('fPersonal').innerHTML = '<option value="">Selecciona equipo primero</option>';
-    populateHeredaDe();
-    const p = profileMap[currentProfile];
-    const preEquipo = p.equipo || (currentSubTab !== 'Todos' ? currentSubTab : '');
-    if (preEquipo) { document.getElementById('fEquipo').value = preEquipo; filterPersonalByEquipo(); }
-  }
-  document.getElementById('modal').style.display = 'flex';
-}
-
-function closeModal() { document.getElementById('modal').style.display = 'none'; editingId = null; }
-
-function populateHeredaDe() {
-  const sel = document.getElementById('fHeredaDe');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">— No aplica —</option>';
-  [...personal].sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(p => {
-    const o = document.createElement('option');
-    o.value = p.user;
-    o.textContent = p.nombre + ' [' + p.equipo + ' · ' + (p.ciudad||'') + '] (' + p.user + ')';
-    sel.appendChild(o);
-  });
-}
-
-function filterPersonalByEquipo() {
-  const eq = document.getElementById('fEquipo').value;
-  const sel = document.getElementById('fPersonal');
-  sel.innerHTML = '<option value="">Seleccionar persona</option>';
-  if (!eq) return;
-  personal.filter(p => p.equipo === eq).forEach(p => {
-    const o = document.createElement('option'); o.value = p.user; o.textContent = p.nombre + ' [' + (p.ciudad||'') + '] (' + p.user + ')'; sel.appendChild(o);
-  });
-}
-
+// ═══════════════════════════════════════════════════════════════
+//  MODAL CURSO (admin modal search)
+// ═══════════════════════════════════════════════════════════════
 async function renderModalCursos() {
-  const q = (document.getElementById('searchModalCurso').value || '').trim();
+  const q = (document.getElementById('searchModalCurso')?.value||'').trim();
   const lista = document.getElementById('listModalCursos');
-  if (!q || q.length < 2) {
-    lista.innerHTML = '<div style="text-align:center;padding:12px;font-size:12px;color:var(--text-muted)">Escribe para buscar en 34,055 cursos</div>';
-    return;
-  }
-  lista.innerHTML = '<div style="text-align:center;padding:10px"><span class="spinner"></span></div>';
-  const { data } = await sb.from('cursos_udemy').select('*').ilike('titulo', '%' + q + '%').order('rating', { ascending: false }).limit(10);
-  const results = data || [];
-  lista.innerHTML = results.map(c => `
-    <div class="curso-item ${selectedCurso && selectedCurso.id === c.id ? 'selected' : ''}" onclick="selectCurso('${c.id}')">
-      <div class="curso-title">${c.titulo}</div>
-      <div class="curso-meta"><span>${c.categoria||''}</span><span>${Number(c.horas||0).toFixed(0)}h</span><span>⭐${c.rating||''}</span></div>
-    </div>`).join('') || '<div style="text-align:center;padding:12px;font-size:12px;color:var(--text-muted)">Sin resultados</div>';
-}
-
-async function selectCurso(id) {
-  // Find in current modal results or fetch from DB
-  let found = (cursosCache || []).find(c => String(c.id) === String(id));
-  if (!found) {
-    const { data } = await sb.from('cursos_udemy').select('*').eq('id', String(id)).limit(1);
-    found = data && data[0];
-  }
-  if (!found) return;
-  selectedCurso = found;
-  renderModalCursos();
-  document.getElementById('cursoSelBox').style.display = 'block';
-  document.getElementById('csTitulo').textContent = found.titulo;
-  document.getElementById('csMeta').textContent = (found.instructor||'') + ' · ⏱ ' + Number(found.horas||0).toFixed(1) + ' h · ⭐' + (found.rating||'') + ' · ' + (found.idioma||'') + ' · ' + (found.nivel||'');
-}
-
-function asignarCursoDirecto(id) {
-  // Find in cursosCache (catalog tab results)
-  const found = (cursosCache || []).find(c => String(c.id) === String(id));
-  if (found) selectedCurso = found;
-  openModal();
-}
-
-function editAsig(id) { const a = asignaciones.find(x => x.id === id); if (a) openModal(a); }
-
-async function guardarAsignacion(abrirCorreo = false) {
-  const user_login = document.getElementById('fPersonal').value;
-  const equipo = document.getElementById('fEquipo').value;
-  if (!equipo) { showToast('Selecciona el equipo'); return; }
-  if (!editingId && !user_login) { showToast('Selecciona la persona'); return; }
-  const pers = personal.find(p => p.user === user_login);
-  const btnG = document.getElementById('btnGuardar');
-  const btnGC = document.getElementById('btnGuardarCorreo');
-  if (btnG) { btnG.innerHTML = '<span class="spinner"></span>'; btnG.disabled = true; }
-  if (btnGC) { btnGC.disabled = true; }
-
-  const payload = {
-    user_login: user_login || (editingId ? asignaciones.find(a=>a.id===editingId)?.user_login : ''),
-    nombre: pers ? pers.nombre : (editingId ? asignaciones.find(a=>a.id===editingId)?.nombre : ''),
-    equipo,
-    curso_id: selectedCurso ? selectedCurso.id : (editingId ? asignaciones.find(a=>a.id===editingId)?.curso_id : null),
-    curso_titulo: selectedCurso ? selectedCurso.titulo : (editingId ? asignaciones.find(a=>a.id===editingId)?.curso_titulo : null),
-    horas_curso: selectedCurso ? Number(selectedCurso.horas||0) : (editingId ? asignaciones.find(a=>a.id===editingId)?.horas_curso : null),
-    institucion: document.getElementById('fInstitucion').value,
-    licencia: document.getElementById('fLicencia').value,
-    fecha_inicio: document.getElementById('fInicio').value || null,
-    fecha_fin: document.getElementById('fFin').value || null,
-    prioridad: document.getElementById('fPrioridad').value,
-    modalidad: document.getElementById('fModalidad').value,
-    objetivo: document.getElementById('fObjetivo').value,
-    aprobado_por: document.getElementById('fAprobado').value,
-    estado: document.getElementById('fEstado').value || 'Registrado',
-    avance: parseInt(document.getElementById('fAvance').value) || 0,
-    certificado: document.getElementById('fCertificado').value,
-    costo: parseFloat(document.getElementById('fCosto').value) || null,
-    observaciones: document.getElementById('fObs').value,
-    heredada_de: document.getElementById('fHeredaDe')?.value || null,
-  };
-
-  let error;
-  if (editingId) {
-    ({ error } = await sb.from('asignaciones').update(payload).eq('id', editingId));
-  } else {
-    ({ error } = await sb.from('asignaciones').insert([payload]));
-  }
-
-  if (btnG) { btnG.innerHTML = 'Guardar'; btnG.disabled = false; }
-  if (btnGC) { btnGC.disabled = false; }
-  if (error) { showToast('Error: ' + error.message); return; }
-  const savedId = editingId;
-  const savedUser = payload.user_login;
-  const savedEquipo = payload.equipo;
-  closeModal();
-  showToast(editingId ? 'Asignación actualizada ✓' : 'Asignación guardada ✓');
-  await loadAll();
-  if (abrirCorreo) {
-    // Find the saved record and open email modal with its data
-    const saved = asignaciones.find(a => a.user_login === savedUser && a.equipo === savedEquipo);
-    if (saved) { currentEmailAsigId = saved.id; openEmailFromRow(saved.id); }
-    else { currentEmailAsigId = null; openEmailModal(); }
-  }
-}
-
-// ── TOAST ────────────────────────────────────────────────────────
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
-}
-
-// ── EMAIL MODAL ─────────────────────────────────────────────────
-let selectedEmailCurso = null;
-let currentEmailAsigId = null;
-
-function openEmailModal() {
-  if (!currentEmailAsigId) currentEmailAsigId = null;
-  selectedEmailCurso = null;
-  document.getElementById('eqCursoSelBox').style.display = 'none';
-  document.getElementById('eqSearchCurso').value = '';
-  document.getElementById('eqListCursos').innerHTML = '';
-  document.getElementById('eqEquipo').value = '';
-  document.getElementById('eqPersonal').innerHTML = '<option value="">Selecciona equipo primero</option>';
-  document.getElementById('eqCodigo').value = '';
-  document.getElementById('eqCedula').value = '';
-  document.getElementById('eqAprobado').value = '';
-  document.getElementById('eqJustificacion').value = 'Esta capacitación fortalecerá competencias clave relacionadas con el pensamiento crítico, el análisis de situaciones, la priorización de actividades y la toma de decisiones efectivas, habilidades que contribuirán positivamente a su desempeño profesional y al logro de los objetivos del área.';
-  // Pre-select if sub-tab active
-  if (currentSubTab !== 'Todos') {
-    document.getElementById('eqEquipo').value = currentSubTab;
-    filterEmailPersonal();
-  }
-  updateEmailPreview();
-  document.getElementById('emailModal').style.display = 'flex';
-}
-
-function closeEmailModal() { document.getElementById('emailModal').style.display = 'none'; }
-
-function filterEmailPersonal() {
-  const eq = document.getElementById('eqEquipo').value;
-  const sel = document.getElementById('eqPersonal');
-  sel.innerHTML = '<option value="">Seleccionar persona</option>';
-  if (!eq) return;
-  personal.filter(p => p.equipo === eq).forEach(p => {
-    const o = document.createElement('option');
-    o.value = p.user;
-    o.textContent = p.nombre + ' (' + p.user + ')';
-    sel.appendChild(o);
-  });
-  autoFillPersonalData();
-  updateEmailPreview();
-}
-
-function autoFillPersonalData() {
-  const userLogin = document.getElementById('eqPersonal').value;
-  const pers = personal.find(p => p.user === userLogin);
-  if (!pers) return;
-  // Auto-fill ciudad, código, cédula
-  document.getElementById('eqCiudad').value = pers.ciudad || 'UIO';
-  document.getElementById('eqCodigo').value = pers.codigo || '';
-  document.getElementById('eqCedula').value = pers.cedula || '';
-  // Auto-set TelcoU contact based on ciudad
-  autoSetTelcouContact(pers.ciudad);
-  updateEmailPreview();
-}
-
-function autoSetTelcouContact(ciudad) {
-  const contactEl = document.getElementById('eqTelcouContacto');
-  const mailEl = document.getElementById('eqTelcouMail');
-  if (!contactEl) return;
-  if (ciudad === 'GYE') {
-    contactEl.value = 'Carlos Ruilova';
-    if (mailEl) mailEl.value = 'cruilova@telconet.ec';
-  } else {
-    contactEl.value = 'Melissa Zurita';
-    if (mailEl) mailEl.value = 'mdzurita@telconet.ec';
-  }
-}
-
-async function renderEmailCursos() {
-  const q = (document.getElementById('eqSearchCurso').value || '').trim();
-  const lista = document.getElementById('eqListCursos');
-  if (!q || q.length < 2) { lista.innerHTML = ''; return; }
+  if (!lista) return;
+  if (!q || q.length < 2) { lista.innerHTML = '<div style="text-align:center;padding:10px;font-size:12px;color:var(--text3)">Escribe para buscar en 34,055 cursos</div>'; return; }
   lista.innerHTML = '<div style="text-align:center;padding:8px"><span class="spinner"></span></div>';
-  const { data } = await sb.from('cursos_udemy').select('*').ilike('titulo', '%' + q + '%').order('rating', { ascending: false }).limit(8);
+  const { data } = await sb.from('cursos_udemy').select('*').ilike('titulo','%'+q+'%').order('rating',{ascending:false}).limit(8);
   const results = data || [];
   lista.innerHTML = results.map(c => `
-    <div class="curso-item ${selectedEmailCurso && selectedEmailCurso.id === c.id ? 'selected' : ''}" onclick="selectEmailCurso('${c.id}')">
-      <div class="curso-title" style="font-size:12px">${c.titulo}</div>
-      <div class="curso-meta"><span>ID: ${c.id}</span><span>${c.categoria||''}</span><span>${Number(c.horas||0).toFixed(0)}h</span><span>🌐 ${c.idioma||''}</span></div>
+    <div class="curso-item ${selectedCurso&&String(selectedCurso.id)===String(c.id)?'selected':''}" onclick="selectModalCurso('${c.id}')">
+      <div class="curso-title">${c.titulo}</div>
+      <div class="curso-meta"><span>${c.categoria||''}</span><span>⏱ ${Number(c.horas||0).toFixed(0)}h</span><span>⭐${c.rating||''}</span><span>🌐 ${c.idioma||''}</span></div>
     </div>`).join('') || '<div style="text-align:center;padding:10px;font-size:12px;color:var(--text3)">Sin resultados</div>';
 }
 
-async function selectEmailCurso(id) {
-  const { data } = await sb.from('cursos_udemy').select('*').eq('id', String(id)).limit(1);
-  if (!data || !data[0]) return;
-  selectedEmailCurso = data[0];
-  document.getElementById('eqCursoSelBox').style.display = 'block';
-  document.getElementById('eqCsTitulo').textContent = selectedEmailCurso.titulo;
-  document.getElementById('eqCsMeta').textContent = 'ID: ' + selectedEmailCurso.id + ' · ' + (selectedEmailCurso.horas||0).toFixed(0) + 'h · ' + (selectedEmailCurso.idioma||'') + ' · ⭐' + (selectedEmailCurso.rating||'');
-  renderEmailCursos();
-  updateEmailPreview();
-}
-
-function getEmailPersonaData() {
-  const userLogin = document.getElementById('eqPersonal').value;
-  const pers = personal.find(p => p.user === userLogin);
-  return pers;
-}
-
-function getAprobadoEmail(nombre) {
-  const map = {
-    'Haydi Chiluisa': 'hchiluisa@telconet.ec',
-    'Eduardo Nuñez': 'bnunez@telconet.ec',
-    'Geovanna Naranjo': 'ganaranjo@telconet.ec',
-    'Carmen Alarcón': 'cralarcon@telconet.ec'
-  };
-  return map[nombre] || '';
-}
-
-function buildEmailHTML() {
-  const pers = getEmailPersonaData();
-  const ciudad = document.getElementById('eqCiudad').value || 'UIO';
-  const codigo = document.getElementById('eqCodigo').value || '&nbsp;';
-  const cedula = document.getElementById('eqCedula').value || '&nbsp;';
-  const aprobado = document.getElementById('eqAprobado').value || '';
-  const justif = (document.getElementById('eqJustificacion').value || '').split(String.fromCharCode(10)).join('<br>');
-  const curso = selectedEmailCurso;
-  const nombre = pers ? pers.nombre.toUpperCase() : '&nbsp;';
-  const userLogin = pers ? pers.user : '&nbsp;';
-  const mail = pers ? userLogin + '@telconet.ec' : '&nbsp;';
-  const aprobadoEmail = getAprobadoEmail(aprobado);
-  const contacto = document.getElementById('eqTelcouContacto')?.value || 'Melissa Zurita';
-  const contactoNombre = contacto.split(' ')[0];
-  const saludo = 'Estimad' + (contacto.includes('Carlos') ? 'o ' : 'a ') + contactoNombre;
-
-  const thStyle = 'border:1px solid #ddd;padding:7px 10px;background:#0d1b2e;color:#ffffff;font-size:12px;text-align:left;white-space:nowrap';
-  const tdStyle = 'border:1px solid #ddd;padding:7px 10px;font-size:12px;white-space:nowrap';
-
-  const cursoRows = curso ? `
-    <tr>
-      <td style="${tdStyle}">CCID:4-CID:${curso.id}</td>
-      <td style="${tdStyle}">${curso.id}</td>
-      <td style="${tdStyle}">${curso.titulo}</td>
-      <td style="${tdStyle}">${curso.idioma||'English'}</td>
-    </tr>` : `<tr><td colspan="4" style="${tdStyle}">Sin curso seleccionado</td></tr>`;
-
-  const telcouMail = document.getElementById('eqTelcouMail')?.value || 'mdzurita@telconet.ec';
-
-  return `<div style="font-family:Segoe UI,Arial,sans-serif;font-size:14px;color:#1a1a1a;line-height:1.6">
-<p>${saludo},</p>
-<p>Por medio de la presente, solicito su valioso apoyo con la asignación de una licencia de Udemy para el siguiente personal:</p>
-
-<table style="border-collapse:collapse;margin:12px 0">
-  <thead>
-    <tr>
-      <th style="${thStyle}">CIUDAD</th>
-      <th style="${thStyle}">CÓDIGO</th>
-      <th style="${thStyle}">CÉDULA</th>
-      <th style="${thStyle}">USER</th>
-      <th style="${thStyle}">APELLIDOS Y NOMBRES</th>
-      <th style="${thStyle}">MAIL EMPRESA</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="${tdStyle}">${ciudad}</td>
-      <td style="${tdStyle}">${codigo}</td>
-      <td style="${tdStyle}">${cedula}</td>
-      <td style="${tdStyle}">${userLogin}</td>
-      <td style="${tdStyle}">${nombre}</td>
-      <td style="${tdStyle}">${mail}</td>
-    </tr>
-  </tbody>
-</table>
-
-<p><strong>CURSO SOLICITADO:</strong></p>
-<table style="border-collapse:collapse;margin:12px 0">
-  <thead>
-    <tr>
-      <th style="${thStyle}">content_collection_course_identifier</th>
-      <th style="${thStyle}">UB Course ID</th>
-      <th style="${thStyle}">Course title</th>
-      <th style="${thStyle}">Course Language</th>
-    </tr>
-  </thead>
-  <tbody>${cursoRows}</tbody>
-</table>
-
-<p>${justif}</p>
-<p>Agradezco su gentil ayuda.</p>
-<p>Saludos cordiales,</p>
-<br>
-<strong>${aprobado}</strong><br>
-Coordinador Nacional – Proyectos e Implementación<br>
-TELCONET LATAM<br>
-<a href="mailto:${aprobadoEmail}">${aprobadoEmail}</a><br>
-Quito - Ecuador | <a href="http://www.telconet.net">www.telconet.net</a>
-</div>`;
-}
-
-function buildEmailPlain() {
-  const pers = getEmailPersonaData();
-  const ciudad = document.getElementById('eqCiudad').value || 'UIO';
-  const codigo = document.getElementById('eqCodigo').value || '______';
-  const cedula = document.getElementById('eqCedula').value || '______';
-  const aprobado = document.getElementById('eqAprobado').value || '______';
-  const justif = document.getElementById('eqJustificacion').value;
-  const curso = selectedEmailCurso;
-  const nombre = pers ? pers.nombre.toUpperCase() : '______';
-  const userLogin = pers ? pers.user : '______';
-  const mail = pers ? userLogin + '@telconet.ec' : '______';
-  const cursoInfo = curso ? `CCID:4-CID:${curso.id} | ${curso.id} | ${curso.titulo} | ${curso.idioma||'English'}` : '______';
-  return `Estimada Melissita,
-
-Por medio de la presente, solicito su valioso apoyo con la asignación de una licencia de Udemy para el siguiente personal:
-
-CIUDAD | CÓDIGO | CÉDULA | USER | APELLIDOS Y NOMBRES | MAIL EMPRESA
-${ciudad} | ${codigo} | ${cedula} | ${userLogin} | ${nombre} | ${mail}
-
-CURSO SOLICITADO:
-content_collection_course_identifier | UB Course ID | Course title | Course Language
-${cursoInfo}
-
-${justif}
-
-Agradezco su gentil ayuda.
-
-Saludos cordiales,
-${aprobado}
-Coordinador Nacional – Proyectos e Implementación
-TELCONET LATAM
-Quito - Ecuador | www.telconet.net`;
-}
-
-function updateEmailPreview() {
-  // Show HTML preview in the panel
-  document.getElementById('emailPreview').innerHTML = buildEmailHTML();
-}
-
-async function copyEmailText() {
-  const html = buildEmailHTML();
-  const plain = buildEmailPlain();
-  try {
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        'text/html': new Blob([html], { type: 'text/html' }),
-        'text/plain': new Blob([plain], { type: 'text/plain' })
-      })
-    ]);
-    showToast('Correo copiado con formato ✓ — pega en Outlook');
-  } catch(e) {
-    navigator.clipboard.writeText(plain);
-    showToast('Copiado como texto plano ✓');
+async function selectModalCurso(id) {
+  let found = cursosCache.find(c => String(c.id)===String(id));
+  if (!found) {
+    const { data } = await sb.from('cursos_udemy').select('*').eq('id',String(id)).limit(1);
+    found = data&&data[0];
   }
+  if (!found) return;
+  selectedCurso = found;
+  document.getElementById('cursoSelBox').style.display = 'block';
+  document.getElementById('csTitulo').textContent = found.titulo;
+  document.getElementById('csMeta').textContent = (found.instructor||'') + ' · ⏱ ' + Number(found.horas||0).toFixed(1) + 'h · ⭐' + (found.rating||'') + ' · 🌐 ' + (found.idioma||'');
+  renderModalCursos();
 }
 
-function openInOutlook() {
-  const pers = getEmailPersonaData();
-  const ciudad = document.getElementById('eqCiudad').value || 'UIO';
-  const userLogin = pers ? pers.user : 'colaborador';
-  const subject = 'PEI: ' + ciudad + ' - ASIGNACIÓN LICENCIA UDEMY - ' + userLogin;
-  const to = 'mdzurita@telconet.ec';
-  const cc = 'telcou_uio@telconet.ec;bnunez@telconet.ec;ganaranjo@telconet.ec;cralarcon@telconet.ec';
-
-  // Try opening Outlook desktop via mailto (works with Outlook as default mail client)
-  // Build a minimal body since mailto doesn't support HTML
-  const plain = buildEmailPlain();
-
-  // Create a temporary form to POST to outlook protocol
-  const mailtoLink = `mailto:${to}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(plain)}`;
-  
-  // Copy HTML to clipboard so user can paste in Outlook body
-  copyEmailText();
-  
-  // Open outlook new message window
-  window.location.href = mailtoLink;
-  
-  showToast('Outlook abierto · Pega (Ctrl+V) el cuerpo con formato de tabla');
-}
-
-// ── WORKFLOW HELPERS ─────────────────────────────────────────────
-function setFiltroEstado(val) {
-  document.getElementById('filtroEstado').value = val;
-  // highlight active wf step
-  document.querySelectorAll('.wf-step').forEach(s => s.classList.remove('active-wf'));
-  if (val) {
-    document.querySelectorAll('.wf-step').forEach(s => {
-      if (s.textContent.includes(val.substring(0,6))) s.classList.add('active-wf');
-    });
-  }
-  renderAsignaciones();
-}
-
+// ═══════════════════════════════════════════════════════════════
+//  EMAIL MODAL
+// ═══════════════════════════════════════════════════════════════
 function openEmailFromRow(id) {
   const a = asignaciones.find(x => x.id === id);
   if (!a) return;
   currentEmailAsigId = id;
-  // pre-fill email modal with this assignment data
-  openEmailModal();
-  setTimeout(() => {
-    if (a.equipo) {
-      document.getElementById('eqEquipo').value = a.equipo;
-      filterEmailPersonal();
-      setTimeout(() => {
-        document.getElementById('eqPersonal').value = a.user_login || '';
-        autoFillPersonalData();
-      }, 50);
-    }
-    // If course is known, try to show it
-    if (a.curso_titulo) {
-      document.getElementById('eqCursoSelBox').style.display = 'block';
-      document.getElementById('eqCsTitulo').textContent = a.curso_titulo;
-      document.getElementById('eqCsMeta').textContent = a.curso_id ? 'ID: ' + a.curso_id : '';
-      selectedEmailCurso = { id: a.curso_id, titulo: a.curso_titulo, idioma: '', horas: a.horas_curso || 0, rating: '' };
-      updateEmailPreview();
-    }
-  }, 100);
+  const pers = personal.find(p => p.user === a.user_login) || {};
+  const ciudad = pers.ciudad || 'UIO';
+  const telcouContacto = ciudad === 'GYE' ? 'Carlos Ruilova' : 'Melissa Zurita';
+  const telcouMail = ciudad === 'GYE' ? 'cruilova@telconet.ec' : 'mdzurita@telconet.ec';
+
+  document.getElementById('emailModalBody').innerHTML = `
+    <div class="form-row">
+      <div class="form-field">
+        <label>Ciudad</label>
+        <select id="eqCiudad" onchange="updateTelcouContact(this.value);updateEmailPreview()">
+          <option ${ciudad==='UIO'?'selected':''}>UIO</option>
+          <option ${ciudad==='GYE'?'selected':''}>GYE</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Código colaborador</label>
+        <input type="text" id="eqCodigo" value="${pers.codigo||''}" oninput="updateEmailPreview()">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Contacto Telco U</label>
+        <select id="eqTelcouContacto" onchange="updateTelcouMail(this.value);updateEmailPreview()">
+          <option value="Melissa Zurita" ${telcouContacto==='Melissa Zurita'?'selected':''}>Melissa Zurita (UIO)</option>
+          <option value="Carlos Ruilova" ${telcouContacto==='Carlos Ruilova'?'selected':''}>Carlos Ruilova (GYE)</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Mail destino</label>
+        <input type="text" id="eqTelcouMail" value="${telcouMail}" readonly style="background:var(--gray-bg);color:var(--text3);font-size:12px">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Cédula</label>
+        <input type="text" id="eqCedula" value="${pers.cedula||''}" oninput="updateEmailPreview()">
+      </div>
+      <div class="form-field">
+        <label>Aprobado por</label>
+        <select id="eqAprobado" onchange="updateEmailPreview()">
+          <option value="">Seleccionar...</option>
+          <option>Carmen Alarcón</option><option>Geovanna Naranjo</option>
+          <option>Haydi Chiluisa</option><option>Eduardo Nuñez</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field full">
+        <label>Justificación</label>
+        <textarea id="eqJustificacion" rows="2">Esta capacitación fortalecerá competencias clave relacionadas con el pensamiento crítico, el análisis de situaciones, la priorización de actividades y la toma de decisiones efectivas, habilidades que contribuirán positivamente a su desempeño profesional y al logro de los objetivos del área.</textarea>
+      </div>
+    </div>
+    <div class="section-label">Vista previa</div>
+    <div class="email-preview-box" id="emailPreview"></div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeEmailModal()">Cancelar</button>
+      <button class="btn navy" onclick="guardarSolicitudEnviada()">Guardar</button>
+      <button class="btn primary" onclick="guardarYEnviarCorreo()">✉️ Guardar y Correo</button>
+    </div>`;
+
+  updateEmailPreview(a, pers);
+  document.getElementById('emailModal').style.display = 'flex';
 }
 
-function checkAlerts() {
-  const today = new Date();
-  const equipos = currentSubTab === 'Todos'
-    ? ['Todos', 'Planificación', 'Implementación', 'O&M']
-    : [currentSubTab];
-
-  const banner = document.getElementById('alertBanner');
-  const allMsgs = [];
-
-  const equiposList = currentSubTab === 'Todos'
-    ? ['Planificación', 'Implementación', 'O&M']
-    : [currentSubTab];
-
-  equiposList.forEach(eq => {
-    const data = asignaciones.filter(a => a.equipo === eq);
-    const label = currentSubTab === 'Todos' ? `Eq. ${eq}` : eq;
-
-    const vencidos = data.filter(a => {
-      if (!a.fecha_fin || a.estado === 'Culminado' || a.estado === 'Vencido') return false;
-      return new Date(a.fecha_fin) < today && a.estado === 'En curso';
-    });
-    const proximos = data.filter(a => {
-      if (!a.fecha_fin || a.estado === 'Culminado' || a.estado === 'Vencido') return false;
-      const diff = (new Date(a.fecha_fin) - today) / (1000*60*60*24);
-      return diff >= 0 && diff <= 5 && a.estado === 'En curso';
-    });
-    const certPend = data.filter(a => a.estado === 'Certificado pendiente');
-
-    const msgs = [];
-    if (vencidos.length) msgs.push(`${vencidos.length} curso(s) vencido(s)`);
-    if (proximos.length) msgs.push(`${proximos.length} curso(s) vencen en 5 días`);
-    if (certPend.length) msgs.push(`${certPend.length} certificado(s) pendiente(s)`);
-
-    if (msgs.length) {
-      allMsgs.push(`<strong>Alertas - ${label}:</strong> ` + msgs.join(' · '));
-    }
-  });
-
-  // Also count workflow steps for current view
-  updateWorkflowCounts();
-
-  if (allMsgs.length) {
-    banner.style.display = 'flex';
-    document.getElementById('alertBannerMsg').innerHTML = allMsgs.join('<br>');
-  } else {
-    banner.style.display = 'none';
-  }
+function updateTelcouContact(ciudad) {
+  const contactEl = document.getElementById('eqTelcouContacto');
+  const mailEl = document.getElementById('eqTelcouMail');
+  if (ciudad === 'GYE') { if(contactEl) contactEl.value='Carlos Ruilova'; if(mailEl) mailEl.value='cruilova@telconet.ec'; }
+  else { if(contactEl) contactEl.value='Melissa Zurita'; if(mailEl) mailEl.value='mdzurita@telconet.ec'; }
 }
 
-function updateWorkflowCounts() {
-  const data = currentSubTab === 'Todos'
-    ? asignaciones
-    : asignaciones.filter(a => a.equipo === currentSubTab);
-
-  const counts = {
-    '': data.filter(a => a.estado === 'Registrado').length,
-    'Solicitud enviada': data.filter(a => a.estado === 'Solicitud enviada').length,
-    'Licencia confirmada': data.filter(a => a.estado === 'Licencia confirmada').length,
-    'En curso': data.filter(a => a.estado === 'En curso').length,
-    'Certificado pendiente': data.filter(a => a.estado === 'Certificado pendiente').length,
-    'Culminado': data.filter(a => a.estado === 'Culminado').length,
-  };
-
-  const steps = ['','Solicitud enviada','Licencia confirmada','En curso','Certificado pendiente','Culminado'];
-  steps.forEach((estado, i) => {
-    const el = document.getElementById('wf'+i);
-    if (!el) return;
-    const n = counts[estado] || 0;
-    const labels = ['Registrado','Solicitud enviada','Lic. confirmada','En curso','Cert. pendiente','Culminado'];
-    const icons = ['📋','📤','✔','▶','📄','✅'];
-    el.innerHTML = `${icons[i]} <span>${labels[i]}</span>${n > 0 ? '<span style="background:var(--orange);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">'+n+'</span>' : ''}`;
-  });
+function updateTelcouMail(contacto) {
+  const mailEl = document.getElementById('eqTelcouMail');
+  if (mailEl) mailEl.value = contacto.includes('Carlos') ? 'cruilova@telconet.ec' : 'mdzurita@telconet.ec';
 }
 
-// ── EMAIL SAVE HELPERS ──────────────────────────────────────────
+function updateEmailPreview(asig, pers) {
+  if (!asig) asig = asignaciones.find(x => x.id === currentEmailAsigId);
+  if (!pers) pers = personal.find(p => p.user === asig?.user_login) || {};
+  const ciudad = document.getElementById('eqCiudad')?.value || pers.ciudad || 'UIO';
+  const codigo = document.getElementById('eqCodigo')?.value || pers.codigo || '—';
+  const cedula = document.getElementById('eqCedula')?.value || pers.cedula || '—';
+  const aprobado = document.getElementById('eqAprobado')?.value || '—';
+  const telcouMail = document.getElementById('eqTelcouMail')?.value || 'mdzurita@telconet.ec';
+  const contacto = document.getElementById('eqTelcouContacto')?.value || 'Melissa Zurita';
+  const nombre = (pers.nombre||'').toUpperCase();
+  const userLogin = pers.user || '—';
+  const mail = pers.mail || userLogin+'@telconet.ec';
+  const curso = asig;
+  const thS = 'border:1px solid #ddd;padding:6px 10px;background:#0d1b2e;color:#fff;font-size:12px;text-align:left;white-space:nowrap';
+  const tdS = 'border:1px solid #ddd;padding:6px 10px;font-size:12px;white-space:nowrap';
+  const html = `<p><strong>Para:</strong> ${telcouMail}; telcou_uio@telconet.ec<br>
+<strong>CC:</strong> bnunez@telconet.ec; ganaranjo@telconet.ec; cralarcon@telconet.ec<br>
+<strong>Asunto:</strong> PEI: ${ciudad} - ASIGNACIÓN LICENCIA UDEMY - ${userLogin}</p><br>
+<p>Estimad${contacto.includes('Carlos')?'o':'a'} ${contacto.split(' ')[0]},</p>
+<p>Por medio de la presente, solicito su valioso apoyo con la asignación de una licencia de Udemy para el siguiente personal:</p>
+<table style="border-collapse:collapse;margin:10px 0"><thead><tr>
+  <th style="${thS}">CIUDAD</th><th style="${thS}">CÓDIGO</th><th style="${thS}">CÉDULA</th>
+  <th style="${thS}">USER</th><th style="${thS}">APELLIDOS Y NOMBRES</th><th style="${thS}">MAIL</th>
+</tr></thead><tbody><tr>
+  <td style="${tdS}">${ciudad}</td><td style="${tdS}">${codigo}</td><td style="${tdS}">${cedula}</td>
+  <td style="${tdS}">${userLogin}</td><td style="${tdS}">${nombre}</td><td style="${tdS}">${mail}</td>
+</tr></tbody></table>
+<p><strong>CURSO SOLICITADO:</strong></p>
+<table style="border-collapse:collapse;margin:10px 0"><thead><tr>
+  <th style="${thS}">content_collection_course_identifier</th><th style="${thS}">UB Course ID</th>
+  <th style="${thS}">Course title</th><th style="${thS}">Course Language</th>
+</tr></thead><tbody><tr>
+  <td style="${tdS}">${curso?.curso_id?'CCID:4-CID:'+curso.curso_id:'—'}</td>
+  <td style="${tdS}">${curso?.curso_id||'—'}</td>
+  <td style="${tdS}">${curso?.curso_titulo||'—'}</td>
+  <td style="${tdS}">—</td>
+</tr></tbody></table>
+<p id="eqJustPreview">${(document.getElementById('eqJustificacion')?.value||'').split(String.fromCharCode(10)).join('<br>')}</p>
+<p>Agradezco su gentil ayuda.</p><p>Saludos cordiales,</p><br>
+<strong>${aprobado}</strong><br>Coordinador Nacional – Proyectos e Implementación<br>TELCONET LATAM<br>Quito - Ecuador`;
+  const preview = document.getElementById('emailPreview');
+  if (preview) preview.innerHTML = html;
+}
+
 async function guardarSolicitudEnviada() {
-  // Update the linked assignment estado to "Solicitud enviada"
   if (currentEmailAsigId) {
-    const { error } = await sb.from('asignaciones')
-      .update({ estado: 'Solicitud enviada' })
-      .eq('id', currentEmailAsigId);
-    if (!error) {
-      showToast('Estado actualizado a Solicitud enviada ✓');
-      await loadAll();
-    } else {
-      showToast('Error al guardar: ' + error.message);
-    }
-  } else {
-    showToast('Correo listo — actualiza el estado manualmente');
+    await sb.from('asignaciones').update({ estado: 'Autorizado' }).eq('id', currentEmailAsigId);
+    showToast('Estado actualizado ✓');
+    await loadAll();
+    renderSolicitudes();
   }
   closeEmailModal();
 }
 
 async function guardarYEnviarCorreo() {
-  // Save estado first, then open Outlook
   if (currentEmailAsigId) {
-    await sb.from('asignaciones')
-      .update({ estado: 'Solicitud enviada' })
-      .eq('id', currentEmailAsigId);
+    await sb.from('asignaciones').update({ estado: 'Autorizado' }).eq('id', currentEmailAsigId);
     await loadAll();
   }
-  openInOutlook();
-  showToast('Estado: Solicitud enviada · Outlook abierto — pega con Ctrl+V');
+  const a = asignaciones.find(x => x.id === currentEmailAsigId);
+  const pers = personal.find(p => p.user === a?.user_login) || {};
+  const ciudad = document.getElementById('eqCiudad')?.value || pers.ciudad || 'UIO';
+  const userLogin = pers.user || 'colaborador';
+  const subject = 'PEI: '+ciudad+' - ASIGNACIÓN LICENCIA UDEMY - '+userLogin;
+  const to = document.getElementById('eqTelcouMail')?.value || 'mdzurita@telconet.ec';
+  const cc = 'telcou_uio@telconet.ec;bnunez@telconet.ec;ganaranjo@telconet.ec;cralarcon@telconet.ec';
+  const preview = document.getElementById('emailPreview');
+  if (preview) {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([preview.innerHTML],{type:'text/html'}),'text/plain':new Blob([preview.innerText],{type:'text/plain'})})]);
+    } catch(e) { navigator.clipboard.writeText(preview.innerText); }
+  }
+  window.location.href = `mailto:${to}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}`;
+  showToast('Outlook abierto · Pega con Ctrl+V el cuerpo');
   closeEmailModal();
 }
 
-// ── INIT ─────────────────────────────────────────────────────────
-(async function init() {
-  const url = localStorage.getItem(STORAGE_KEY_URL);
-  const key = localStorage.getItem(STORAGE_KEY_KEY);
-  if (url && key) {
-    try {
-      sb = window.supabase.createClient(url, key);
-      await showApp();
-    } catch(e) {
-      localStorage.removeItem(STORAGE_KEY_URL);
-      localStorage.removeItem(STORAGE_KEY_KEY);
-      document.getElementById('loadingOverlay').style.display = 'none';
-      document.getElementById('setupScreen').style.display = 'flex';
-    }
-  } else {
-    document.getElementById('loadingOverlay').style.display = 'none';
-    document.getElementById('setupScreen').style.display = 'flex';
+function closeEmailModal() { document.getElementById('emailModal').style.display = 'none'; currentEmailAsigId = null; }
+
+// ═══════════════════════════════════════════════════════════════
+//  ALERTS & WORKFLOW COUNTS
+// ═══════════════════════════════════════════════════════════════
+function checkAlerts() {
+  const today = new Date();
+  const equiposList = currentSubTab === 'Todos' ? ['Planificación','Implementación','O&M'] : [currentSubTab];
+  const banner = document.getElementById('alertBanner');
+  const allMsgs = [];
+  equiposList.forEach(eq => {
+    const data = asignaciones.filter(a => a.equipo === eq);
+    const label = currentSubTab === 'Todos' ? 'Eq. '+eq : eq;
+    const vencidos = data.filter(a => !a.fecha_fin||a.estado==='Culminado'?false:new Date(a.fecha_fin)<today&&a.estado==='En curso').length;
+    const proximos = data.filter(a => {
+      if (!a.fecha_fin||a.estado==='Culminado') return false;
+      const diff = (new Date(a.fecha_fin)-today)/(1000*60*60*24);
+      return diff>=0&&diff<=5&&a.estado==='En curso';
+    }).length;
+    const certPend = data.filter(a => a.estado==='Culminado'&&!a.certificado_enviado).length;
+    const msgs = [];
+    if (vencidos) msgs.push(vencidos+' vencido(s)');
+    if (proximos) msgs.push(proximos+' vence(n) en 5 días');
+    if (certPend) msgs.push(certPend+' certificado(s) pendiente(s)');
+    if (msgs.length) allMsgs.push(`<strong>Alertas - ${label}:</strong> `+msgs.join(' · '));
+  });
+  if (banner) {
+    if (allMsgs.length) { banner.style.display='flex'; document.getElementById('alertBannerMsg').innerHTML=allMsgs.join('<br>'); }
+    else banner.style.display='none';
   }
+  updateWorkflowCounts();
+}
+
+function updateWorkflowCounts() {
+  const data = currentSubTab==='Todos' ? asignaciones : asignaciones.filter(a=>a.equipo===currentSubTab);
+  const states = ['Pendiente','Autorizado','En curso','Culminado'];
+  const icons = ['🕐','✔','▶','✅'];
+  states.forEach((st,i) => {
+    const el = document.getElementById('wf'+i);
+    if (!el) return;
+    const n = data.filter(a=>a.estado===st).length;
+    el.innerHTML = `${icons[i]} <span>${st}</span>${n>0?'<span style="background:var(--orange);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px">'+n+'</span>':''}`;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════════
+function closeModal() { document.getElementById('modal').style.display='none'; editingId=null; selectedCurso=null; }
+
+function estadoBadge(e) {
+  const map = {
+    'Pendiente':   '<span class="badge badge-pendiente">🕐 Pendiente</span>',
+    'Autorizado':  '<span class="badge badge-autorizado">✔ Autorizado</span>',
+    'En curso':    '<span class="badge badge-encurso">▶ En curso</span>',
+    'Culminado':   '<span class="badge badge-culminado">✅ Culminado</span>',
+    'Rechazado':   '<span class="badge badge-alta">✕ Rechazado</span>',
+  };
+  return map[e] || `<span class="badge">${e||'—'}</span>`;
+}
+
+function estadoColor(e) {
+  return {Pendiente:'var(--amber)',Autorizado:'var(--blue)',Culminado:'var(--green)',Rechazado:'var(--red)'}[e]||'var(--blue)';
+}
+
+function equipoBadgeStr(e) {
+  if (e==='Planificación') return '<span class="badge badge-plan">Planificación</span>';
+  if (e==='Implementación') return '<span class="badge badge-impl">Implementación</span>';
+  if (e==='O&M') return '<span class="badge badge-om">O&amp;M</span>';
+  return `<span class="badge">${e||'—'}</span>`;
+}
+
+function prioridadBadge(p) {
+  return p==='Alta'?'<span class="badge badge-alta">Alta</span>':p==='Baja'?'<span class="badge" style="background:var(--green-lt);color:var(--green)">Baja</span>':'<span class="badge badge-media">Media</span>';
+}
+
+function show(id) { document.getElementById(id).style.display='flex'; }
+function hide(id) { document.getElementById(id).style.display='none'; }
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+(async function init() {
+  const ok = await initSupabase();
+  if (!ok) {
+    hide('loadingOverlay');
+    document.getElementById('setupScreen').style.display = 'flex';
+    return;
+  }
+  startAuth();
 })();
 </script>
 </body>
