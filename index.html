@@ -1090,12 +1090,12 @@ function renderSolicitarCurso() {
     <div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;padding:20px;margin-bottom:16px">
       <div class="section-label">Filtros de búsqueda</div>
       <div class="toolbar" style="margin-bottom:12px">
-        <input type="text" id="userFiltroCurso" placeholder="Buscar curso, instructor..." oninput="debounceCursos()" style="max-width:300px;flex:2">
-        <select id="userFiltroCat" onchange="renderCatalogo()" style="max-width:200px">
+        <input type="text" id="userFiltroCurso" placeholder="Buscar curso, instructor..." style="max-width:300px;flex:2">
+        <select id="userFiltroCat" style="max-width:200px">
           <option value="">Todas las categorías</option>
           ${CATEGORIAS_UDEMY.map(c=>`<option>${c}</option>`).join('')}
         </select>
-        <select id="userFiltroIdioma" onchange="renderCatalogo()">
+        <select id="userFiltroIdioma">
           <option value="">Todos los idiomas</option>
           <option>English</option><option>Spanish</option><option>Portuguese</option>
           <option>French</option><option>German</option><option>Italian</option>
@@ -1131,6 +1131,15 @@ function renderSolicitarCurso() {
       </div>
     </div>`;
   document.getElementById('listaCursosUser').innerHTML = '<div class="empty">Escribe para buscar entre 34,055 cursos</div>';
+  // Attach events after DOM is ready
+  setTimeout(() => {
+    const inp = document.getElementById('userFiltroCurso');
+    const cat = document.getElementById('userFiltroCat');
+    const idi = document.getElementById('userFiltroIdioma');
+    if (inp) inp.addEventListener('input', debounceCursos);
+    if (cat) cat.addEventListener('change', renderCatalogo);
+    if (idi) idi.addEventListener('change', renderCatalogo);
+  }, 50);
 }
 
 function cancelarSolicitud() {
