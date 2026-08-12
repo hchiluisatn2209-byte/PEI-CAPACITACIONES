@@ -1090,18 +1090,19 @@ function renderSolicitarCurso() {
     <div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;padding:20px;margin-bottom:16px">
       <div class="section-label">Filtros de búsqueda</div>
       <div class="toolbar" style="margin-bottom:12px">
-        <input type="text" id="userFiltroCurso" placeholder="Buscar curso, instructor..." style="max-width:300px;flex:2">
-        <select id="userFiltroCat" style="max-width:200px">
+        <input type="text" id="userFiltroCurso" placeholder="Buscar curso, instructor...">
+        <select id="userFiltroCat">
           <option value="">Todas las categorías</option>
-          ${CATEGORIAS_UDEMY.map(c=>`<option>${c}</option>`).join('')}
+          ${CATEGORIAS_UDEMY.map(c=>'<option>'+c+'</option>').join('')}
         </select>
         <select id="userFiltroIdioma">
           <option value="">Todos los idiomas</option>
           <option>English</option><option>Spanish</option><option>Portuguese</option>
           <option>French</option><option>German</option><option>Italian</option>
         </select>
+        <button class="btn primary" onclick="buscarCursosUser()">🔍 Buscar</button>
       </div>
-      <div id="listaCursosUser"></div>
+      <div id="listaCursosUser"><div class="empty">Escribe y presiona Buscar</div></div>
     </div>
     <div id="solicitudFormArea" style="display:none;background:var(--surface-2);border:1px solid var(--orange);border-radius:12px;padding:20px">
       <div class="section-label">Completa tu solicitud</div>
@@ -1130,16 +1131,47 @@ function renderSolicitarCurso() {
         <button class="btn primary" onclick="enviarSolicitud()">📤 Enviar solicitud</button>
       </div>
     </div>`;
-  document.getElementById('listaCursosUser').innerHTML = '<div class="empty">Escribe para buscar entre 34,055 cursos</div>';
-  // Attach events after DOM is ready
+
+  // Also allow Enter key to trigger search
   setTimeout(() => {
     const inp = document.getElementById('userFiltroCurso');
-    const cat = document.getElementById('userFiltroCat');
-    const idi = document.getElementById('userFiltroIdioma');
-    if (inp) inp.addEventListener('input', debounceCursos);
-    if (cat) cat.addEventListener('change', renderCatalogo);
-    if (idi) idi.addEventListener('change', renderCatalogo);
-  }, 50);
+    if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') buscarCursosUser(); });
+  }, 100);
+}
+
+async function buscarCursosUser() {
+  const q = (document.getElementById('userFiltroCurso')?.value || '').trim();
+  const cat = document.getElementById('userFiltroCat')?.value || '';
+  const idioma = document.getElementById('userFiltroIdioma')?.value || '';
+  const listEl = document.getElementById('listaCursosUser');
+  if (!listEl) return;
+  if (!q && !cat && !idioma) {
+    listEl.innerHTML = '<div class="empty">Escribe al menos 2 caracteres para buscar</div>';
+    return;
+  }
+  listEl.innerHTML = '<div class="empty"><span class="spinner"></span> Buscando...</div>';
+  let query = sb.from('cursos_udemy').select('*');
+  if (q && q.length >= 2) query = query.ilike('titulo', '%'+q+'%');
+  if (cat) query = query.eq('categoria', cat);
+  if (idioma) query = query.eq('idioma', idioma);
+  query = query.order('rating', { ascending: false }).limit(50);
+  const { data, error } = await query;
+  if (error) { listEl.innerHTML = '<div class="empty">Error: ' + error.message + '</div>'; return; }
+  cursosCache = data || [];
+  if (!cursosCache.length) { listEl.innerHTML = '<div class="empty">No se encontraron cursos</div>'; return; }
+  listEl.innerHTML = cursosCache.map(c => `<div class="curso-item ${selectedCurso&&String(selectedCurso.id)===String(c.id)?'selected':''}" onclick="selectUserCurso('${c.id}')">
+    <div style="display:flex;align-items:baseline;gap:8px">
+      <span style="font-size:10px;color:var(--text3);font-family:monospace">ID:${c.id}</span>
+      <div class="curso-title">${c.titulo}</div>
+    </div>
+    <div class="curso-meta">
+      <span>👤 ${c.instructor||''}</span><span>🏷 ${c.categoria||''}</span>
+      <span>⏱ <strong>${Number(c.horas||0).toFixed(0)}h</strong></span>
+      <span>⭐${c.rating||''}</span><span>${c.nivel||''}</span>
+      <span>🌐 ${c.idioma||''}</span>
+      ${c.practica?'<span style="color:var(--green)">✓ práctica</span>':''}
+    </div>
+  </div>`).join('') + (cursosCache.length===50?'<div style="text-align:center;padding:8px;font-size:11px;color:var(--text3)">Mostrando 50 resultados — refina la búsqueda</div>':'');
 }
 
 function cancelarSolicitud() {
