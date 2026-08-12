@@ -982,34 +982,91 @@ async function loadUserData() {
 }
 
 function renderMisSolicitudes() {
-  let html = `<div class="section-title">Mis solicitudes de capacitación</div>`;
-  if (!asignaciones.length) {
-    html += `<div class="info-box">ℹ️ Aún no tienes cursos solicitados. Ve a <strong>Solicitar curso</strong> para buscar en el catálogo Udemy y enviar tu solicitud al administrador.</div>`;
+  const total = asignaciones.length;
+  const culminados = asignaciones.filter(a=>a.estado==='Culminado').length;
+  const encurso = asignaciones.filter(a=>a.estado==='En curso').length;
+  const pendientes = asignaciones.filter(a=>a.estado==='Pendiente').length;
+  const horas = asignaciones.reduce((s,a)=>s+(a.estado==='Culminado'?Number(a.horas_curso||0):0),0);
+
+  let html = `
+    <!-- Stats personales -->
+    <div class="stats-grid" style="margin-bottom:20px">
+      <div class="stat-card" style="border-top-color:var(--blue)">
+        <div class="stat-label">Mis cursos</div>
+        <div class="stat-value" style="color:var(--navy)">${total}</div>
+      </div>
+      <div class="stat-card" style="border-top-color:var(--amber)">
+        <div class="stat-label">Pendientes</div>
+        <div class="stat-value" style="color:var(--amber)">${pendientes}</div>
+      </div>
+      <div class="stat-card" style="border-top-color:var(--blue)">
+        <div class="stat-label">En curso</div>
+        <div class="stat-value" style="color:var(--blue)">${encurso}</div>
+      </div>
+      <div class="stat-card" style="border-top-color:var(--green)">
+        <div class="stat-label">Culminados · ${horas.toFixed(0)}h</div>
+        <div class="stat-value" style="color:var(--green)">${culminados}</div>
+      </div>
+    </div>`;
+
+  if (!total) {
+    html += `<div style="text-align:center;padding:48px 24px;background:var(--surface-2);border-radius:16px;border:2px dashed var(--gray-bd)">
+      <div style="font-size:48px;margin-bottom:16px">🎓</div>
+      <div style="font-size:16px;font-weight:600;margin-bottom:8px">Aún no tienes cursos</div>
+      <div style="font-size:13px;color:var(--text3);margin-bottom:20px">Ve a <strong>Solicitar curso</strong> y elige una capacitación del catálogo de Udemy</div>
+      <button class="btn primary" onclick="document.querySelectorAll('.nav-tab')[1].click()">🔍 Buscar cursos</button>
+    </div>`;
   } else {
-    html += asignaciones.map(a => {
-      const locked = ['Pendiente','Rechazado'].includes(a.estado);
-      const canProgress = ['Autorizado','En curso'].includes(a.estado);
-      const isCulminado = a.estado === 'Culminado';
-      return `<div class="sol-card" style="border-left:4px solid ${estadoColor(a.estado)}">
-        <div class="sol-card-header">
-          <div style="flex:1">
-            <div class="sol-curso">${a.curso_titulo||'Sin curso asignado'}</div>
-            <div class="sol-meta">⏱ ${a.horas_curso?Number(a.horas_curso).toFixed(0)+'h':'—'} · 📅 ${a.fecha_inicio||'—'} → ${a.fecha_fin||'—'}</div>
-            <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              ${estadoBadge(a.estado)}
-              ${a.avance ? `<span style="font-size:12px">${a.avance}% <div class="pct-bar" style="display:inline-block"><div class="pct-fill" style="width:${a.avance}%"></div></div></span>` : ''}
-            </div>
-            ${a.estado === 'Rechazado' && a.observaciones_admin ? `<div class="locked-notice">❌ Motivo rechazo: ${a.observaciones_admin}</div>` : ''}
-            ${locked ? `<div class="locked-notice">🔒 ${a.estado === 'Pendiente' ? 'En espera de aprobación del administrador' : 'Solicitud rechazada — puedes hacer una nueva solicitud'}</div>` : ''}
-          </div>
-          <div class="sol-actions">
-            ${canProgress ? `<button class="btn primary" onclick="openUserProgress(${a.id})">📝 Actualizar avance</button>` : ''}
-            ${isCulminado ? `<button class="btn" onclick="openUserProgress(${a.id})" style="background:var(--green-lt);color:var(--green);border-color:var(--green-lt)">✅ Ver detalle</button>` : ''}
-          </div>
+    // Group by estado
+    const grupos = [
+      { label: '🕐 Pendientes de aprobación', estado: 'Pendiente', color: 'var(--amber)', bg: 'var(--amber-lt)' },
+      { label: '✔ Autorizados — listos para iniciar', estado: 'Autorizado', color: 'var(--blue)', bg: 'var(--blue-lt)' },
+      { label: '▶ En curso', estado: 'En curso', color: 'var(--blue)', bg: 'var(--blue-lt)' },
+      { label: '✅ Culminados', estado: 'Culminado', color: 'var(--green)', bg: 'var(--green-lt)' },
+      { label: '✕ Rechazados', estado: 'Rechazado', color: 'var(--red)', bg: 'var(--red-lt)' },
+    ];
+
+    grupos.forEach(g => {
+      const items = asignaciones.filter(a=>a.estado===g.estado);
+      if (!items.length) return;
+      html += `<div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:700;color:${g.color};text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding:6px 12px;background:${g.bg};border-radius:6px;display:inline-block">${g.label} (${items.length})</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px">
+          ${items.map(a => {
+            const canProgress = ['Autorizado','En curso'].includes(a.estado);
+            const isCulminado = a.estado === 'Culminado';
+            const avance = a.avance || 0;
+            return `<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-top:3px solid ${g.color};border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+              <div style="font-size:13px;font-weight:600;margin-bottom:6px;line-height:1.4">${a.curso_titulo||'Sin curso'}</div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:10px;display:flex;gap:10px;flex-wrap:wrap">
+                ${a.horas_curso?`<span>⏱ ${Number(a.horas_curso).toFixed(0)}h</span>`:''}
+                ${a.fecha_inicio?`<span>📅 ${a.fecha_inicio}</span>`:''}
+                ${a.fecha_fin?`<span>→ ${a.fecha_fin}</span>`:''}
+              </div>
+              ${avance > 0 || a.estado === 'En curso' ? `
+              <div style="margin-bottom:10px">
+                <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;margin-bottom:4px">
+                  <span>Avance</span><span style="color:${g.color}">${avance}%</span>
+                </div>
+                <div style="height:6px;background:var(--gray-bg);border-radius:3px;overflow:hidden">
+                  <div style="height:100%;width:${avance}%;background:${g.color};border-radius:3px;transition:width .5s"></div>
+                </div>
+              </div>` : ''}
+              ${isCulminado && a.certificado_enviado ? '<div style="font-size:11px;color:var(--green);margin-bottom:8px">✅ Certificado enviado a Telco U</div>' : ''}
+              ${isCulminado && !a.certificado_enviado ? '<div style="font-size:11px;color:var(--red);margin-bottom:8px">⚠️ Certificado pendiente de envío</div>' : ''}
+              ${a.estado==='Rechazado'&&a.observaciones_admin?`<div style="font-size:11px;color:var(--red);background:var(--red-lt);padding:5px 8px;border-radius:5px;margin-bottom:8px">❌ ${a.observaciones_admin}</div>`:''}
+              ${a.estado==='Pendiente'?'<div style="font-size:11px;color:var(--text3);background:var(--gray-bg);padding:5px 8px;border-radius:5px;margin-bottom:8px">🔒 Esperando aprobación del administrador</div>':''}
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+                ${canProgress?`<button class="btn primary" style="font-size:12px;padding:6px 12px" onclick="openUserProgress(${a.id})">📝 Actualizar avance</button>`:''}
+                ${isCulminado?`<button class="btn" style="font-size:12px;padding:6px 12px;background:var(--green-lt);color:var(--green);border-color:var(--green-lt)" onclick="openUserProgress(${a.id})">✅ Ver detalle</button>`:''}
+              </div>
+            </div>`;
+          }).join('')}
         </div>
       </div>`;
-    }).join('');
+    });
   }
+
   document.getElementById('mainContent').innerHTML = html;
 }
 
