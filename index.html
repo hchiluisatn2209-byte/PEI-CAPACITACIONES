@@ -1055,7 +1055,7 @@ function renderMisSolicitudes() {
               ${isCulminado && a.certificado_enviado ? '<div style="font-size:11px;color:var(--green);margin-bottom:8px">✅ Certificado enviado a Telco U</div>' : ''}
               ${isCulminado && !a.certificado_enviado ? '<div style="font-size:11px;color:var(--red);margin-bottom:8px">⚠️ Certificado pendiente de envío</div>' : ''}
               ${a.estado==='Rechazado'&&a.observaciones_admin?`<div style="font-size:11px;color:var(--red);background:var(--red-lt);padding:5px 8px;border-radius:5px;margin-bottom:8px">❌ ${a.observaciones_admin}</div>`:''}
-              ${a.estado==='Pendiente'?'<div style="font-size:11px;color:var(--text3);background:var(--gray-bg);padding:5px 8px;border-radius:5px;margin-bottom:8px">🔒 Esperando aprobación del administrador</div>':''}
+              ${a.estado==='Pendiente'?'<div style="font-size:11px;color:var(--text3);background:var(--gray-bg);padding:5px 8px;border-radius:5px;margin-bottom:8px">🔒 Esperando aprobación de la Coordinación / Jefatura</div>':''}
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
                 ${canProgress?`<button class="btn primary" style="font-size:12px;padding:6px 12px" onclick="openUserProgress(${a.id})">📝 Actualizar avance</button>`:''}
                 ${isCulminado?`<button class="btn" style="font-size:12px;padding:6px 12px;background:var(--green-lt);color:var(--green);border-color:var(--green-lt)" onclick="openUserProgress(${a.id})">✅ Ver detalle</button>`:''}
