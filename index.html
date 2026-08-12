@@ -1150,12 +1150,21 @@ function selectUserCurso(id) {
 }
 
 async function renderCatalogo() {
-  const q = (document.getElementById('userFiltroCurso')?.value || document.getElementById('filtroCurso')?.value || '').trim();
-  const cat = document.getElementById('userFiltroCat')?.value || document.getElementById('filtroCat')?.value || '';
-  const idioma = document.getElementById('userFiltroIdioma')?.value || document.getElementById('filtroIdioma')?.value || '';
+  // Get search values from whichever inputs exist (user or admin context)
+  const qEl = document.getElementById('userFiltroCurso') || document.getElementById('filtroCurso');
+  const catEl = document.getElementById('userFiltroCat') || document.getElementById('filtroCat');
+  const idiomaEl = document.getElementById('userFiltroIdioma') || document.getElementById('filtroIdioma');
   const listEl = document.getElementById('listaCursosUser') || document.getElementById('listaCursos');
   if (!listEl) return;
-  if (!q && !cat && !idioma) { listEl.innerHTML = '<div class="empty">Escribe al menos 2 caracteres para buscar</div>'; return; }
+
+  const q = (qEl?.value || '').trim();
+  const cat = catEl?.value || '';
+  const idioma = idiomaEl?.value || '';
+
+  if (!q && !cat && !idioma) {
+    listEl.innerHTML = '<div class="empty">Escribe al menos 2 caracteres para buscar</div>';
+    return;
+  }
   listEl.innerHTML = '<div class="empty"><span class="spinner"></span> Buscando...</div>';
   let query = sb.from('cursos_udemy').select('*');
   if (q && q.length >= 2) query = query.ilike('titulo', '%'+q+'%');
@@ -1190,7 +1199,10 @@ function renderCatalogoList() {
 
 function debounceCursos() {
   clearTimeout(cursosSearchTimer);
-  cursosSearchTimer = setTimeout(renderCatalogo, 400);
+  cursosSearchTimer = setTimeout(() => {
+    // Call renderCatalogo which handles both admin and user contexts
+    renderCatalogo();
+  }, 400);
 }
 
 async function enviarSolicitud() {
