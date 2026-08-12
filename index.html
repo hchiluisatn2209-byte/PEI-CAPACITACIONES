@@ -1132,11 +1132,25 @@ function renderSolicitarCurso() {
       </div>
     </div>`;
 
-  // Also allow Enter key to trigger search
-  setTimeout(() => {
+  // Attach input event with polling to ensure element exists
+  let _pollAttempts = 0;
+  const _poll = setInterval(() => {
     const inp = document.getElementById('userFiltroCurso');
-    if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') buscarCursosUser(); });
-  }, 100);
+    const cat = document.getElementById('userFiltroCat');
+    const idi = document.getElementById('userFiltroIdioma');
+    if (inp) {
+      clearInterval(_poll);
+      inp.addEventListener('input', () => {
+        clearTimeout(cursosSearchTimer);
+        cursosSearchTimer = setTimeout(buscarCursosUser, 350);
+      });
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') buscarCursosUser(); });
+      if (cat) cat.addEventListener('change', buscarCursosUser);
+      if (idi) idi.addEventListener('change', buscarCursosUser);
+      inp.focus();
+    }
+    if (++_pollAttempts > 20) clearInterval(_poll);
+  }, 50);
 }
 
 async function buscarCursosUser() {
@@ -1146,7 +1160,11 @@ async function buscarCursosUser() {
   const listEl = document.getElementById('listaCursosUser');
   if (!listEl) return;
   if (!q && !cat && !idioma) {
-    listEl.innerHTML = '<div class="empty">Escribe al menos 2 caracteres para buscar</div>';
+    listEl.innerHTML = '<div class="empty">Escribe para buscar entre 34,055 cursos</div>';
+    return;
+  }
+  if (q && q.length < 2) {
+    listEl.innerHTML = '<div class="empty">Escribe al menos 2 caracteres...</div>';
     return;
   }
   listEl.innerHTML = '<div class="empty"><span class="spinner"></span> Buscando...</div>';
@@ -1203,7 +1221,11 @@ async function renderCatalogo() {
   const idioma = idiomaEl?.value || '';
 
   if (!q && !cat && !idioma) {
-    listEl.innerHTML = '<div class="empty">Escribe al menos 2 caracteres para buscar</div>';
+    listEl.innerHTML = '<div class="empty">Escribe para buscar entre 34,055 cursos</div>';
+    return;
+  }
+  if (q && q.length < 2) {
+    listEl.innerHTML = '<div class="empty">Escribe al menos 2 caracteres...</div>';
     return;
   }
   listEl.innerHTML = '<div class="empty"><span class="spinner"></span> Buscando...</div>';
