@@ -612,55 +612,136 @@ function teamCard(icon, name, email, bg, color, d, barColor) {
 
 // ── SOLICITUDES (Admin review) ────────────────────────────────
 function renderSolicitudes() {
-  const pendientes = asignaciones.filter(a => a.estado === 'Pendiente');
-  let html = `<div class="section-title">Solicitudes pendientes de aprobación (${pendientes.length})</div>`;
-  if (!pendientes.length) {
-    html += '<div class="empty">✅ No hay solicitudes pendientes</div>';
-  } else {
-    html += pendientes.map(a => `
-      <div class="sol-card" style="border-left:4px solid var(--amber)">
-        <div class="sol-card-header">
-          <div>
-            <div class="sol-curso">${a.curso_titulo||'Sin curso'}</div>
-            <div class="sol-meta">👤 <strong>${a.nombre}</strong> · ${equipoBadgeStr(a.equipo)} · ⏱ ${a.horas_curso ? Number(a.horas_curso).toFixed(0)+'h' : '—'} · ${a.fecha_inicio||'—'} → ${a.fecha_fin||'—'}</div>
-            ${a.observaciones ? `<div class="sol-meta" style="margin-top:4px;color:var(--text2)">💬 ${a.observaciones}</div>` : ''}
-          </div>
-          <div class="sol-actions">
-            <button class="btn success" onclick="aprobarSolicitud(${a.id})">✔ Autorizar</button>
-            <button class="btn" onclick="rechazarSolicitud(${a.id})" style="color:var(--red);border-color:var(--border-danger)">✕ Rechazar</button>
-            <button class="btn navy" onclick="openEmailFromRow(${a.id})" title="Generar correo Telco U">✉️</button>
-          </div>
-        </div>
-      </div>`).join('');
-  }
+  const grupos = [
+    { key: 'Pendiente',    label: '🕐 Nuevas solicitudes',         color: 'var(--amber)', bg: 'var(--amber-lt)',  estados: ['Pendiente'] },
+    { key: 'En revisión',  label: '🔎 En revisión con Telco U',    color: 'var(--blue)',  bg: 'var(--blue-lt)',   estados: ['En revisión'] },
+    { key: 'Autorizado',   label: '✔ Autorizados — Licencia lista', color: 'var(--green)', bg: 'var(--green-lt)', estados: ['Autorizado'] },
+    { key: 'Rechazado',    label: '✕ Rechazados',                  color: 'var(--red)',   bg: 'var(--red-lt)',    estados: ['Rechazado'] },
+  ];
 
-  // Also show recently authorized
-  const autorizados = asignaciones.filter(a => a.estado === 'Autorizado').slice(0,5);
-  if (autorizados.length) {
-    html += `<div class="section-title" style="margin-top:20px">Autorizados recientemente</div>`;
-    html += autorizados.map(a => `
-      <div class="sol-card" style="border-left:4px solid var(--green)">
-        <div class="sol-card-header">
-          <div>
-            <div class="sol-curso">${a.curso_titulo||'Sin curso'}</div>
-            <div class="sol-meta">👤 <strong>${a.nombre}</strong> · ${equipoBadgeStr(a.equipo)}</div>
-          </div>
-          <div class="sol-actions">
-            <span class="badge badge-autorizado">✔ Autorizado</span>
-            <button class="btn navy" onclick="openEmailFromRow(${a.id})">✉️</button>
-          </div>
-        </div>
-      </div>`).join('');
-  }
+  // Summary stats
+  const totalPend = asignaciones.filter(a=>a.estado==='Pendiente').length;
+  const totalRev  = asignaciones.filter(a=>a.estado==='En revisión').length;
+  const totalAut  = asignaciones.filter(a=>a.estado==='Autorizado').length;
+
+  let html = `<div class="stats-grid" style="margin-bottom:20px">
+    <div class="stat-card" style="border-top-color:var(--amber)"><div class="stat-label">Nuevas solicitudes</div><div class="stat-value" style="color:var(--amber)">${totalPend}</div></div>
+    <div class="stat-card" style="border-top-color:var(--blue)"><div class="stat-label">En revisión</div><div class="stat-value" style="color:var(--blue)">${totalRev}</div></div>
+    <div class="stat-card" style="border-top-color:var(--green)"><div class="stat-label">Autorizados</div><div class="stat-value" style="color:var(--green)">${totalAut}</div></div>
+    <div class="stat-card" style="border-top-color:var(--navy)"><div class="stat-label">Total gestionadas</div><div class="stat-value">${asignaciones.filter(a=>['Pendiente','En revisión','Autorizado','En curso','Culminado'].includes(a.estado)).length}</div></div>
+  </div>`;
+
+  grupos.forEach(g => {
+    const items = asignaciones.filter(a => g.estados.includes(a.estado));
+    if (!items.length) return;
+    html += `<div style="margin-bottom:24px">
+      <div style="font-size:12px;font-weight:700;color:${g.color};text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;padding:7px 14px;background:${g.bg};border-radius:6px;display:inline-block">${g.label} (${items.length})</div>
+      ${items.map(a => solicitudCard(a, g.color)).join('')}
+    </div>`;
+  });
 
   document.getElementById('mainContent').innerHTML = html;
 }
 
-async function aprobarSolicitud(id) {
-  const { error } = await sb.from('asignaciones').update({ estado: 'Autorizado' }).eq('id', id);
-  if (!error) { showToast('Solicitud autorizada ✓'); await loadAll(); renderSolicitudes(); }
+function solicitudCard(a, borderColor) {
+  const isPend = a.estado === 'Pendiente';
+  const isRev  = a.estado === 'En revisión';
+  const isAut  = a.estado === 'Autorizado';
+  const isRech = a.estado === 'Rechazado';
+
+  return `<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-left:4px solid ${borderColor};border-radius:12px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:5px">${a.curso_titulo||'Sin curso'}</div>
+        <div style="font-size:12px;color:var(--text3);display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+          <span>👤 <strong style="color:var(--text2)">${a.nombre}</strong></span>
+          ${equipoBadgeStr(a.equipo)}
+          ${a.horas_curso?`<span>⏱ ${Number(a.horas_curso).toFixed(0)}h</span>`:''}
+          ${a.fecha_inicio?`<span>📅 ${a.fecha_inicio} → ${a.fecha_fin||'?'}</span>`:''}
+        </div>
+        ${a.observaciones?`<div style="font-size:12px;color:var(--text2);background:var(--gray-bg);padding:6px 10px;border-radius:6px;margin-bottom:8px">💬 <em>${a.observaciones}</em></div>`:''}
+        ${isRev?`<div style="font-size:12px;color:var(--blue);background:var(--blue-lt);padding:6px 10px;border-radius:6px">🔎 En validación con Telco U — verificando disponibilidad de licencia</div>`:''}
+        ${isAut?`<div style="font-size:12px;color:var(--green);background:var(--green-lt);padding:6px 10px;border-radius:6px">✅ Licencia asignada — el colaborador recibirá correo de Telco U con acceso. Debe registrar sus fechas reales de inicio y fin.</div>`:''}
+        ${isRech&&a.observaciones_admin?`<div style="font-size:12px;color:var(--red);background:var(--red-lt);padding:6px 10px;border-radius:6px">❌ ${a.observaciones_admin}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        ${isPend?`
+          <button class="btn" style="font-size:12px;background:var(--blue-lt);color:var(--blue);border-color:var(--blue-lt);width:100%" onclick="marcarEnRevision(${a.id})">🔎 Marcar en revisión</button>
+          <button class="btn success" style="font-size:12px;width:100%" onclick="confirmarAutorizar(${a.id})">✔ Autorizar licencia</button>
+          <button class="btn" style="font-size:12px;color:var(--red);border-color:var(--border-danger);width:100%" onclick="rechazarSolicitud(${a.id})">✕ Rechazar</button>
+        `:''}
+        ${isRev?`
+          <button class="btn success" style="font-size:12px;width:100%" onclick="confirmarAutorizar(${a.id})">✔ Autorizar licencia</button>
+          <button class="btn navy" style="font-size:12px;width:100%" onclick="openEmailFromRow(${a.id})">✉️ Correo Telco U</button>
+          <button class="btn" style="font-size:12px;color:var(--red);border-color:var(--border-danger);width:100%" onclick="rechazarSolicitud(${a.id})">✕ Rechazar</button>
+        `:''}
+        ${isAut?`
+          <button class="btn navy" style="font-size:12px" onclick="openEmailFromRow(${a.id})">✉️ Correo Telco U</button>
+        `:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+async function marcarEnRevision(id) {
+  const { error } = await sb.from('asignaciones').update({ estado: 'En revisión' }).eq('id', id);
+  if (!error) { showToast('Marcado en revisión con Telco U ✓'); await loadAll(); renderSolicitudes(); }
   else showToast('Error: ' + error.message);
 }
+
+async function confirmarAutorizar(id) {
+  const a = asignaciones.find(x => x.id === id);
+  if (!a) return;
+  // Show confirmation modal
+  editingId = id;
+  document.getElementById('modalTitle').textContent = '✔ Confirmar autorización de licencia';
+  document.getElementById('modalSubtitle').textContent = a.curso_titulo || '';
+  document.getElementById('modalBody').innerHTML = `
+    <div style="background:var(--green-lt);border:1px solid var(--green);border-radius:var(--radius);padding:14px;margin-bottom:16px;font-size:13px;color:var(--green)">
+      ✅ Al autorizar, el colaborador <strong>${a.nombre}</strong> recibirá el estado <strong>Autorizado</strong> y verá el mensaje de que debe esperar el correo de Telco U con el acceso a la licencia.
+    </div>
+    <div class="form-row">
+      <div class="form-field full">
+        <label>Nota para el colaborador (opcional)</label>
+        <textarea id="notaAutorizacion" rows="2" placeholder="Ej: La licencia estará activa a partir del lunes. Revisa tu correo de Telco U."></textarea>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field full">
+        <label>¿Generar correo a Telco U ahora?</label>
+        <select id="genCorreo">
+          <option value="si">Sí — abrir correo a Telco U después de autorizar</option>
+          <option value="no">No — solo cambiar el estado</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn success" onclick="ejecutarAutorizacion()">✔ Confirmar autorización</button>
+    </div>`;
+  document.getElementById('modal').style.display = 'flex';
+}
+
+async function ejecutarAutorizacion() {
+  const nota = document.getElementById('notaAutorizacion')?.value || '';
+  const genCorreo = document.getElementById('genCorreo')?.value;
+  const obs = nota ? nota : 'Licencia autorizada. Recibirás un correo de Telco U con el acceso. Cuando lo recibas, registra tus fechas reales de inicio y fin en el sistema.';
+  const { error } = await sb.from('asignaciones')
+    .update({ estado: 'Autorizado', observaciones_admin: obs })
+    .eq('id', editingId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  const id = editingId;
+  closeModal();
+  showToast('Licencia autorizada ✓');
+  await loadAll();
+  renderSolicitudes();
+  if (genCorreo === 'si') {
+    currentEmailAsigId = id;
+    openEmailFromRow(id);
+  }
+}
+
+// aprobarSolicitud replaced by confirmarAutorizar flow
 
 async function rechazarSolicitud(id) {
   const motivo = prompt('Motivo del rechazo (opcional):') ?? '';
@@ -1020,6 +1101,7 @@ function renderMisSolicitudes() {
     // Group by estado
     const grupos = [
       { label: '🕐 Pendientes de aprobación', estado: 'Pendiente', color: 'var(--amber)', bg: 'var(--amber-lt)' },
+      { label: '🔎 En revisión con Telco U', estado: 'En revisión', color: 'var(--blue)', bg: 'var(--blue-lt)' },
       { label: '✔ Autorizados — listos para iniciar', estado: 'Autorizado', color: 'var(--blue)', bg: 'var(--blue-lt)' },
       { label: '▶ En curso', estado: 'En curso', color: 'var(--blue)', bg: 'var(--blue-lt)' },
       { label: '✅ Culminados', estado: 'Culminado', color: 'var(--green)', bg: 'var(--green-lt)' },
@@ -1055,7 +1137,10 @@ function renderMisSolicitudes() {
               ${isCulminado && a.certificado_enviado ? '<div style="font-size:11px;color:var(--green);margin-bottom:8px">✅ Certificado enviado a Telco U</div>' : ''}
               ${isCulminado && !a.certificado_enviado ? '<div style="font-size:11px;color:var(--red);margin-bottom:8px">⚠️ Certificado pendiente de envío</div>' : ''}
               ${a.estado==='Rechazado'&&a.observaciones_admin?`<div style="font-size:11px;color:var(--red);background:var(--red-lt);padding:5px 8px;border-radius:5px;margin-bottom:8px">❌ ${a.observaciones_admin}</div>`:''}
-              ${a.estado==='Pendiente'?'<div style="font-size:11px;color:var(--text3);background:var(--gray-bg);padding:5px 8px;border-radius:5px;margin-bottom:8px">🔒 Esperando aprobación de la Coordinación / Jefatura</div>':''}
+              ${a.estado==='Pendiente'?'<div style="font-size:11px;color:var(--amber);background:var(--amber-lt);padding:5px 8px;border-radius:5px;margin-bottom:8px">🕐 Esperando aprobación de la Coordinación / Jefatura</div>':''}
+              ${a.estado==='En revisión'?'<div style="font-size:11px;color:var(--blue);background:var(--blue-lt);padding:5px 8px;border-radius:5px;margin-bottom:8px">🔎 En revisión — se está verificando disponibilidad de licencia con Telco U</div>':''}
+              ${a.estado==='Autorizado'&&a.observaciones_admin?`<div style="font-size:11px;color:var(--green);background:var(--green-lt);padding:6px 10px;border-radius:5px;margin-bottom:8px">✅ ${a.observaciones_admin}</div>`:''}
+              ${a.estado==='Autorizado'&&!a.observaciones_admin?'<div style="font-size:11px;color:var(--green);background:var(--green-lt);padding:6px 10px;border-radius:5px;margin-bottom:8px">✅ Licencia autorizada — espera el correo de Telco U con tu acceso. Cuando lo recibas, registra tus fechas reales.</div>':''}
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
                 ${canProgress?`<button class="btn primary" style="font-size:12px;padding:6px 12px" onclick="openUserProgress(${a.id})">📝 Actualizar avance</button>`:''}
                 ${isCulminado?`<button class="btn" style="font-size:12px;padding:6px 12px;background:var(--green-lt);color:var(--green);border-color:var(--green-lt)" onclick="openUserProgress(${a.id})">✅ Ver detalle</button>`:''}
@@ -1690,17 +1775,18 @@ function closeModal() { document.getElementById('modal').style.display='none'; e
 
 function estadoBadge(e) {
   const map = {
-    'Pendiente':   '<span class="badge badge-pendiente">🕐 Pendiente</span>',
-    'Autorizado':  '<span class="badge badge-autorizado">✔ Autorizado</span>',
-    'En curso':    '<span class="badge badge-encurso">▶ En curso</span>',
-    'Culminado':   '<span class="badge badge-culminado">✅ Culminado</span>',
-    'Rechazado':   '<span class="badge badge-alta">✕ Rechazado</span>',
+    'Pendiente':    '<span class="badge badge-pendiente">🕐 Pendiente</span>',
+    'En revisión':  '<span class="badge" style="background:var(--blue-lt);color:var(--blue)">🔎 En revisión</span>',
+    'Autorizado':   '<span class="badge badge-autorizado">✔ Autorizado</span>',
+    'En curso':     '<span class="badge badge-encurso">▶ En curso</span>',
+    'Culminado':    '<span class="badge badge-culminado">✅ Culminado</span>',
+    'Rechazado':    '<span class="badge badge-alta">✕ Rechazado</span>',
   };
   return map[e] || `<span class="badge">${e||'—'}</span>`;
 }
 
 function estadoColor(e) {
-  return {Pendiente:'var(--amber)',Autorizado:'var(--blue)',Culminado:'var(--green)',Rechazado:'var(--red)'}[e]||'var(--blue)';
+  return {'Pendiente':'var(--amber)','En revisión':'var(--blue)','Autorizado':'var(--green)','En curso':'var(--blue)','Culminado':'var(--green)','Rechazado':'var(--red)'}[e]||'var(--blue)';
 }
 
 function equipoBadgeStr(e) {
