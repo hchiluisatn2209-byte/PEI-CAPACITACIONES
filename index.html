@@ -694,6 +694,22 @@ function renderSolicitudes() {
   document.getElementById('mainContent').innerHTML = html;
 }
 
+function solicitudButtons(a) {
+  const id = a.id;
+  if (a.estado === 'Pendiente') {
+    return `<button class="btn" style="font-size:12px;background:var(--blue-lt);color:var(--blue);border-color:var(--blue-lt);width:100%" onclick="marcarEnRevision(${id})">🔎 Marcar en revisión</button>
+            <button class="btn success" style="font-size:12px;width:100%" onclick="confirmarAutorizar(${id})">✔ Autorizar licencia</button>
+            <button class="btn" style="font-size:12px;color:var(--red);border-color:var(--border-danger);width:100%" onclick="rechazarSolicitud(${id})">✕ Rechazar</button>`;
+  } else if (a.estado === 'En revisión') {
+    return `<button class="btn success" style="font-size:12px;width:100%" onclick="confirmarAutorizar(${id})">✔ Autorizar licencia</button>
+            <button class="btn navy" style="font-size:12px;width:100%" onclick="openEmailFromRowNoState(${id})">✉️ Correo Telco U</button>
+            <button class="btn" style="font-size:12px;color:var(--red);border-color:var(--border-danger);width:100%" onclick="rechazarSolicitud(${id})">✕ Rechazar</button>`;
+  } else if (a.estado === 'Autorizado') {
+    return `<button class="btn navy" style="font-size:12px;width:100%" onclick="openEmailFromRowNoState(${id})">✉️ Correo Telco U</button>`;
+  }
+  return '';
+}
+
 function solicitudCard(a, borderColor) {
   const isPend = a.estado === 'Pendiente';
   const isRev  = a.estado === 'En revisión';
@@ -715,25 +731,9 @@ function solicitudCard(a, borderColor) {
         ${isAut?`<div style="font-size:12px;color:var(--green);background:var(--green-lt);padding:6px 10px;border-radius:6px">✅ Licencia asignada — el colaborador recibirá correo de Telco U con acceso. Debe registrar sus fechas reales de inicio y fin.</div>`:''}
         ${isRech&&a.observaciones_admin?`<div style="font-size:12px;color:var(--red);background:var(--red-lt);padding:6px 10px;border-radius:6px">❌ ${a.observaciones_admin}</div>`:''}
       </div>
-      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-        ${isPend?`
-          <button class="btn" style="font-size:12px;background:var(--blue-lt);color:var(--blue);border-color:var(--blue-lt);width:100%" onclick="marcarEnRevision(${a.id})">🔎 Marcar en revisión</button>
-          <button class="btn success" style="font-size:12px;width:100%" onclick="confirmarAutorizar(${a.id})">✔ Autorizar licencia</button>
-          <button class="btn" style="font-size:12px;color:var(--red);border-color:var(--border-danger);width:100%" onclick="rechazarSolicitud(${a.id})">✕ Rechazar</button>
-        `:''}
-        ${isRev?`
-          <button class="btn success" style="font-size:12px;width:100%" onclick="confirmarAutorizar(${a.id})">✔ Autorizar licencia</button>
-          <button class="btn navy" style="font-size:12px;width:100%" onclick="openEmailFromRowNoState(${a.id})">✉️ Correo Telco U</button>
-          <button class="btn" style="font-size:12px;color:var(--red);border-color:var(--border-danger);width:100%" onclick="rechazarSolicitud(${a.id})">✕ Rechazar</button>
-        `:''}
-        ${isAut?`
-          <button class="btn navy" style="font-size:12px;width:100%" onclick="openEmailFromRowNoState(${a.id})">✉️ Correo Telco U</button>
-        `:''}
-        ${isAut?`
-          <button class="btn navy" style="font-size:12px" onclick="openEmailFromRow(${a.id})">✉️ Correo Telco U</button>
-        `:''}
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;min-width:160px">
+        ${solicitudButtons(a)}
       </div>
-    </div>
   </div>`;
 }
 
@@ -1279,16 +1279,38 @@ function openUserProgress(id) {
           </select>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-field full">
-          <label>¿Enviaste el certificado a Telco U?</label>
-          <select id="uCertificado" ${isCulminado&&a.certificado_enviado!==null?'disabled':''}>
-            <option value="">—</option>
-            <option value="true" ${a.certificado_enviado===true?'selected':''}>Sí, lo envié</option>
-            <option value="false" ${a.certificado_enviado===false?'selected':''}>No aún</option>
+    <!-- Sección Certificado -->
+    <div id="certSection" style="border:1px solid ${a.certificado_enviado===true?'var(--green)':isCulminado&&!a.certificado_enviado?'var(--red)':'var(--gray-bd)'};border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;background:${a.certificado_enviado===true?'var(--green-lt)':isCulminado&&!a.certificado_enviado?'var(--red-lt)':'transparent'}">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;color:${a.certificado_enviado===true?'var(--green)':isCulminado&&!a.certificado_enviado?'var(--red)':'var(--text2)'}">
+        📄 Certificado a Telco U · Capacitaciones
+        ${isCulminado&&!a.certificado_enviado?'<span style="color:var(--red)"> — PENDIENTE ⚠️</span>':''}
+        ${a.certificado_enviado===true?'<span style="color:var(--green)"> — ENVIADO ✅</span>':''}
+      </div>
+      ${!isCulminado?'<div style="font-size:11px;color:var(--text3);margin-bottom:8px">Para marcar como <strong>Culminado</strong> debes confirmar el envío del certificado a Telco U.</div>':''}
+      ${isCulminado&&!a.certificado_enviado?'<div style="font-size:11px;color:var(--red);margin-bottom:8px">El curso está culminado pero aún no confirmaste el envío del certificado.</div>':''}
+      <div class="form-row" style="margin-bottom:6px">
+        <div class="form-field">
+          <label>¿Enviaste el certificado?</label>
+          <select id="uCertificado" onchange="onCertChange(this.value)" ${a.certificado_enviado===true?'disabled':''}>
+            <option value="">— Seleccionar —</option>
+            <option value="true" ${a.certificado_enviado===true?'selected':''}>✅ Sí, lo envié a Telco U</option>
+            <option value="false" ${a.certificado_enviado===false?'selected':''}>❌ No aún</option>
           </select>
         </div>
+        <div class="form-field">
+          <label>Fecha de envío</label>
+          <input type="date" id="uFechaCertificado" value="${a.fecha_certificado||''}" ${a.certificado_enviado===true?'disabled':''} style="display:${a.certificado_enviado===true?'block':'none'}">
+        </div>
       </div>
+      <div class="form-row" id="certRefRow" style="display:${a.certificado_enviado===true?'grid':'none'}">
+        <div class="form-field full">
+          <label>Referencia del correo enviado</label>
+          <input type="text" id="uRefCertificado" value="${a.ref_certificado||''}" placeholder="Ej: Enviado a mdzurita@telconet.ec el 12/08/2026" ${a.certificado_enviado===true?'disabled':''}>
+        </div>
+      </div>
+      ${a.certificado_enviado===true?'<div style="font-size:11px;color:var(--green);background:rgba(27,122,62,.08);padding:6px 10px;border-radius:5px">✅ Certificado confirmado'+( a.fecha_certificado?' el '+a.fecha_certificado:'')+( a.ref_certificado?' · '+a.ref_certificado:'')+' </div>':''}
+      ${isCulminado&&!a.certificado_enviado?'<button class="btn primary" style="margin-top:8px;font-size:12px;width:100%" onclick="enableCertUpdate()">📄 Registrar envío del certificado</button>':''}
+    </div>
       <div class="form-row">
         <div class="form-field full">
           <label>Observaciones / notas</label>
