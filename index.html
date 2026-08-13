@@ -1301,23 +1301,42 @@ function openUserProgress(id) {
     <div class="form-actions">
       <button class="btn" onclick="closeModal()">Cancelar</button>
       ${!isCulminado ? `<button class="btn primary" onclick="guardarProgreso()">💾 Guardar</button>` : ''}
+      ${isCulminado && !a.certificado_enviado ? `<button class="btn primary" style="display:none" onclick="guardarProgreso()">💾 Guardar certificado</button>` : ''}
+      ${isCulminado && a.certificado_enviado ? `<div style="font-size:12px;color:var(--text3);align-self:center">Registro completado ✅</div>` : ''}
     </div>`;
   document.getElementById('modal').style.display = 'flex';
 }
 
 function onCertChange(val) {
   const section = document.getElementById('certSection');
+  const dateField = document.getElementById('uFechaCertificado');
+  const refRow = document.getElementById('certRefRow');
   if (!section) return;
   if (val === 'true') {
     section.style.border = '2px solid var(--green)';
     section.style.background = 'var(--green-lt)';
-  } else if (val === 'false') {
+    if (dateField) { dateField.style.display = 'block'; dateField.style.opacity = '1'; dateField.focus(); }
+    if (refRow) refRow.style.display = 'grid';
+  } else {
     section.style.border = '1px solid var(--gray-bd)';
     section.style.background = 'transparent';
+    if (dateField) { dateField.style.display = 'none'; }
+    if (refRow) refRow.style.display = 'none';
   }
-  // Show/hide reference field hint
-  const ref = document.getElementById('uRefCertificado');
-  if (ref && val === 'true') ref.focus();
+}
+
+function enableCertUpdate() {
+  // Enable editing certificate fields for already-Culminado courses
+  const certSel = document.getElementById('uCertificado');
+  const dateField = document.getElementById('uFechaCertificado');
+  const section = document.getElementById('certSection');
+  const btn = section?.querySelector('button');
+  if (certSel) { certSel.disabled = false; certSel.focus(); }
+  if (dateField) { dateField.style.display = 'block'; }
+  if (btn) btn.style.display = 'none';
+  // Also enable save button
+  const saveBtn = document.querySelector('.form-actions .btn.primary');
+  if (saveBtn) saveBtn.style.display = 'flex';
 }
 
 async function guardarProgreso() {
@@ -1330,6 +1349,7 @@ async function guardarProgreso() {
   const fechaInicioReal = document.getElementById('uFechaInicioReal')?.value || null;
   const fechaFinReal = document.getElementById('uFechaFinReal')?.value || null;
   const refCert = document.getElementById('uRefCertificado')?.value || null;
+  const fechaCert = document.getElementById('uFechaCertificado')?.value || null;
   const finalEstado = avance === 100 && estado !== 'Culminado' ? 'Culminado' : estado;
 
   // ── Validación: no puede culminar sin confirmar el certificado ──
@@ -1350,6 +1370,7 @@ async function guardarProgreso() {
     estado: finalEstado,
     certificado_enviado: certVal === 'true' ? true : certVal === 'false' ? false : null,
     ref_certificado: refCert,
+    fecha_certificado: document.getElementById('uFechaCertificado')?.value || null,
     observaciones: obs,
     fecha_telcou_inicio: fechaTelcouInicio,
     fecha_telcou_fin: fechaTelcouFin,
