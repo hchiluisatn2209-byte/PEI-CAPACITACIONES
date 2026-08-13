@@ -1305,6 +1305,21 @@ function openUserProgress(id) {
   document.getElementById('modal').style.display = 'flex';
 }
 
+function onCertChange(val) {
+  const section = document.getElementById('certSection');
+  if (!section) return;
+  if (val === 'true') {
+    section.style.border = '2px solid var(--green)';
+    section.style.background = 'var(--green-lt)';
+  } else if (val === 'false') {
+    section.style.border = '1px solid var(--gray-bd)';
+    section.style.background = 'transparent';
+  }
+  // Show/hide reference field hint
+  const ref = document.getElementById('uRefCertificado');
+  if (ref && val === 'true') ref.focus();
+}
+
 async function guardarProgreso() {
   const avance = parseInt(document.getElementById('uAvance')?.value)||0;
   const estado = document.getElementById('uEstado')?.value;
@@ -1314,11 +1329,27 @@ async function guardarProgreso() {
   const fechaTelcouFin = document.getElementById('uFechaTelcouFin')?.value || null;
   const fechaInicioReal = document.getElementById('uFechaInicioReal')?.value || null;
   const fechaFinReal = document.getElementById('uFechaFinReal')?.value || null;
+  const refCert = document.getElementById('uRefCertificado')?.value || null;
   const finalEstado = avance === 100 && estado !== 'Culminado' ? 'Culminado' : estado;
+
+  // ── Validación: no puede culminar sin confirmar el certificado ──
+  if (finalEstado === 'Culminado' && certVal !== 'true') {
+    // Highlight the certificate section
+    const certSection = document.getElementById('certSection');
+    if (certSection) {
+      certSection.style.border = '2px solid var(--red)';
+      certSection.style.background = 'var(--red-lt)';
+      certSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    showToast('⚠️ Debes confirmar el envío del certificado antes de marcar como Culminado');
+    return;
+  }
+
   const payload = {
     avance,
     estado: finalEstado,
     certificado_enviado: certVal === 'true' ? true : certVal === 'false' ? false : null,
+    ref_certificado: refCert,
     observaciones: obs,
     fecha_telcou_inicio: fechaTelcouInicio,
     fecha_telcou_fin: fechaTelcouFin,
@@ -1864,8 +1895,9 @@ function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
       <button class="btn primary" onclick="guardarYEnviarCorreo()">✉️ Guardar y Correo</button>
     </div>`;
 
-  updateEmailPreview(a, pers);
   document.getElementById('emailModal').style.display = 'flex';
+  // Let DOM render before updating preview
+  setTimeout(() => updateEmailPreview(a, pers), 30);
 }
 
 function updateTelcouContact(ciudad) {
@@ -1882,6 +1914,7 @@ function updateTelcouMail(contacto) {
 
 function updateEmailPreview(asig, pers) {
   if (!asig) asig = asignaciones.find(x => x.id === currentEmailAsigId);
+  if (!asig && !pers) return;
   if (!pers) pers = personal.find(p => p.user === asig?.user_login) || {};
   const ciudad = document.getElementById('eqCiudad')?.value || pers.ciudad || 'UIO';
   const codigo = document.getElementById('eqCodigo')?.value || pers.codigo || '—';
