@@ -1114,26 +1114,13 @@ function renderMisSolicitudes() {
   const pendientes = asignaciones.filter(a=>a.estado==='Pendiente').length;
   const horas = asignaciones.reduce((s,a)=>s+(a.estado==='Culminado'?Number(a.horas_curso||0):0),0);
 
-  let html = `
-    <!-- Stats personales -->
-    <div class="stats-grid" style="margin-bottom:20px">
-      <div class="stat-card" style="border-top-color:var(--blue)">
-        <div class="stat-label">Mis cursos</div>
-        <div class="stat-value" style="color:var(--navy)">${total}</div>
-      </div>
-      <div class="stat-card" style="border-top-color:var(--amber)">
-        <div class="stat-label">Pendientes</div>
-        <div class="stat-value" style="color:var(--amber)">${pendientes}</div>
-      </div>
-      <div class="stat-card" style="border-top-color:var(--blue)">
-        <div class="stat-label">En curso</div>
-        <div class="stat-value" style="color:var(--blue)">${encurso}</div>
-      </div>
-      <div class="stat-card" style="border-top-color:var(--green)">
-        <div class="stat-label">Culminados · ${horas.toFixed(0)}h</div>
-        <div class="stat-value" style="color:var(--green)">${culminados}</div>
-      </div>
-    </div>`;
+  // Stats row
+  let html = `<div class="stats-grid" style="margin-bottom:20px">
+    <div class="stat-card" style="border-top-color:var(--navy)"><div class="stat-label">Mis cursos</div><div class="stat-value">${total}</div></div>
+    <div class="stat-card" style="border-top-color:var(--amber)"><div class="stat-label">Pendientes</div><div class="stat-value" style="color:var(--amber)">${pendientes}</div></div>
+    <div class="stat-card" style="border-top-color:var(--blue)"><div class="stat-label">En curso</div><div class="stat-value" style="color:var(--blue)">${encurso}</div></div>
+    <div class="stat-card" style="border-top-color:var(--green)"><div class="stat-label">Culminados · ${horas.toFixed(0)}h</div><div class="stat-value" style="color:var(--green)">${culminados}</div></div>
+  </div>`;
 
   if (!total) {
     html += `<div style="text-align:center;padding:48px 24px;background:var(--surface-2);border-radius:16px;border:2px dashed var(--gray-bd)">
@@ -1142,62 +1129,87 @@ function renderMisSolicitudes() {
       <div style="font-size:13px;color:var(--text3);margin-bottom:20px">Ve a <strong>Solicitar curso</strong> y elige una capacitación del catálogo de Udemy</div>
       <button class="btn primary" onclick="document.querySelectorAll('.nav-tab')[1].click()">🔍 Buscar cursos</button>
     </div>`;
-  } else {
-    // Group by estado
-    const grupos = [
-      { label: '🕐 Pendientes de aprobación', estado: 'Pendiente', color: 'var(--amber)', bg: 'var(--amber-lt)' },
-      { label: '🔎 En revisión con Telco U', estado: 'En revisión', color: 'var(--blue)', bg: 'var(--blue-lt)' },
-      { label: '✔ Autorizados — listos para iniciar', estado: 'Autorizado', color: 'var(--blue)', bg: 'var(--blue-lt)' },
-      { label: '▶ En curso', estado: 'En curso', color: 'var(--blue)', bg: 'var(--blue-lt)' },
-      { label: '✅ Culminados', estado: 'Culminado', color: 'var(--green)', bg: 'var(--green-lt)' },
-      { label: '✕ Rechazados', estado: 'Rechazado', color: 'var(--red)', bg: 'var(--red-lt)' },
-    ];
-
-    grupos.forEach(g => {
-      const items = asignaciones.filter(a=>a.estado===g.estado);
-      if (!items.length) return;
-      html += `<div style="margin-bottom:20px">
-        <div style="font-size:12px;font-weight:700;color:${g.color};text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding:6px 12px;background:${g.bg};border-radius:6px;display:inline-block">${g.label} (${items.length})</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px">
-          ${items.map(a => {
-            const canProgress = ['Autorizado','En curso'].includes(a.estado);
-            const isCulminado = a.estado === 'Culminado';
-            const avance = a.avance || 0;
-            return `<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-top:3px solid ${g.color};border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
-              <div style="font-size:13px;font-weight:600;margin-bottom:6px;line-height:1.4">${a.curso_titulo||'Sin curso'}</div>
-              <div style="font-size:11px;color:var(--text3);margin-bottom:10px;display:flex;gap:10px;flex-wrap:wrap">
-                ${a.horas_curso?`<span>⏱ ${Number(a.horas_curso).toFixed(0)}h</span>`:''}
-                ${a.fecha_telcou_inicio||a.fecha_telcou_fin?`<span style="color:var(--blue)">📅 Telco U: ${a.fecha_telcou_inicio||'—'} → ${a.fecha_telcou_fin||'—'}</span>`:'<span style="color:var(--text3);font-style:italic">Sin fechas Telco U aún</span>'}
-                ${a.fecha_inicio_real||a.fecha_fin_real?`<span style="color:var(--green)">✓ Real: ${a.fecha_inicio_real||'—'} → ${a.fecha_fin_real||'—'}</span>`:''}
-              </div>
-              ${avance > 0 || a.estado === 'En curso' ? `
-              <div style="margin-bottom:10px">
-                <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;margin-bottom:4px">
-                  <span>Avance</span><span style="color:${g.color}">${avance}%</span>
-                </div>
-                <div style="height:6px;background:var(--gray-bg);border-radius:3px;overflow:hidden">
-                  <div style="height:100%;width:${avance}%;background:${g.color};border-radius:3px;transition:width .5s"></div>
-                </div>
-              </div>` : ''}
-              ${isCulminado && a.certificado_enviado ? '<div style="font-size:11px;color:var(--green);margin-bottom:8px">✅ Certificado enviado a Telco U</div>' : ''}
-              ${isCulminado && !a.certificado_enviado ? '<div style="font-size:11px;color:var(--red);margin-bottom:8px">⚠️ Certificado pendiente de envío</div>' : ''}
-              ${a.estado==='Rechazado'&&a.observaciones_admin?`<div style="font-size:11px;color:var(--red);background:var(--red-lt);padding:5px 8px;border-radius:5px;margin-bottom:8px">❌ ${a.observaciones_admin}</div>`:''}
-              ${a.estado==='Pendiente'?'<div style="font-size:11px;color:var(--amber);background:var(--amber-lt);padding:5px 8px;border-radius:5px;margin-bottom:8px">🕐 Esperando aprobación de la Coordinación / Jefatura</div>':''}
-              ${a.estado==='En revisión'?'<div style="font-size:11px;color:var(--blue);background:var(--blue-lt);padding:5px 8px;border-radius:5px;margin-bottom:8px">🔎 En revisión — se está verificando disponibilidad de licencia con Telco U</div>':''}
-              ${a.estado==='Autorizado'&&a.observaciones_admin?`<div style="font-size:11px;color:var(--green);background:var(--green-lt);padding:6px 10px;border-radius:5px;margin-bottom:8px">✅ ${a.observaciones_admin}</div>`:''}
-              ${a.estado==='Autorizado'&&!a.observaciones_admin?'<div style="font-size:11px;color:var(--green);background:var(--green-lt);padding:6px 10px;border-radius:5px;margin-bottom:8px">✅ Licencia autorizada — espera el correo de Telco U con tu acceso. Cuando lo recibas, registra tus fechas reales.</div>':''}
-              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
-                ${canProgress?`<button class="btn primary" style="font-size:12px;padding:6px 12px" onclick="openUserProgress(${a.id})">📝 Actualizar avance</button>`:''}
-                ${isCulminado?`<button class="btn" style="font-size:12px;padding:6px 12px;background:var(--green-lt);color:var(--green);border-color:var(--green-lt)" onclick="openUserProgress(${a.id})">✅ Ver detalle</button>`:''}
-              </div>
-            </div>`;
-          }).join('')}
-        </div>
-      </div>`;
-    });
+    document.getElementById('mainContent').innerHTML = html;
+    return;
   }
 
+  // Kanban columns definition
+  const cols = [
+    { key:'pendiente',   label:'🕐 Pendiente',    color:'var(--amber)', bg:'#fffbf0', bd:'#f5a623', estados:['Pendiente','En revisión'] },
+    { key:'autorizado',  label:'✔ Autorizado',    color:'var(--green)', bg:'#f0faf4', bd:'#1b7a3e', estados:['Autorizado'] },
+    { key:'encurso',     label:'▶ En curso',      color:'var(--blue)',  bg:'#f0f6ff', bd:'#1a73c8', estados:['En curso'] },
+    { key:'culminado',   label:'✅ Culminado',     color:'var(--green)', bg:'#f0faf4', bd:'#1b7a3e', estados:['Culminado'] },
+    { key:'rechazado',   label:'✕ Rechazado',     color:'var(--red)',   bg:'#fff5f5', bd:'#c0392b', estados:['Rechazado'] },
+  ].filter(c => asignaciones.some(a => c.estados.includes(a.estado)));
+
+  html += `<div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:12px;align-items:flex-start">`;
+
+  cols.forEach(col => {
+    const items = asignaciones.filter(a => col.estados.includes(a.estado));
+    html += `<div style="min-width:260px;max-width:280px;flex-shrink:0;background:${col.bg};border:1.5px solid ${col.bd};border-radius:14px;overflow:hidden">
+      <!-- Column header -->
+      <div style="padding:12px 14px;background:${col.bd};display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.05em">${col.label}</span>
+        <span style="background:rgba(255,255,255,.25);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px">${items.length}</span>
+      </div>
+      <!-- Cards -->
+      <div style="padding:10px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 280px);overflow-y:auto">
+        ${items.map(a => kanbanCard(a, col)).join('')}
+      </div>
+    </div>`;
+  });
+
+  html += `</div>`;
   document.getElementById('mainContent').innerHTML = html;
+}
+
+function kanbanCard(a, col) {
+  const canProgress = ['Autorizado','En curso'].includes(a.estado);
+  const isCulminado = a.estado === 'Culminado';
+  const avance = a.avance || 0;
+
+  // Deadline alert
+  let deadlineHtml = '';
+  if (a.fecha_telcou_fin && !isCulminado) {
+    const diff = Math.ceil((new Date(a.fecha_telcou_fin) - new Date()) / (1000*60*60*24));
+    if (diff < 0) deadlineHtml = `<div style="font-size:10px;color:var(--red);background:var(--red-lt);padding:3px 7px;border-radius:5px;margin-bottom:6px">⚠️ Venció hace ${Math.abs(diff)} día(s)</div>`;
+    else if (diff <= 5) deadlineHtml = `<div style="font-size:10px;color:var(--amber);background:var(--amber-lt);padding:3px 7px;border-radius:5px;margin-bottom:6px">⏰ Vence en ${diff} día(s)</div>`;
+  }
+
+  return `<div style="background:#fff;border-radius:10px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);border:1px solid rgba(0,0,0,.06)">
+    ${deadlineHtml}
+    <!-- Curso title -->
+    <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:6px;line-height:1.4">${a.curso_titulo||'Sin curso'}</div>
+
+    <!-- Meta info -->
+    <div style="font-size:10px;color:var(--text3);display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+      ${a.horas_curso?`<span style="background:var(--gray-bg);padding:2px 6px;border-radius:4px">⏱ ${Number(a.horas_curso).toFixed(0)}h</span>`:''}
+      ${a.fecha_telcou_inicio?`<span style="background:var(--blue-lt);color:var(--blue);padding:2px 6px;border-radius:4px">📅 ${a.fecha_telcou_inicio}</span>`:''}
+      ${a.fecha_telcou_fin?`<span style="background:var(--blue-lt);color:var(--blue);padding:2px 6px;border-radius:4px">→ ${a.fecha_telcou_fin}</span>`:''}
+    </div>
+
+    <!-- Progress bar (if in progress) -->
+    ${avance > 0 ? `<div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:600;margin-bottom:3px">
+        <span style="color:var(--text3)">Avance</span>
+        <span style="color:${col.color}">${avance}%</span>
+      </div>
+      <div style="height:5px;background:var(--gray-bg);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${avance}%;background:${col.color};border-radius:3px"></div>
+      </div>
+    </div>` : ''}
+
+    <!-- Estado badges -->
+    ${a.estado==='En revisión'?`<div style="font-size:10px;color:var(--blue);margin-bottom:6px">🔎 En validación con Telco U</div>`:''}
+    ${isCulminado&&a.certificado_enviado?`<div style="font-size:10px;color:var(--green);margin-bottom:6px">✅ Certificado enviado</div>`:''}
+    ${isCulminado&&!a.certificado_enviado?`<div style="font-size:10px;color:var(--red);margin-bottom:6px">⚠️ Certificado pendiente</div>`:''}
+    ${a.estado==='Rechazado'&&a.observaciones_admin?`<div style="font-size:10px;color:var(--red);background:var(--red-lt);padding:4px 7px;border-radius:5px;margin-bottom:6px">❌ ${a.observaciones_admin}</div>`:''}
+    ${a.observaciones_admin&&a.estado==='Autorizado'?`<div style="font-size:10px;color:var(--green);background:var(--green-lt);padding:4px 7px;border-radius:5px;margin-bottom:6px;line-height:1.4">📢 ${a.observaciones_admin}</div>`:''}
+
+    <!-- Action button -->
+    ${canProgress?`<button onclick="openUserProgress(${a.id})" style="width:100%;padding:6px;font-size:11px;font-weight:600;background:${col.bd};color:#fff;border:none;border-radius:7px;cursor:pointer;margin-top:2px">📝 Actualizar avance</button>`:''}
+    ${isCulminado?`<button onclick="openUserProgress(${a.id})" style="width:100%;padding:6px;font-size:11px;font-weight:600;background:var(--green-lt);color:var(--green);border:1px solid var(--green);border-radius:7px;cursor:pointer;margin-top:2px">✅ Ver detalle</button>`:''}
+  </div>`;
 }
 
 function openUserProgress(id) {
