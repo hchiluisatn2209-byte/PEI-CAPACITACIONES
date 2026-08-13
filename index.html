@@ -1140,7 +1140,7 @@ function renderMisSolicitudes() {
     { key:'encurso',     label:'▶ En curso',      color:'var(--blue)',  bg:'#f0f6ff', bd:'#1a73c8', estados:['En curso'] },
     { key:'culminado',   label:'✅ Culminado',     color:'var(--green)', bg:'#f0faf4', bd:'#1b7a3e', estados:['Culminado'] },
     { key:'rechazado',   label:'✕ Rechazado',     color:'var(--red)',   bg:'#fff5f5', bd:'#c0392b', estados:['Rechazado'] },
-  ].filter(c => asignaciones.some(a => c.estados.includes(a.estado)));
+  ]; // All columns always visible — Pendiente shows even at 0
 
   html += `<div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:12px;align-items:flex-start">`;
 
@@ -1154,7 +1154,7 @@ function renderMisSolicitudes() {
       </div>
       <!-- Cards -->
       <div style="padding:10px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 280px);overflow-y:auto">
-        ${items.map(a => kanbanCard(a, col)).join('')}
+        ${items.length ? items.map(a => kanbanCard(a, col)).join('') : '<div style="text-align:center;padding:20px 10px;color:#aaa;font-size:12px">Sin solicitudes</div>'}
       </div>
     </div>`;
   });
