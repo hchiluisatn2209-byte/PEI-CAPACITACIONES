@@ -410,6 +410,12 @@ let currentSubTab = 'Todos';
 let editingId = null;
 let selectedCurso = null;
 let currentEmailAsigId = null;
+// Persist solicitar curso state
+let _userSearchQ = '';
+let _userSearchCat = '';
+let _userSearchIdioma = '';
+let _userSearchResults = [];
+let _userSelectedCursoId = null;
 
 // ═══════════════════════════════════════════════════════════════
 //  SUPABASE INIT
@@ -1392,7 +1398,26 @@ function renderSolicitarCurso() {
       inp.addEventListener('keydown', e => { if (e.key === 'Enter') buscarCursosUser(); });
       if (cat) cat.addEventListener('change', buscarCursosUser);
       if (idi) idi.addEventListener('change', buscarCursosUser);
-      inp.focus();
+
+      // Restore previous search state
+      if (_userSearchQ) {
+        inp.value = _userSearchQ;
+        if (cat && _userSearchCat) cat.value = _userSearchCat;
+        if (idi && _userSearchIdioma) idi.value = _userSearchIdioma;
+        if (_userSearchResults.length) {
+          cursosCache = _userSearchResults;
+          renderCatalogoList();
+          // Restore selected course alert if any
+          if (_userSelectedCursoId) {
+            const prev = cursosCache.find(c => String(c.id) === String(_userSelectedCursoId));
+            if (prev) setTimeout(() => selectUserCurso(String(_userSelectedCursoId)), 50);
+          }
+        } else {
+          buscarCursosUser();
+        }
+      } else {
+        inp.focus();
+      }
     }
     if (++_pollAttempts > 20) clearInterval(_poll);
   }, 50);
@@ -1402,6 +1427,8 @@ async function buscarCursosUser() {
   const q = (document.getElementById('userFiltroCurso')?.value || '').trim();
   const cat = document.getElementById('userFiltroCat')?.value || '';
   const idioma = document.getElementById('userFiltroIdioma')?.value || '';
+  // Save state
+  _userSearchQ = q; _userSearchCat = cat; _userSearchIdioma = idioma;
   const listEl = document.getElementById('listaCursosUser');
   if (!listEl) return;
   if (!q && !cat && !idioma) {
@@ -1421,6 +1448,7 @@ async function buscarCursosUser() {
   const { data, error } = await query;
   if (error) { listEl.innerHTML = '<div class="empty">Error: ' + error.message + '</div>'; return; }
   cursosCache = data || [];
+  _userSearchResults = cursosCache;
   if (!cursosCache.length) { listEl.innerHTML = '<div class="empty">No se encontraron cursos</div>'; return; }
   listEl.innerHTML = cursosCache.map(c => `<div class="curso-item ${selectedCurso&&String(selectedCurso.id)===String(c.id)?'selected':''}" onclick="selectUserCurso('${c.id}')">
     <div style="display:flex;align-items:baseline;gap:8px">
@@ -1439,6 +1467,7 @@ async function buscarCursosUser() {
 
 function cancelarSolicitud() {
   selectedCurso = null;
+  _userSelectedCursoId = null;
   const fa = document.getElementById('solicitudFormArea');
   if (fa) { fa.style.display = 'none'; fa.style.border = ''; fa.style.background = ''; }
   renderCatalogoList();
@@ -1451,6 +1480,7 @@ function selectUserCurso(id) {
   // Check if user already has this course
   const existing = asignaciones.find(a => String(a.curso_id) === String(id));
   if (existing && existing.estado !== 'Rechazado') {
+    _userSelectedCursoId = id;
     // Show alert — course already requested
     const formArea = document.getElementById('solicitudFormArea');
     formArea.style.display = 'block';
@@ -1467,10 +1497,14 @@ function selectUserCurso(id) {
             ${existing.estado === 'Pendiente' ? '🕐 Tu solicitud está esperando aprobación de la Coordinación / Jefatura.' : ''}
             ${existing.estado === 'En revisión' ? '🔎 Tu solicitud está en revisión con Telco U.' : ''}
             ${existing.estado === 'Autorizado' ? '✔ Ya tienes la licencia autorizada. Revisa la columna <strong>Autorizado</strong> en Mis solicitudes.' : ''}
-            ${existing.estado === 'En curso' ? '▶ Ya estás cursando esta capacitación. Actualiza tu avance en Mis solicitudes.' : ''}
+            ${existing.estado === 'En curso' ? '▶ Ya estás cursando esta capacitación.' : ''}
+            ${existing.estado === 'Autorizado' ? '✔ Ya tienes la licencia autorizada. Registra tus fechas de Telco U.' : ''}
             ${existing.estado === 'Culminado' ? '✅ Ya completaste este curso. Si necesitas repetirlo, consulta con tu coordinador.' : ''}
           </div>
-          <button class="btn" style="margin-top:12px;font-size:12px" onclick="cancelarSolicitud()">← Buscar otro curso</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+            ${(existing.estado === 'En curso' || existing.estado === 'Autorizado') ? `<button class="btn primary" style="font-size:12px" onclick="openUserProgress(${existing.id});cancelarSolicitud()">📝 Actualizar avance</button>` : ''}
+            <button class="btn" style="font-size:12px" onclick="cancelarSolicitud()">← Buscar otro curso</button>
+          </div>
         </div>
       </div>`;
     formArea.scrollIntoView({ behavior: 'smooth' });
@@ -1514,6 +1548,7 @@ function selectUserCurso(id) {
 
   // Normal flow — new course
   selectedCurso = c;
+  _userSelectedCursoId = id;
   const formArea = document.getElementById('solicitudFormArea');
   formArea.style.border = '1px solid var(--orange)';
   formArea.style.background = 'var(--surface-2)';
@@ -1604,6 +1639,8 @@ async function enviarSolicitud() {
   if (error) { showToast('Error: ' + error.message); return; }
   showToast('¡Solicitud enviada! El administrador la revisará pronto ✓');
   selectedCurso = null;
+  _userSelectedCursoId = null;
+  _userSearchQ = ''; _userSearchCat = ''; _userSearchIdioma = ''; _userSearchResults = [];
   await loadUserData();
   // Go to mis solicitudes
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
