@@ -463,31 +463,50 @@ function startAuth() {
   document.getElementById('loadingMsg').textContent = 'Verificando sesión...';
   document.getElementById('loadingOverlay').style.display = 'flex';
 
-  // First check if there's already an active session in storage
-  sb.auth.getSession().then(async ({ data: { session } }) => {
-    if (session) {
-      await resolveUser(session.user);
-      return;
-    }
-    // No active session — listen for auth changes (handles OAuth callback)
-    sb.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        // Clean the URL hash after OAuth redirect
-        if (window.location.hash && window.location.hash.includes('access_token')) {
-          history.replaceState(null, '', window.location.pathname);
-        }
-        await resolveUser(session.user);
-      } else if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
-        hide('loadingOverlay');
-        show('authScreen');
-      } else if (!session) {
+  // Parse access_token from URL hash manually (GitHub Pages uses ##)
+  const rawHash = window.location.href;
+  const tokenMatch = rawHash.match(/access_token=([^&]+)/);
+  const refreshMatch = rawHash.match(/refresh_token=([^&]+)/);
+
+  if (tokenMatch && refreshMatch) {
+    // OAuth callback — set session manually
+    sb.auth.setSession({
+      access_token: tokenMatch[1],
+      refresh_token: refreshMatch[1]
+    }).then(async ({ data, error }) => {
+      // Clean URL
+      history.replaceState(null, '', window.location.pathname);
+      if (data?.session) {
+        await resolveUser(data.session.user);
+      } else {
         hide('loadingOverlay');
         show('authScreen');
       }
     });
+    return;
+  }
+
+  // No token in URL — check stored session
+  sb.auth.getSession().then(async ({ data: { session } }) => {
+    if (session) {
+      await resolveUser(session.user);
+    } else {
+      hide('loadingOverlay');
+      show('authScreen');
+    }
   }).catch(() => {
     hide('loadingOverlay');
     show('authScreen');
+  });
+
+  // Listen for future auth changes (token refresh etc)
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'TOKEN_REFRESHED' && session) {
+      // Session refreshed silently — no action needed
+    } else if (event === 'SIGNED_OUT') {
+      hide('app');
+      show('authScreen');
+    }
   });
 }
 
