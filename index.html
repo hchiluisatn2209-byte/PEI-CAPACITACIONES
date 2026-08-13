@@ -1477,12 +1477,34 @@ function selectUserCurso(id) {
   const c = cursosCache.find(x => String(x.id) === String(id));
   if (!c) return;
 
+  // Always restore the base form HTML first (in case it was replaced by a previous alert)
+  const formArea = document.getElementById('solicitudFormArea');
+  if (!document.getElementById('csTituloUser')) {
+    formArea.style.background = 'var(--surface-2)';
+    formArea.style.border = '1px solid var(--orange)';
+    formArea.innerHTML = `
+      <div class="section-label">Completa tu solicitud</div>
+      <div class="curso-sel-box" id="cursoSelBoxUser" style="display:block;margin-bottom:14px">
+        <strong id="csTituloUser"></strong><br>
+        <span style="font-size:11px;color:var(--amber)" id="csMetaUser"></span>
+      </div>
+      <div class="form-row">
+        <div class="form-field full">
+          <label>Justificación / motivo de la solicitud</label>
+          <textarea id="uSolObs" rows="3" placeholder="¿Por qué necesitas este curso? ¿Cómo aportará a tu trabajo?"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="cancelarSolicitud()">Cancelar</button>
+        <button class="btn primary" onclick="enviarSolicitud()">📤 Enviar solicitud</button>
+      </div>`;
+  }
+
   // Check if user already has this course
   const existing = asignaciones.find(a => String(a.curso_id) === String(id));
   if (existing && existing.estado !== 'Rechazado') {
     _userSelectedCursoId = id;
     // Show alert — course already requested
-    const formArea = document.getElementById('solicitudFormArea');
     formArea.style.display = 'block';
     formArea.style.border = '1.5px solid var(--amber)';
     formArea.style.background = 'var(--amber-lt)';
@@ -1515,7 +1537,6 @@ function selectUserCurso(id) {
 
   // If rejected — allow new attempt
   if (existing && existing.estado === 'Rechazado') {
-    const formArea = document.getElementById('solicitudFormArea');
     // Show info that previous was rejected
     const rejectedMsg = existing.observaciones_admin ? `<div style="font-size:11px;color:var(--red);background:var(--red-lt);padding:5px 8px;border-radius:5px;margin-bottom:10px">❌ Solicitud anterior rechazada: ${existing.observaciones_admin}</div>` : '';
     selectedCurso = c;
@@ -1549,7 +1570,6 @@ function selectUserCurso(id) {
   // Normal flow — new course
   selectedCurso = c;
   _userSelectedCursoId = id;
-  const formArea = document.getElementById('solicitudFormArea');
   formArea.style.border = '1px solid var(--orange)';
   formArea.style.background = 'var(--surface-2)';
   document.getElementById('csTituloUser').textContent = c.titulo;
