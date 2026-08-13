@@ -1206,6 +1206,7 @@ function kanbanCard(a, col) {
     </div>` : ''}
 
     <!-- Estado badges -->
+    ${a.estado==='Pendiente'?`<div style="font-size:10px;color:var(--amber);background:rgba(245,166,35,.15);padding:4px 8px;border-radius:5px;margin-bottom:6px">🔒 Esperando aprobación de la Coordinación / Jefatura</div>`:''}
     ${a.estado==='En revisión'?`<div style="font-size:10px;color:var(--blue);margin-bottom:6px">🔎 En validación con Telco U</div>`:''}
     ${isCulminado&&a.certificado_enviado?`<div style="font-size:10px;color:var(--green);margin-bottom:6px">✅ Certificado enviado</div>`:''}
     ${isCulminado&&!a.certificado_enviado?`<div style="font-size:10px;color:var(--red);margin-bottom:6px">⚠️ Certificado pendiente</div>`:''}
