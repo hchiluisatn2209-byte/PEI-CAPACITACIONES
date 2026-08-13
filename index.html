@@ -1439,17 +1439,88 @@ async function buscarCursosUser() {
 
 function cancelarSolicitud() {
   selectedCurso = null;
-  document.getElementById('solicitudFormArea').style.display = 'none';
+  const fa = document.getElementById('solicitudFormArea');
+  if (fa) { fa.style.display = 'none'; fa.style.border = ''; fa.style.background = ''; }
+  renderCatalogoList();
 }
 
 function selectUserCurso(id) {
   const c = cursosCache.find(x => String(x.id) === String(id));
   if (!c) return;
+
+  // Check if user already has this course
+  const existing = asignaciones.find(a => String(a.curso_id) === String(id));
+  if (existing && existing.estado !== 'Rechazado') {
+    // Show alert — course already requested
+    const formArea = document.getElementById('solicitudFormArea');
+    formArea.style.display = 'block';
+    formArea.style.border = '1.5px solid var(--amber)';
+    formArea.style.background = 'var(--amber-lt)';
+    formArea.innerHTML = `
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <span style="font-size:28px">⚠️</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--amber);margin-bottom:6px">Ya tienes este curso registrado</div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">${c.titulo}</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Estado actual: ${estadoBadge(existing.estado)}</div>
+          <div style="font-size:12px;color:var(--text3)">
+            ${existing.estado === 'Pendiente' ? '🕐 Tu solicitud está esperando aprobación de la Coordinación / Jefatura.' : ''}
+            ${existing.estado === 'En revisión' ? '🔎 Tu solicitud está en revisión con Telco U.' : ''}
+            ${existing.estado === 'Autorizado' ? '✔ Ya tienes la licencia autorizada. Revisa la columna <strong>Autorizado</strong> en Mis solicitudes.' : ''}
+            ${existing.estado === 'En curso' ? '▶ Ya estás cursando esta capacitación. Actualiza tu avance en Mis solicitudes.' : ''}
+            ${existing.estado === 'Culminado' ? '✅ Ya completaste este curso. Si necesitas repetirlo, consulta con tu coordinador.' : ''}
+          </div>
+          <button class="btn" style="margin-top:12px;font-size:12px" onclick="cancelarSolicitud()">← Buscar otro curso</button>
+        </div>
+      </div>`;
+    formArea.scrollIntoView({ behavior: 'smooth' });
+    selectedCurso = null;
+    renderCatalogoList();
+    return;
+  }
+
+  // If rejected — allow new attempt
+  if (existing && existing.estado === 'Rechazado') {
+    const formArea = document.getElementById('solicitudFormArea');
+    // Show info that previous was rejected
+    const rejectedMsg = existing.observaciones_admin ? `<div style="font-size:11px;color:var(--red);background:var(--red-lt);padding:5px 8px;border-radius:5px;margin-bottom:10px">❌ Solicitud anterior rechazada: ${existing.observaciones_admin}</div>` : '';
+    selectedCurso = c;
+    document.getElementById('csTituloUser').textContent = c.titulo;
+    document.getElementById('csMetaUser').textContent = (c.instructor||'') + ' · ⏱ ' + Number(c.horas||0).toFixed(0) + 'h · ⭐' + (c.rating||'') + ' · ' + (c.idioma||'') + ' · ' + (c.nivel||'');
+    formArea.style.display = 'block';
+    formArea.style.border = '1.5px solid var(--orange)';
+    formArea.style.background = 'var(--surface-2)';
+    formArea.innerHTML = `
+      <div class="section-label">Nuevo intento de solicitud</div>
+      ${rejectedMsg}
+      <div class="curso-sel-box" id="cursoSelBoxUser" style="display:block;margin-bottom:14px">
+        <strong id="csTituloUser">${c.titulo}</strong><br>
+        <span style="font-size:11px;color:var(--amber)">${(c.instructor||'')} · ⏱ ${Number(c.horas||0).toFixed(0)}h · ⭐${c.rating||''} · ${c.idioma||''} · ${c.nivel||''}</span>
+      </div>
+      <div class="form-row">
+        <div class="form-field full">
+          <label>Justificación / motivo de la solicitud</label>
+          <textarea id="uSolObs" rows="3" placeholder="¿Por qué necesitas este curso? ¿Cómo aportará a tu trabajo?"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="cancelarSolicitud()">Cancelar</button>
+        <button class="btn primary" onclick="enviarSolicitud()">📤 Enviar nueva solicitud</button>
+      </div>`;
+    formArea.scrollIntoView({ behavior: 'smooth' });
+    renderCatalogoList();
+    return;
+  }
+
+  // Normal flow — new course
   selectedCurso = c;
+  const formArea = document.getElementById('solicitudFormArea');
+  formArea.style.border = '1px solid var(--orange)';
+  formArea.style.background = 'var(--surface-2)';
   document.getElementById('csTituloUser').textContent = c.titulo;
   document.getElementById('csMetaUser').textContent = (c.instructor||'') + ' · ⏱ ' + Number(c.horas||0).toFixed(0) + 'h · ⭐' + (c.rating||'') + ' · ' + (c.idioma||'') + ' · ' + (c.nivel||'');
-  document.getElementById('solicitudFormArea').style.display = 'block';
-  document.getElementById('solicitudFormArea').scrollIntoView({ behavior: 'smooth' });
+  formArea.style.display = 'block';
+  formArea.scrollIntoView({ behavior: 'smooth' });
   renderCatalogoList();
 }
 
