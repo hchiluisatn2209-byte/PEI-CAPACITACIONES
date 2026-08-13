@@ -723,7 +723,7 @@ function solicitudCard(a, borderColor) {
         `:''}
         ${isRev?`
           <button class="btn success" style="font-size:12px;width:100%" onclick="confirmarAutorizar(${a.id})">✔ Autorizar licencia</button>
-          <button class="btn navy" style="font-size:12px;width:100%" onclick="openEmailFromRow(${a.id})">✉️ Correo Telco U</button>
+          <button class="btn navy" style="font-size:12px;width:100%" onclick="openEmailFromRow(${a.id})">✉️ Solicitar licencia a Telco U</button>
           <button class="btn" style="font-size:12px;color:var(--red);border-color:var(--border-danger);width:100%" onclick="rechazarSolicitud(${a.id})">✕ Rechazar</button>
         `:''}
         ${isAut?`
@@ -757,15 +757,7 @@ async function confirmarAutorizar(id) {
         <textarea id="notaAutorizacion" rows="2" placeholder="Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas."></textarea>
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-field full">
-        <label>¿Generar correo a Telco U ahora?</label>
-        <select id="genCorreo">
-          <option value="si">Sí — abrir correo a Telco U después de autorizar</option>
-          <option value="no">No — solo cambiar el estado</option>
-        </select>
-      </div>
-    </div>
+    <!-- Correo a Telco U no aplica aquí: la confirmación ya fue recibida manualmente -->
     <div class="form-actions">
       <button class="btn" onclick="closeModal()">Cancelar</button>
       <button class="btn success" onclick="ejecutarAutorizacion()">✔ Confirmar autorización</button>
@@ -775,21 +767,15 @@ async function confirmarAutorizar(id) {
 
 async function ejecutarAutorizacion() {
   const nota = document.getElementById('notaAutorizacion')?.value || '';
-  const genCorreo = document.getElementById('genCorreo')?.value;
   const obs = nota ? nota : 'Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.';
   const { error } = await sb.from('asignaciones')
     .update({ estado: 'Autorizado', observaciones_admin: obs })
     .eq('id', editingId);
   if (error) { showToast('Error: ' + error.message); return; }
-  const id = editingId;
   closeModal();
-  showToast('Licencia autorizada ✓');
+  showToast('Licencia autorizada ✓ — el colaborador verá el estado actualizado');
   await loadAll();
   renderSolicitudes();
-  if (genCorreo === 'si') {
-    currentEmailAsigId = id;
-    openEmailFromRow(id);
-  }
 }
 
 // aprobarSolicitud replaced by confirmarAutorizar flow
