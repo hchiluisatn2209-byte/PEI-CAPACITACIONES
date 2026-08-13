@@ -719,7 +719,6 @@ function solicitudCard(a, borderColor) {
         ${isPend?`
           <button class="btn" style="font-size:12px;background:var(--blue-lt);color:var(--blue);border-color:var(--blue-lt);width:100%" onclick="marcarEnRevision(${a.id})">🔎 Marcar en revisión</button>
           <button class="btn success" style="font-size:12px;width:100%" onclick="confirmarAutorizar(${a.id})">✔ Autorizar licencia</button>
-          <button class="btn navy" style="font-size:12px;width:100%" onclick="openEmailFromRowNoState(${a.id})">✉️ Correo Telco U</button>
           <button class="btn" style="font-size:12px;color:var(--red);border-color:var(--border-danger);width:100%" onclick="rechazarSolicitud(${a.id})">✕ Rechazar</button>
         `:''}
         ${isRev?`
@@ -1269,7 +1268,7 @@ function openUserProgress(id) {
       <div class="form-row">
         <div class="form-field">
           <label>% de avance</label>
-          <input type="number" id="uAvance" min="0" max="100" value="${a.avance||0}" ${isCulminado?'disabled':''}>
+          <input type="number" id="uAvance" min="0" max="100" value="${a.avance||0}" ${isCulminado?'disabled':''} oninput="onAvanceChange(this.value)">
         </div>
         <div class="form-field">
           <label>Estado</label>
@@ -1305,6 +1304,16 @@ function openUserProgress(id) {
       ${isCulminado && a.certificado_enviado ? `<div style="font-size:12px;color:var(--text3);align-self:center">Registro completado ✅</div>` : ''}
     </div>`;
   document.getElementById('modal').style.display = 'flex';
+}
+
+function onAvanceChange(val) {
+  const estado = document.getElementById('uEstado');
+  if (!estado) return;
+  if (parseInt(val) === 100) {
+    estado.value = 'Culminado';
+  } else if (estado.value === 'Culminado' && parseInt(val) < 100) {
+    estado.value = 'En curso';
+  }
 }
 
 function onCertChange(val) {
