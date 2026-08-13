@@ -2168,6 +2168,60 @@ function showToast(msg) {
 // ═══════════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════════
+function verDetalleSolicitud(id) {
+  const a = asignaciones.find(x => x.id === id);
+  if (!a) return;
+  const pers = personal.find(p => p.user === a.user_login) || {};
+  const estadoColor = {'Autorizado':'var(--green)','En curso':'var(--blue)','Culminado':'var(--green)','Rechazado':'var(--red)'}[a.estado]||'var(--amber)';
+  document.getElementById('modalTitle').textContent = '📋 Detalle de solicitud';
+  document.getElementById('modalSubtitle').textContent = a.curso_titulo || '';
+  document.getElementById('modalBody').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      ${estadoBadge(a.estado)}
+      ${a.prioridad?`<span class="badge" style="background:var(--gray-bg);color:var(--text2)">Prioridad: ${a.prioridad}</span>`:''}
+    </div>
+    <div style="background:var(--gray-bg);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:8px">👤 Colaborador</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
+        <div><span style="color:var(--text3);font-size:11px">Nombre</span><br><strong>${a.nombre||'—'}</strong></div>
+        <div><span style="color:var(--text3);font-size:11px">Equipo</span><br>${equipoBadgeStr(a.equipo)}</div>
+        <div><span style="color:var(--text3);font-size:11px">Ciudad · Código</span><br>${pers.ciudad||'—'} · ${pers.codigo||'—'}</div>
+        <div><span style="color:var(--text3);font-size:11px">Mail</span><br><a href="mailto:${pers.mail||''}" style="color:var(--blue);font-size:12px">${pers.mail||'—'}</a></div>
+      </div>
+    </div>
+    <div style="background:var(--blue-lt);border:1px solid #85b7eb;border-radius:var(--radius);padding:12px 14px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;margin-bottom:6px">🎓 Curso</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:5px">${a.curso_titulo||'—'}</div>
+      <div style="font-size:12px;color:var(--text3)">⏱ ${a.horas_curso?Number(a.horas_curso).toFixed(0)+'h':'—'} · ID: ${a.curso_id||'—'} · ${a.licencia||'—'}</div>
+      ${a.observaciones?`<div style="margin-top:6px;font-size:12px;color:var(--text2);font-style:italic;background:#fff;padding:6px 10px;border-radius:5px">💬 "${a.observaciones}"</div>`:''}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:var(--radius);padding:10px 12px">
+        <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:4px">📅 Fechas Telco U</div>
+        <div style="font-size:12px">${a.fecha_telcou_inicio||'—'} → ${a.fecha_telcou_fin||'—'}</div>
+      </div>
+      <div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:var(--radius);padding:10px 12px">
+        <div style="font-size:11px;color:var(--green);font-weight:700;margin-bottom:4px">✓ Fechas reales</div>
+        <div style="font-size:12px">${a.fecha_inicio_real||'—'} → ${a.fecha_fin_real||'—'}</div>
+      </div>
+    </div>
+    ${a.avance?`<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:4px"><span>Avance</span><span style="color:${estadoColor}">${a.avance}%</span></div>
+      <div style="height:8px;background:var(--gray-bg);border-radius:4px;overflow:hidden"><div style="height:100%;width:${a.avance}%;background:${estadoColor};border-radius:4px"></div></div>
+    </div>`:''}
+    ${a.certificado_enviado!==null?`<div style="background:${a.certificado_enviado===true?'var(--green-lt)':'var(--red-lt)'};border:1px solid ${a.certificado_enviado===true?'var(--green)':'var(--red)'};border-radius:var(--radius);padding:10px 12px;margin-bottom:12px;font-size:12px;color:${a.certificado_enviado===true?'var(--green)':'var(--red)'}">
+      ${a.certificado_enviado===true?'✅ Certificado enviado':'⚠️ Certificado pendiente'}${a.fecha_certificado?' · '+a.fecha_certificado:''}
+      ${a.ref_certificado?`<div style="margin-top:3px;font-size:11px;color:var(--text2)">${a.ref_certificado}</div>`:''}
+    </div>`:''}
+    ${a.observaciones_admin?`<div style="background:var(--amber-lt);border:1px solid var(--border-warning);border-radius:var(--radius);padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--amber)">📢 <strong>Nota al colaborador:</strong> ${a.observaciones_admin}</div>`:''}
+    <div class="form-actions">
+      <button class="btn" onclick="closeModal()">Cerrar</button>
+      <button class="btn navy" onclick="closeModal();openEmailFromRowNoState(${a.id})">✉️ Correo Telco U</button>
+      <button class="btn primary" onclick="closeModal();editAsig(${a.id})">✏️ Editar</button>
+    </div>`;
+  document.getElementById('modal').style.display = 'flex';
+}
+
 (async function init() {
   await initSupabase();
   startAuth();
