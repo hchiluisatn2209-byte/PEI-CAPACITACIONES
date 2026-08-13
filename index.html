@@ -419,7 +419,15 @@ async function initSupabase() {
   const SUPABASE_URL = 'https://kpdcggekcoxagufymgvr.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwZGNnZ2VrY294YWd1ZnltZ3ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzNTAyNTYsImV4cCI6MjEwMDkyNjI1Nn0.2B0GbUC8Vkw_yM7C0B9eXozOirWy5FyGfOxL6nhtLPY';
   try {
-    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        persistSession: true,
+        storageKey: 'proycorp-auth',
+        storage: window.localStorage,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      }
+    });
     return true;
   } catch(e) { return false; }
 }
@@ -454,15 +462,32 @@ async function connectSupabase() {
 function startAuth() {
   document.getElementById('loadingMsg').textContent = 'Verificando sesión...';
   document.getElementById('loadingOverlay').style.display = 'flex';
-  sb.auth.onAuthStateChange(async (event, session) => {
+
+  // First check if there's already an active session in storage
+  sb.auth.getSession().then(async ({ data: { session } }) => {
     if (session) {
       await resolveUser(session.user);
-    } else {
-      hide('loadingOverlay');
-      // Clear hash from URL if present
-      if (window.location.hash) history.replaceState(null, '', window.location.pathname);
-      show('authScreen');
+      return;
     }
+    // No active session — listen for auth changes (handles OAuth callback)
+    sb.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        // Clean the URL hash after OAuth redirect
+        if (window.location.hash && window.location.hash.includes('access_token')) {
+          history.replaceState(null, '', window.location.pathname);
+        }
+        await resolveUser(session.user);
+      } else if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
+        hide('loadingOverlay');
+        show('authScreen');
+      } else if (!session) {
+        hide('loadingOverlay');
+        show('authScreen');
+      }
+    });
+  }).catch(() => {
+    hide('loadingOverlay');
+    show('authScreen');
   });
 }
 
@@ -479,6 +504,7 @@ async function signInGoogle() {
 
 async function signOut() {
   await sb.auth.signOut();
+  localStorage.removeItem('proycorp-auth');
   location.reload();
 }
 
@@ -703,7 +729,7 @@ async function confirmarAutorizar(id) {
     <div class="form-row">
       <div class="form-field full">
         <label>Nota para el colaborador (opcional)</label>
-        <textarea id="notaAutorizacion" rows="2" placeholder="Ej: La licencia estará activa a partir del lunes. Revisa tu correo de Telco U."></textarea>
+        <textarea id="notaAutorizacion" rows="2" placeholder="Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas."></textarea>
       </div>
     </div>
     <div class="form-row">
@@ -725,7 +751,7 @@ async function confirmarAutorizar(id) {
 async function ejecutarAutorizacion() {
   const nota = document.getElementById('notaAutorizacion')?.value || '';
   const genCorreo = document.getElementById('genCorreo')?.value;
-  const obs = nota ? nota : 'Licencia autorizada. Recibirás un correo de Telco U con el acceso. Cuando lo recibas, registra tus fechas reales de inicio y fin en el sistema.';
+  const obs = nota ? nota : 'Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.';
   const { error } = await sb.from('asignaciones')
     .update({ estado: 'Autorizado', observaciones_admin: obs })
     .eq('id', editingId);
