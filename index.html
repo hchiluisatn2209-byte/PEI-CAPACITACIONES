@@ -1299,7 +1299,7 @@ function openUserProgress(id) {
         </div>
         <div class="form-field">
           <label>Fecha de envío</label>
-          <input type="date" id="uFechaCertificado" value="${a.fecha_certificado||''}" ${a.certificado_enviado===true?'disabled':''} style="display:${a.certificado_enviado===true?'block':'none'}">
+          <input type="date" id="uFechaCertificado" value="${a.fecha_certificado||''}" ${a.certificado_enviado===true?'disabled':''} style="display:${a.certificado_enviado!==false?'block':'none'}">
         </div>
       </div>
       <div class="form-row" id="certRefRow" style="display:${a.certificado_enviado===true?'grid':'none'}">
