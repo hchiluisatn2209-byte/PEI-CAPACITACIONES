@@ -719,12 +719,16 @@ function solicitudCard(a, borderColor) {
         ${isPend?`
           <button class="btn" style="font-size:12px;background:var(--blue-lt);color:var(--blue);border-color:var(--blue-lt);width:100%" onclick="marcarEnRevision(${a.id})">🔎 Marcar en revisión</button>
           <button class="btn success" style="font-size:12px;width:100%" onclick="confirmarAutorizar(${a.id})">✔ Autorizar licencia</button>
+          <button class="btn navy" style="font-size:12px;width:100%" onclick="openEmailFromRowNoState(${a.id})">✉️ Correo Telco U</button>
           <button class="btn" style="font-size:12px;color:var(--red);border-color:var(--border-danger);width:100%" onclick="rechazarSolicitud(${a.id})">✕ Rechazar</button>
         `:''}
         ${isRev?`
           <button class="btn success" style="font-size:12px;width:100%" onclick="confirmarAutorizar(${a.id})">✔ Autorizar licencia</button>
-          <button class="btn navy" style="font-size:12px;width:100%" onclick="openEmailFromRow(${a.id})">✉️ Solicitar licencia a Telco U</button>
+          <button class="btn navy" style="font-size:12px;width:100%" onclick="openEmailFromRowNoState(${a.id})">✉️ Correo Telco U</button>
           <button class="btn" style="font-size:12px;color:var(--red);border-color:var(--border-danger);width:100%" onclick="rechazarSolicitud(${a.id})">✕ Rechazar</button>
+        `:''}
+        ${isAut?`
+          <button class="btn navy" style="font-size:12px;width:100%" onclick="openEmailFromRowNoState(${a.id})">✉️ Correo Telco U</button>
         `:''}
         ${isAut?`
           <button class="btn navy" style="font-size:12px" onclick="openEmailFromRow(${a.id})">✉️ Correo Telco U</button>
@@ -1780,6 +1784,18 @@ async function selectModalCurso(id) {
 // ═══════════════════════════════════════════════════════════════
 //  EMAIL MODAL
 // ═══════════════════════════════════════════════════════════════
+function openEmailFromRowNoState(id) {
+  // Opens email modal WITHOUT changing the estado
+  const a = asignaciones.find(x => x.id === id);
+  if (!a) return;
+  currentEmailAsigId = null; // Don't link to state change
+  const pers = personal.find(p => p.user === a.user_login) || {};
+  const ciudad = pers.ciudad || 'UIO';
+  const telcouContacto = ciudad === 'GYE' ? 'Carlos Ruilova' : 'Melissa Zurita';
+  const telcouMail = ciudad === 'GYE' ? 'cruilova@telconet.ec' : 'mdzurita@telconet.ec';
+  _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail);
+}
+
 function openEmailFromRow(id) {
   const a = asignaciones.find(x => x.id === id);
   if (!a) return;
@@ -1789,6 +1805,10 @@ function openEmailFromRow(id) {
   const telcouContacto = ciudad === 'GYE' ? 'Carlos Ruilova' : 'Melissa Zurita';
   const telcouMail = ciudad === 'GYE' ? 'cruilova@telconet.ec' : 'mdzurita@telconet.ec';
 
+  _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail);
+}
+
+function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
   document.getElementById('emailModalBody').innerHTML = `
     <div class="form-row">
       <div class="form-field">
