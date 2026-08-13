@@ -735,7 +735,9 @@ function solicitudButtons(a) {
             <button class="btn navy" style="font-size:12px;width:100%" onclick="openEmailFromRowNoState(${id})">✉️ Correo Telco U</button>
             <button class="btn" style="font-size:12px;color:var(--red);border-color:var(--border-danger);width:100%" onclick="rechazarSolicitud(${id})">✕ Rechazar</button>`;
   } else if (a.estado === 'Autorizado') {
-    return `<button class="btn navy" style="font-size:12px;width:100%" onclick="openEmailFromRowNoState(${id})">✉️ Correo Telco U</button>`;
+    return `<button class="btn" style="font-size:12px;width:100%;background:var(--navy);color:#fff;border-color:var(--navy)" onclick="verDetalleSolicitud(${id})">📋 Ver detalle</button>`;
+  } else if (a.estado === 'En curso' || a.estado === 'Culminado') {
+    return `<button class="btn" style="font-size:12px;width:100%;color:var(--blue);border-color:var(--blue-lt);background:var(--blue-lt)" onclick="verDetalleSolicitud(${id})">📋 Ver detalle</button>`;
   }
   return '';
 }
