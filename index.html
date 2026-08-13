@@ -663,36 +663,66 @@ function teamCard(icon, name, email, bg, color, d, barColor) {
 
 // ── SOLICITUDES (Admin review) ────────────────────────────────
 function renderSolicitudes() {
-  const grupos = [
-    { key: 'Pendiente',    label: '🕐 Nuevas solicitudes',         color: 'var(--amber)', bg: 'var(--amber-lt)',  estados: ['Pendiente'] },
-    { key: 'En revisión',  label: '🔎 En revisión con Telco U',    color: 'var(--blue)',  bg: 'var(--blue-lt)',   estados: ['En revisión'] },
-    { key: 'Autorizado',   label: '✔ Autorizados — Licencia lista', color: 'var(--green)', bg: 'var(--green-lt)', estados: ['Autorizado'] },
-    { key: 'Rechazado',    label: '✕ Rechazados',                  color: 'var(--red)',   bg: 'var(--red-lt)',    estados: ['Rechazado'] },
-  ];
-
-  // Summary stats
   const totalPend = asignaciones.filter(a=>a.estado==='Pendiente').length;
   const totalRev  = asignaciones.filter(a=>a.estado==='En revisión').length;
   const totalAut  = asignaciones.filter(a=>a.estado==='Autorizado').length;
+  const totalCur  = asignaciones.filter(a=>a.estado==='En curso').length;
+  const totalCul  = asignaciones.filter(a=>a.estado==='Culminado').length;
 
-  let html = `<div class="stats-grid" style="margin-bottom:20px">
-    <div class="stat-card" style="border-top-color:var(--amber)"><div class="stat-label">Nuevas solicitudes</div><div class="stat-value" style="color:var(--amber)">${totalPend}</div></div>
+  const cols = [
+    { estado:'Pendiente',    label:'🕐 Pendiente',     color:'var(--amber)', bg:'#fffbf0', bd:'#f5a623' },
+    { estado:'En revisión',  label:'🔎 En revisión',   color:'var(--blue)',  bg:'#f0f6ff', bd:'#1a73c8' },
+    { estado:'Autorizado',   label:'✔ Autorizado',     color:'var(--green)', bg:'#f0faf4', bd:'#1b7a3e' },
+    { estado:'En curso',     label:'▶ En curso',       color:'var(--blue)',  bg:'#f0f6ff', bd:'#1a73c8' },
+    { estado:'Culminado',    label:'✅ Culminado',      color:'var(--green)', bg:'#f0faf4', bd:'#1b7a3e' },
+    { estado:'Rechazado',    label:'✕ Rechazado',      color:'var(--red)',   bg:'#fff5f5', bd:'#c0392b' },
+  ];
+
+  let html = `<div class="stats-grid" style="margin-bottom:16px">
+    <div class="stat-card" style="border-top-color:var(--amber)"><div class="stat-label">Nuevas</div><div class="stat-value" style="color:var(--amber)">${totalPend}</div></div>
     <div class="stat-card" style="border-top-color:var(--blue)"><div class="stat-label">En revisión</div><div class="stat-value" style="color:var(--blue)">${totalRev}</div></div>
     <div class="stat-card" style="border-top-color:var(--green)"><div class="stat-label">Autorizados</div><div class="stat-value" style="color:var(--green)">${totalAut}</div></div>
-    <div class="stat-card" style="border-top-color:var(--navy)"><div class="stat-label">Total gestionadas</div><div class="stat-value">${asignaciones.filter(a=>['Pendiente','En revisión','Autorizado','En curso','Culminado'].includes(a.estado)).length}</div></div>
+    <div class="stat-card" style="border-top-color:var(--navy)"><div class="stat-label">En curso · Culminados</div><div class="stat-value">${totalCur + totalCul}</div></div>
   </div>`;
 
-  grupos.forEach(g => {
-    const items = asignaciones.filter(a => g.estados.includes(a.estado));
-    if (!items.length) return;
-    html += `<div style="margin-bottom:24px">
-      <div style="font-size:12px;font-weight:700;color:${g.color};text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;padding:7px 14px;background:${g.bg};border-radius:6px;display:inline-block">${g.label} (${items.length})</div>
-      ${items.map(a => solicitudCard(a, g.color)).join('')}
+  html += `<div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;align-items:flex-start">`;
+
+  cols.forEach(col => {
+    const items = asignaciones.filter(a => a.estado === col.estado);
+    html += `<div style="min-width:260px;max-width:280px;flex-shrink:0;background:${col.bg};border:1.5px solid ${col.bd};border-radius:14px;overflow:hidden">
+      <div style="padding:10px 14px;background:${col.bd};display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.05em">${col.label}</span>
+        <span style="background:rgba(255,255,255,.25);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px">${items.length}</span>
+      </div>
+      <div style="padding:8px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 260px);overflow-y:auto">
+        ${items.length ? items.map(a => adminKanbanCard(a, col)).join('') : '<div style="text-align:center;padding:20px 10px;color:#aaa;font-size:12px">Sin solicitudes</div>'}
+      </div>
     </div>`;
   });
 
+  html += `</div>`;
   document.getElementById('mainContent').innerHTML = html;
 }
+
+function adminKanbanCard(a, col) {
+  const btns = solicitudButtons(a);
+  return `<div style="background:#fff;border-radius:10px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);border:1px solid rgba(0,0,0,.06)">
+    <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:5px;line-height:1.4">${a.curso_titulo||'Sin curso'}</div>
+    <div style="font-size:11px;color:var(--text3);display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+      <span>👤 <strong style="color:var(--text2)">${a.nombre||''}</strong></span>
+      ${equipoBadgeStr(a.equipo)}
+      ${a.horas_curso?`<span>⏱ ${Number(a.horas_curso).toFixed(0)}h</span>`:''}
+    </div>
+    ${a.observaciones?`<div style="font-size:11px;color:var(--text2);background:var(--gray-bg);padding:5px 8px;border-radius:5px;margin-bottom:8px;font-style:italic">"${a.observaciones}"</div>`:''}
+    ${a.fecha_telcou_inicio||a.fecha_telcou_fin?`<div style="font-size:10px;color:var(--blue);background:var(--blue-lt);padding:3px 7px;border-radius:4px;margin-bottom:6px">📅 ${a.fecha_telcou_inicio||'—'} → ${a.fecha_telcou_fin||'—'}</div>`:''}
+    ${a.avance?`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px"><span style="color:var(--text3)">Avance</span><span style="color:${col.color};font-weight:700">${a.avance}%</span></div><div style="height:4px;background:var(--gray-bg);border-radius:3px;overflow:hidden"><div style="height:100%;width:${a.avance}%;background:${col.bd};border-radius:3px"></div></div></div>`:''}
+    ${a.certificado_enviado===true?'<div style="font-size:10px;color:var(--green);margin-bottom:6px">✅ Certificado enviado</div>':''}
+    ${a.estado==='Culminado'&&!a.certificado_enviado?'<div style="font-size:10px;color:var(--red);margin-bottom:6px">⚠️ Certificado pendiente</div>':''}
+    ${a.observaciones_admin?`<div style="font-size:10px;color:var(--green);background:var(--green-lt);padding:4px 7px;border-radius:4px;margin-bottom:6px">📢 ${a.observaciones_admin}</div>`:''}
+    ${btns?`<div style="display:flex;flex-direction:column;gap:5px;margin-top:4px">${btns}</div>`:''}
+  </div>`;
+}
+
 
 function solicitudButtons(a) {
   const id = a.id;
@@ -1305,7 +1335,7 @@ function openUserProgress(id) {
       <div class="form-row" id="certRefRow" style="display:${a.certificado_enviado===true?'grid':'none'}">
         <div class="form-field full">
           <label>Referencia del correo enviado</label>
-          <input type="text" id="uRefCertificado" value="${a.ref_certificado||''}" placeholder="Ej: Enviado a mdzurita@telconet.ec el 12/08/2026" ${a.certificado_enviado===true?'disabled':''}>
+          <input type="text" id="uRefCertificado" value="${a.ref_certificado || (a.certificado_enviado!==true ? 'Certificado enviado a mdzurita@telconet.ec el ' + new Date().toLocaleDateString('es-EC') : '')}" placeholder="Ej: Certificado enviado a mdzurita@telconet.ec el 12/08/2026" ${a.certificado_enviado===true?'disabled':''}>
         </div>
       </div>
       ${a.certificado_enviado===true?'<div style="font-size:11px;color:var(--green);background:rgba(27,122,62,.08);padding:6px 10px;border-radius:5px">✅ Certificado confirmado'+( a.fecha_certificado?' el '+a.fecha_certificado:'')+( a.ref_certificado?' · '+a.ref_certificado:'')+' </div>':''}
