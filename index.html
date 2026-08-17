@@ -685,23 +685,66 @@ function renderSolicitudes() {
     <div class="stat-card" style="border-top-color:var(--navy)"><div class="stat-label">En curso · Culminados</div><div class="stat-value">${totalCur + totalCul}</div></div>
   </div>`;
 
-  html += `<div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;align-items:flex-start">`;
+  // ── Barra de filtros ──
+  html += `<div class="toolbar" style="margin-bottom:14px;gap:8px;flex-wrap:wrap">
+    <input type="text" id="solFiltroQ" placeholder="🔍 Buscar por nombre o curso..."
+      style="flex:1;min-width:200px;max-width:340px"
+      oninput="filtrarKanban()">
+    <select id="solFiltroEquipo" onchange="filtrarKanban()"
+      style="min-width:150px">
+      <option value="">Todos los equipos</option>
+      <option value="Planificación">📐 Planificación</option>
+      <option value="Implementación">⚙️ Implementación</option>
+      <option value="O&M">🖥 O&M</option>
+    </select>
+    <button class="btn" onclick="document.getElementById('solFiltroQ').value='';document.getElementById('solFiltroEquipo').value='';filtrarKanban()" title="Limpiar filtros">✕ Limpiar</button>
+  </div>`;
+
+  html += `<div id="kanban-board" style="display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;align-items:flex-start">`;
 
   cols.forEach(col => {
-    const items = asignaciones.filter(a => a.estado === col.estado);
-    html += `<div style="min-width:260px;max-width:280px;flex-shrink:0;background:${col.bg};border:1.5px solid ${col.bd};border-radius:14px;overflow:hidden">
+    html += `<div style="min-width:260px;max-width:280px;flex-shrink:0;background:${col.bg};border:1.5px solid ${col.bd};border-radius:14px;overflow:hidden" data-col="${col.estado}">
       <div style="padding:10px 14px;background:${col.bd};display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.05em">${col.label}</span>
-        <span style="background:rgba(255,255,255,.25);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px">${items.length}</span>
+        <span id="col-count-${col.estado.replace(/\s/g,'-')}" style="background:rgba(255,255,255,.25);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px">0</span>
       </div>
-      <div style="padding:8px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 260px);overflow-y:auto">
-        ${items.length ? items.map(a => adminKanbanCard(a, col)).join('') : '<div style="text-align:center;padding:20px 10px;color:#aaa;font-size:12px">Sin solicitudes</div>'}
+      <div id="col-body-${col.estado.replace(/\s/g,'-')}" style="padding:8px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 300px);overflow-y:auto">
       </div>
     </div>`;
   });
 
   html += `</div>`;
   document.getElementById('mainContent').innerHTML = html;
+  // Render inicial
+  filtrarKanban();
+}
+
+function filtrarKanban() {
+  const q   = (document.getElementById('solFiltroQ')?.value || '').toLowerCase().trim();
+  const eq  = document.getElementById('solFiltroEquipo')?.value || '';
+
+  const cols = [
+    { estado:'Pendiente',   color:'var(--amber)', bg:'#fffbf0', bd:'#f5a623' },
+    { estado:'En revisión', color:'var(--blue)',  bg:'#f0f6ff', bd:'#1a73c8' },
+    { estado:'Autorizado',  color:'var(--green)', bg:'#f0faf4', bd:'#1b7a3e' },
+    { estado:'En curso',    color:'var(--blue)',  bg:'#f0f6ff', bd:'#1a73c8' },
+    { estado:'Culminado',   color:'var(--green)', bg:'#f0faf4', bd:'#1b7a3e' },
+    { estado:'Rechazado',   color:'var(--red)',   bg:'#fff5f5', bd:'#c0392b' },
+  ];
+
+  cols.forEach(col => {
+    let items = asignaciones.filter(a => a.estado === col.estado);
+    if (q)  items = items.filter(a => (a.nombre||'').toLowerCase().includes(q) || (a.curso_titulo||'').toLowerCase().includes(q) || (a.user_login||'').toLowerCase().includes(q));
+    if (eq) items = items.filter(a => a.equipo === eq);
+
+    const bodyEl  = document.getElementById('col-body-'  + col.estado.replace(/\s/g,'-'));
+    const countEl = document.getElementById('col-count-' + col.estado.replace(/\s/g,'-'));
+    if (!bodyEl) return;
+    countEl.textContent = items.length;
+    bodyEl.innerHTML = items.length
+      ? items.map(a => adminKanbanCard(a, col)).join('')
+      : '<div style="text-align:center;padding:20px 10px;color:#aaa;font-size:12px">Sin solicitudes</div>';
+  });
 }
 
 function adminKanbanCard(a, col) {
