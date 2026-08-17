@@ -1074,6 +1074,7 @@ async function guardarAsignacion(abrirCorreo = false) {
     equipo: equipo || prev?.equipo,
     curso_id: selectedCurso ? String(selectedCurso.id) : prev?.curso_id,
     curso_titulo: selectedCurso ? selectedCurso.titulo : prev?.curso_titulo,
+    curso_idioma: selectedCurso ? (selectedCurso.idioma||'') : prev?.curso_idioma,
     horas_curso: selectedCurso ? Number(selectedCurso.horas||0) : prev?.horas_curso,
     fecha_inicio: document.getElementById('fInicio')?.value || null,
     fecha_fin: document.getElementById('fFin')?.value || null,
@@ -1754,6 +1755,7 @@ async function enviarSolicitud() {
     equipo: currentUser.equipo,
     curso_id: String(selectedCurso.id),
     curso_titulo: selectedCurso.titulo,
+    curso_idioma: selectedCurso.idioma || '',
     horas_curso: Number(selectedCurso.horas||0),
     observaciones: obs,
     estado: 'Pendiente',
@@ -2045,7 +2047,7 @@ function updateEmailPreview(asig, pers) {
   <td style="${tdS}">${curso?.curso_id?'CCID:4-CID:'+curso.curso_id:'—'}</td>
   <td style="${tdS}">${curso?.curso_id||'—'}</td>
   <td style="${tdS}">${curso?.curso_titulo||'—'}</td>
-  <td style="${tdS}">—</td>
+  <td style="${tdS}">${curso?.curso_idioma||curso?.idioma||'—'}</td>
 </tr></tbody></table>
 <p id="eqJustPreview">${(document.getElementById('eqJustificacion')?.value||'').split(String.fromCharCode(10)).join('<br>')}</p>
 <p>Agradezco su gentil ayuda.</p><p>Saludos cordiales,</p><br>
@@ -2092,20 +2094,32 @@ function closeEmailModal() { document.getElementById('emailModal').style.display
 function copiarCorreo() {
   const preview = document.getElementById('emailPreview');
   if (!preview) return;
-  const texto = preview.innerText || preview.textContent || '';
-  navigator.clipboard.writeText(texto).then(() => {
-    showToast('✅ Correo copiado al portapapeles');
-  }).catch(() => {
-    // Fallback para navegadores sin clipboard API
-    const ta = document.createElement('textarea');
-    ta.value = texto;
-    ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
+  // Copia HTML rico para que las tablas se peguen con formato en Outlook/Gmail
+  try {
+    const htmlBlob  = new Blob([preview.innerHTML], { type: 'text/html' });
+    const textBlob  = new Blob([preview.innerText],  { type: 'text/plain' });
+    navigator.clipboard.write([new ClipboardItem({ 'text/html': htmlBlob, 'text/plain': textBlob })])
+      .then(() => showToast('✅ Correo copiado — pega con Ctrl+V en Outlook o Gmail'))
+      .catch(() => fallbackCopy(preview));
+  } catch(e) {
+    fallbackCopy(preview);
+  }
+}
+
+function fallbackCopy(preview) {
+  // Fallback: seleccionar el nodo completo y usar execCommand
+  const range = document.createRange();
+  range.selectNodeContents(preview);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  try {
     document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('✅ Correo copiado al portapapeles');
-  });
+    showToast('✅ Correo copiado — pega con Ctrl+V en Outlook o Gmail');
+  } catch(e) {
+    showToast('⚠️ No se pudo copiar automáticamente — selecciona y copia manualmente');
+  }
+  sel.removeAllRanges();
 }
 
 // ═══════════════════════════════════════════════════════════════
