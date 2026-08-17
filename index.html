@@ -1989,8 +1989,7 @@ function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
     <div class="email-preview-box" id="emailPreview"></div>
     <div class="form-actions">
       <button class="btn" onclick="closeEmailModal()">Cancelar</button>
-      <button class="btn navy" onclick="guardarSolicitudEnviada()">Guardar</button>
-      <button class="btn primary" onclick="guardarYEnviarCorreo()">✉️ Guardar y Correo</button>
+      <button class="btn primary" onclick="copiarCorreo()">📋 Copiar Correo</button>
     </div>`;
 
   document.getElementById('emailModal').style.display = 'flex';
@@ -2089,6 +2088,25 @@ async function guardarYEnviarCorreo() {
 }
 
 function closeEmailModal() { document.getElementById('emailModal').style.display = 'none'; currentEmailAsigId = null; }
+
+function copiarCorreo() {
+  const preview = document.getElementById('emailPreview');
+  if (!preview) return;
+  const texto = preview.innerText || preview.textContent || '';
+  navigator.clipboard.writeText(texto).then(() => {
+    showToast('✅ Correo copiado al portapapeles');
+  }).catch(() => {
+    // Fallback para navegadores sin clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = texto;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('✅ Correo copiado al portapapeles');
+  });
+}
 
 // ═══════════════════════════════════════════════════════════════
 //  ALERTS & WORKFLOW COUNTS
