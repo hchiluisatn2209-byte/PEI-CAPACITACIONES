@@ -1784,9 +1784,9 @@ function renderCatalogoList() {
 function debounceCursos() {
   clearTimeout(cursosSearchTimer);
   cursosSearchTimer = setTimeout(() => {
-    // Call renderCatalogo which handles both admin and user contexts
-    renderCatalogo();
-  }, 400);
+    if (currentUser.rol === 'admin') buscarCursosAdmin();
+    else buscarCursosUser();
+  }, 350);
 }
 
 async function enviarSolicitud() {
@@ -1827,11 +1827,11 @@ function renderCatalogo() {
   document.getElementById('mainContent').innerHTML = `
     <div class="toolbar">
       <input type="text" id="filtroCurso" placeholder="Buscar curso, instructor..." oninput="debounceCursos()" style="max-width:280px;flex:2">
-      <select id="filtroCat" onchange="renderCatalogo()">
+      <select id="filtroCat" onchange="buscarCursosAdmin()">
         <option value="">Todas las categorías</option>
         ${CATEGORIAS_UDEMY.map(c=>`<option>${c}</option>`).join('')}
       </select>
-      <select id="filtroIdioma" onchange="renderCatalogo()">
+      <select id="filtroIdioma" onchange="buscarCursosAdmin()">
         <option value="">Todos los idiomas</option>
         <option>English</option><option>Spanish</option><option>Portuguese</option>
         <option>French</option><option>German</option><option>Italian</option>
@@ -1839,6 +1839,56 @@ function renderCatalogo() {
       </select>
     </div>
     <div id="listaCursos"><div class="empty">Escribe para buscar en 34,055 cursos</div></div>`;
+}
+
+async function buscarCursosAdmin() {
+  const lista = document.getElementById('listaCursos');
+  if (!lista) return;
+  const q   = (document.getElementById('filtroCurso')?.value  || '').trim();
+  const cat = (document.getElementById('filtroCat')?.value    || '');
+  const idi = (document.getElementById('filtroIdioma')?.value || '');
+
+  if (!q && !cat && !idi) {
+    lista.innerHTML = '<div class="empty">Escribe para buscar en 34,055 cursos</div>';
+    return;
+  }
+
+  lista.innerHTML = '<div style="text-align:center;padding:20px"><span class="spinner"></span></div>';
+
+  let query = sb.from('cursos_udemy').select('*');
+  if (q)   query = query.or(`titulo.ilike.%${q}%,instructor.ilike.%${q}%`);
+  if (cat) query = query.eq('categoria', cat);
+  if (idi) query = query.eq('idioma', idi);
+  query = query.order('rating', { ascending: false }).limit(50);
+
+  const { data, error } = await query;
+  if (error) { lista.innerHTML = '<div class="empty">Error al buscar cursos</div>'; return; }
+  cursosCache = data || [];
+
+  if (!cursosCache.length) {
+    lista.innerHTML = '<div class="empty">Sin resultados — intenta con otras palabras</div>';
+    return;
+  }
+
+  lista.innerHTML = cursosCache.map(c => `
+    <div class="curso-item" onclick="asignarCursoDirecto('${c.id}')">
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span style="font-size:10px;color:var(--text3);font-family:monospace">ID:${c.id}</span>
+        <div class="curso-title">${c.titulo}</div>
+      </div>
+      <div class="curso-meta">
+        <span>👤 ${c.instructor||''}</span>
+        <span>🏷 ${c.categoria||''}</span>
+        <span>⏱ <strong>${Number(c.horas||0).toFixed(0)}h</strong></span>
+        <span>⭐${c.rating||''}</span>
+        <span>${c.nivel||''}</span>
+        <span>🌐 ${c.idioma||''}</span>
+        ${c.practica?'<span style="color:var(--green)">✓ práctica</span>':''}
+      </div>
+    </div>`).join('')
+    + (cursosCache.length === 50
+      ? '<div style="text-align:center;padding:8px;font-size:11px;color:var(--text3)">Mostrando 50 resultados — refina la búsqueda</div>'
+      : '');
 }
 
 function asignarCursoDirecto(id) {
