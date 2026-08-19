@@ -1117,7 +1117,6 @@ async function guardarAsignacion(abrirCorreo = false) {
     equipo: equipo || prev?.equipo,
     curso_id: selectedCurso ? String(selectedCurso.id) : prev?.curso_id,
     curso_titulo: selectedCurso ? selectedCurso.titulo : prev?.curso_titulo,
-    curso_idioma: selectedCurso ? (selectedCurso.idioma||'') : prev?.curso_idioma,
     horas_curso: selectedCurso ? Number(selectedCurso.horas||0) : prev?.horas_curso,
     fecha_inicio: document.getElementById('fInicio')?.value || null,
     fecha_fin: document.getElementById('fFin')?.value || null,
@@ -1798,7 +1797,6 @@ async function enviarSolicitud() {
     equipo: currentUser.equipo,
     curso_id: String(selectedCurso.id),
     curso_titulo: selectedCurso.titulo,
-    curso_idioma: selectedCurso.idioma || '',
     horas_curso: Number(selectedCurso.horas||0),
     observaciones: obs,
     estado: 'Pendiente',
@@ -2118,6 +2116,8 @@ function updateEmailPreview(asig, pers) {
   const userLogin = pers.user || '—';
   const mail = pers.mail || userLogin+'@telconet.ec';
   const curso = asig;
+  const cursoDetalle = cursosCache.find(c => String(c.id) === String(curso?.curso_id)) || {};
+  const idiomaCurso = cursoDetalle.idioma || curso?.curso_idioma || '—';
   const thS = 'border:1px solid #ddd;padding:6px 10px;background:#0d1b2e;color:#fff;font-size:12px;text-align:left;white-space:nowrap';
   const tdS = 'border:1px solid #ddd;padding:6px 10px;font-size:12px;white-space:nowrap';
   const html = `<p><strong>Para:</strong> ${telcouMail}; telcou_uio@telconet.ec<br>
@@ -2140,7 +2140,7 @@ function updateEmailPreview(asig, pers) {
   <td style="${tdS}">${curso?.curso_id?'CCID:4-CID:'+curso.curso_id:'—'}</td>
   <td style="${tdS}">${curso?.curso_id||'—'}</td>
   <td style="${tdS}">${curso?.curso_titulo||'—'}</td>
-  <td style="${tdS}">${curso?.curso_idioma||curso?.idioma||'—'}</td>
+  <td style="${tdS}">${curso?.curso_idioma||curso?.idioma||idiomaCurso}</td>
 </tr></tbody></table>
 <p id="eqJustPreview">${(document.getElementById('eqJustificacion')?.value||'').split(String.fromCharCode(10)).join('<br>')}</p>
 <p>Agradezco su gentil ayuda.</p><p>Saludos cordiales,</p><br>
