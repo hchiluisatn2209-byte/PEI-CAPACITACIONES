@@ -1912,7 +1912,7 @@ function renderPersonal() {
       <table>
         <thead><tr>
           <th style="position:sticky;left:0;z-index:2;background:var(--navy)">Usuario</th>
-          <th>Nombre</th><th>Ciudad</th><th>Código</th><th>Cédula</th><th>Celular</th><th>Mail</th><th>Equipo</th><th>Registrados</th><th>Culminados</th><th style="background:#3a0a0a">Rechazados</th><th>Avance</th>
+          <th>Nombre</th><th>Ciudad</th><th>Código</th><th>Cédula</th><th>Celular</th><th>Mail</th><th>Equipo</th><th>Registrados</th><th>En Curso</th><th>Culminados</th><th style="background:#3a0a0a">Rechazados</th><th>Avance</th>
         </tr></thead>
         <tbody id="tbPersonal"></tbody>
       </table>
@@ -1941,6 +1941,7 @@ function renderPersonalTabla() {
     const asig = asignaciones.filter(a => a.user_login === per.user);
     // Registrados = Pendiente + En revisión + Autorizado
     const registrados = asig.filter(a => ['Pendiente','En revisión','Autorizado'].includes(a.estado)).length;
+    const enCurso = asig.filter(a => a.estado === 'En curso').length;
     const done   = asig.filter(a => a.estado === 'Culminado').length;
     const rech   = asig.filter(a => a.estado === 'Rechazado').length;
     const certPend = done > 0 && asig.filter(a => a.estado === 'Culminado' && !a.certificado_enviado).length > 0;
@@ -1964,6 +1965,7 @@ function renderPersonalTabla() {
       <td style="font-size:12px"><a href="mailto:${per.mail}" style="color:var(--blue);text-decoration:none">${per.mail||'—'}</a></td>
       <td>${equipoBadgeStr(per.equipo)}</td>
       <td style="text-align:center;font-weight:600;color:var(--blue)">${registrados}</td>
+      <td style="text-align:center;font-weight:600;color:var(--navy)">${enCurso > 0 ? `<span style="color:#1a73c8;font-weight:700">${enCurso}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
       <td style="text-align:center">${culminadoCell}</td>
       <td style="text-align:center;background:rgba(192,57,43,.04)">${rechCell}</td>
       <td><span style="font-size:12px">${pct}%</span><div class="pct-bar"><div class="pct-fill" style="width:${pct}%"></div></div></td>
