@@ -685,66 +685,23 @@ function renderSolicitudes() {
     <div class="stat-card" style="border-top-color:var(--navy)"><div class="stat-label">En curso · Culminados</div><div class="stat-value">${totalCur + totalCul}</div></div>
   </div>`;
 
-  // ── Barra de filtros ──
-  html += `<div class="toolbar" style="margin-bottom:14px;gap:8px;flex-wrap:wrap">
-    <input type="text" id="solFiltroQ" placeholder="🔍 Buscar por nombre o curso..."
-      style="flex:1;min-width:200px;max-width:340px"
-      oninput="filtrarKanban()">
-    <select id="solFiltroEquipo" onchange="filtrarKanban()"
-      style="min-width:150px">
-      <option value="">Todos los equipos</option>
-      <option value="Planificación">📐 Planificación</option>
-      <option value="Implementación">⚙️ Implementación</option>
-      <option value="O&M">🖥 O&M</option>
-    </select>
-    <button class="btn" onclick="document.getElementById('solFiltroQ').value='';document.getElementById('solFiltroEquipo').value='';filtrarKanban()" title="Limpiar filtros">✕ Limpiar</button>
-  </div>`;
-
-  html += `<div id="kanban-board" style="display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;align-items:flex-start">`;
+  html += `<div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;align-items:flex-start">`;
 
   cols.forEach(col => {
-    html += `<div style="min-width:260px;max-width:280px;flex-shrink:0;background:${col.bg};border:1.5px solid ${col.bd};border-radius:14px;overflow:hidden" data-col="${col.estado}">
+    const items = asignaciones.filter(a => a.estado === col.estado);
+    html += `<div style="min-width:260px;max-width:280px;flex-shrink:0;background:${col.bg};border:1.5px solid ${col.bd};border-radius:14px;overflow:hidden">
       <div style="padding:10px 14px;background:${col.bd};display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.05em">${col.label}</span>
-        <span id="col-count-${col.estado.replace(/\s/g,'-')}" style="background:rgba(255,255,255,.25);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px">0</span>
+        <span style="background:rgba(255,255,255,.25);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px">${items.length}</span>
       </div>
-      <div id="col-body-${col.estado.replace(/\s/g,'-')}" style="padding:8px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 300px);overflow-y:auto">
+      <div style="padding:8px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 260px);overflow-y:auto">
+        ${items.length ? items.map(a => adminKanbanCard(a, col)).join('') : '<div style="text-align:center;padding:20px 10px;color:#aaa;font-size:12px">Sin solicitudes</div>'}
       </div>
     </div>`;
   });
 
   html += `</div>`;
   document.getElementById('mainContent').innerHTML = html;
-  // Render inicial
-  filtrarKanban();
-}
-
-function filtrarKanban() {
-  const q   = (document.getElementById('solFiltroQ')?.value || '').toLowerCase().trim();
-  const eq  = document.getElementById('solFiltroEquipo')?.value || '';
-
-  const cols = [
-    { estado:'Pendiente',   color:'var(--amber)', bg:'#fffbf0', bd:'#f5a623' },
-    { estado:'En revisión', color:'var(--blue)',  bg:'#f0f6ff', bd:'#1a73c8' },
-    { estado:'Autorizado',  color:'var(--green)', bg:'#f0faf4', bd:'#1b7a3e' },
-    { estado:'En curso',    color:'var(--blue)',  bg:'#f0f6ff', bd:'#1a73c8' },
-    { estado:'Culminado',   color:'var(--green)', bg:'#f0faf4', bd:'#1b7a3e' },
-    { estado:'Rechazado',   color:'var(--red)',   bg:'#fff5f5', bd:'#c0392b' },
-  ];
-
-  cols.forEach(col => {
-    let items = asignaciones.filter(a => a.estado === col.estado);
-    if (q)  items = items.filter(a => (a.nombre||'').toLowerCase().includes(q) || (a.curso_titulo||'').toLowerCase().includes(q) || (a.user_login||'').toLowerCase().includes(q));
-    if (eq) items = items.filter(a => a.equipo === eq);
-
-    const bodyEl  = document.getElementById('col-body-'  + col.estado.replace(/\s/g,'-'));
-    const countEl = document.getElementById('col-count-' + col.estado.replace(/\s/g,'-'));
-    if (!bodyEl) return;
-    countEl.textContent = items.length;
-    bodyEl.innerHTML = items.length
-      ? items.map(a => adminKanbanCard(a, col)).join('')
-      : '<div style="text-align:center;padding:20px 10px;color:#aaa;font-size:12px">Sin solicitudes</div>';
-  });
 }
 
 function adminKanbanCard(a, col) {
@@ -832,7 +789,7 @@ async function confirmarAutorizar(id) {
     <div class="form-row">
       <div class="form-field full">
         <label>Nota para el colaborador (opcional)</label>
-        <textarea id="notaAutorizacion" rows="2" placeholder="Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas."></textarea>
+        <textarea id="notaAutorizacion" rows="4">Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.</textarea>
       </div>
     </div>
     <!-- Correo a Telco U no aplica aquí: la confirmación ya fue recibida manualmente -->
@@ -844,8 +801,7 @@ async function confirmarAutorizar(id) {
 }
 
 async function ejecutarAutorizacion() {
-  const nota = document.getElementById('notaAutorizacion')?.value || '';
- const obs = nota ? nota : 'Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.';
+  const obs = (document.getElementById('notaAutorizacion')?.value || '').trim();
   const { error } = await sb.from('asignaciones')
     .update({ estado: 'Autorizado', observaciones_admin: obs })
     .eq('id', editingId);
@@ -1783,9 +1739,9 @@ function renderCatalogoList() {
 function debounceCursos() {
   clearTimeout(cursosSearchTimer);
   cursosSearchTimer = setTimeout(() => {
-    if (currentUser.rol === 'admin') buscarCursosAdmin();
-    else buscarCursosUser();
-  }, 350);
+    // Call renderCatalogo which handles both admin and user contexts
+    renderCatalogo();
+  }, 400);
 }
 
 async function enviarSolicitud() {
@@ -1825,11 +1781,11 @@ function renderCatalogo() {
   document.getElementById('mainContent').innerHTML = `
     <div class="toolbar">
       <input type="text" id="filtroCurso" placeholder="Buscar curso, instructor..." oninput="debounceCursos()" style="max-width:280px;flex:2">
-      <select id="filtroCat" onchange="buscarCursosAdmin()">
+      <select id="filtroCat" onchange="renderCatalogo()">
         <option value="">Todas las categorías</option>
         ${CATEGORIAS_UDEMY.map(c=>`<option>${c}</option>`).join('')}
       </select>
-      <select id="filtroIdioma" onchange="buscarCursosAdmin()">
+      <select id="filtroIdioma" onchange="renderCatalogo()">
         <option value="">Todos los idiomas</option>
         <option>English</option><option>Spanish</option><option>Portuguese</option>
         <option>French</option><option>German</option><option>Italian</option>
@@ -1837,56 +1793,6 @@ function renderCatalogo() {
       </select>
     </div>
     <div id="listaCursos"><div class="empty">Escribe para buscar en 34,055 cursos</div></div>`;
-}
-
-async function buscarCursosAdmin() {
-  const lista = document.getElementById('listaCursos');
-  if (!lista) return;
-  const q   = (document.getElementById('filtroCurso')?.value  || '').trim();
-  const cat = (document.getElementById('filtroCat')?.value    || '');
-  const idi = (document.getElementById('filtroIdioma')?.value || '');
-
-  if (!q && !cat && !idi) {
-    lista.innerHTML = '<div class="empty">Escribe para buscar en 34,055 cursos</div>';
-    return;
-  }
-
-  lista.innerHTML = '<div style="text-align:center;padding:20px"><span class="spinner"></span></div>';
-
-  let query = sb.from('cursos_udemy').select('*');
-  if (q)   query = query.or(`titulo.ilike.%${q}%,instructor.ilike.%${q}%`);
-  if (cat) query = query.eq('categoria', cat);
-  if (idi) query = query.eq('idioma', idi);
-  query = query.order('rating', { ascending: false }).limit(50);
-
-  const { data, error } = await query;
-  if (error) { lista.innerHTML = '<div class="empty">Error al buscar cursos</div>'; return; }
-  cursosCache = data || [];
-
-  if (!cursosCache.length) {
-    lista.innerHTML = '<div class="empty">Sin resultados — intenta con otras palabras</div>';
-    return;
-  }
-
-  lista.innerHTML = cursosCache.map(c => `
-    <div class="curso-item" onclick="asignarCursoDirecto('${c.id}')">
-      <div style="display:flex;align-items:baseline;gap:8px">
-        <span style="font-size:10px;color:var(--text3);font-family:monospace">ID:${c.id}</span>
-        <div class="curso-title">${c.titulo}</div>
-      </div>
-      <div class="curso-meta">
-        <span>👤 ${c.instructor||''}</span>
-        <span>🏷 ${c.categoria||''}</span>
-        <span>⏱ <strong>${Number(c.horas||0).toFixed(0)}h</strong></span>
-        <span>⭐${c.rating||''}</span>
-        <span>${c.nivel||''}</span>
-        <span>🌐 ${c.idioma||''}</span>
-        ${c.practica?'<span style="color:var(--green)">✓ práctica</span>':''}
-      </div>
-    </div>`).join('')
-    + (cursosCache.length === 50
-      ? '<div style="text-align:center;padding:8px;font-size:11px;color:var(--text3)">Mostrando 50 resultados — refina la búsqueda</div>'
-      : '');
 }
 
 function asignarCursoDirecto(id) {
@@ -1912,7 +1818,7 @@ function renderPersonal() {
       <table>
         <thead><tr>
           <th style="position:sticky;left:0;z-index:2;background:var(--navy)">Usuario</th>
-          <th>Nombre</th><th>Ciudad</th><th>Código</th><th>Cédula</th><th>Celular</th><th>Mail</th><th>Equipo</th><th>Registrados</th><th>En Curso</th><th>Culminados</th><th style="background:#3a0a0a">Rechazados</th><th>Avance</th>
+          <th>Nombre</th><th>Ciudad</th><th>Código</th><th>Cédula</th><th>Celular</th><th>Mail</th><th>Equipo</th><th>Asignados</th><th>Culminados</th><th>Avance</th>
         </tr></thead>
         <tbody id="tbPersonal"></tbody>
       </table>
@@ -1939,22 +1845,8 @@ function renderPersonalTabla() {
   if (!tb) return;
   tb.innerHTML = data.map(per => {
     const asig = asignaciones.filter(a => a.user_login === per.user);
-    // Registrados = Pendiente + En revisión + Autorizado
-    const registrados = asig.filter(a => ['Pendiente','En revisión','Autorizado'].includes(a.estado)).length;
-    const enCurso = asig.filter(a => a.estado === 'En curso').length;
-    const done   = asig.filter(a => a.estado === 'Culminado').length;
-    const rech   = asig.filter(a => a.estado === 'Rechazado').length;
-    const certPend = done > 0 && asig.filter(a => a.estado === 'Culminado' && !a.certificado_enviado).length > 0;
-    const pct    = registrados ? Math.round(done / registrados * 100) : 0;
-
-    const culminadoCell = done > 0
-      ? `${done}${certPend ? `<br><span class="badge badge-certpend" style="font-size:10px;margin-top:3px">⚠ Cert. pendiente</span>` : ''}`
-      : `0`;
-
-    const rechCell = rech > 0
-      ? `<span style="font-weight:700;color:var(--red)">${rech}</span>`
-      : `<span style="color:var(--text3)">—</span>`;
-
+    const done = asig.filter(a => a.estado === 'Culminado').length;
+    const avg = asig.length ? Math.round(asig.reduce((s,a)=>s+(a.avance||0),0)/asig.length) : 0;
     return `<tr>
       <td style="position:sticky;left:0;background:var(--surface-2);z-index:1;font-size:12px;color:var(--text3)">${per.user}</td>
       <td style="font-weight:600">${per.nombre}</td>
@@ -1964,11 +1856,9 @@ function renderPersonalTabla() {
       <td style="font-size:12px">${per.celular||'—'}</td>
       <td style="font-size:12px"><a href="mailto:${per.mail}" style="color:var(--blue);text-decoration:none">${per.mail||'—'}</a></td>
       <td>${equipoBadgeStr(per.equipo)}</td>
-      <td style="text-align:center;font-weight:600;color:var(--blue)">${registrados}</td>
-      <td style="text-align:center;font-weight:600;color:var(--navy)">${enCurso > 0 ? `<span style="color:#1a73c8;font-weight:700">${enCurso}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
-      <td style="text-align:center">${culminadoCell}</td>
-      <td style="text-align:center;background:rgba(192,57,43,.04)">${rechCell}</td>
-      <td><span style="font-size:12px">${pct}%</span><div class="pct-bar"><div class="pct-fill" style="width:${pct}%"></div></div></td>
+      <td style="text-align:center">${asig.length}</td>
+      <td style="text-align:center">${done}</td>
+      <td><span style="font-size:12px">${avg}%</span><div class="pct-bar"><div class="pct-fill" style="width:${avg}%"></div></div></td>
     </tr>`;
   }).join('');
 }
@@ -2084,7 +1974,8 @@ function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
     <div class="email-preview-box" id="emailPreview"></div>
     <div class="form-actions">
       <button class="btn" onclick="closeEmailModal()">Cancelar</button>
-      <button class="btn primary" onclick="copiarCorreo()">📋 Copiar Correo</button>
+      <button class="btn navy" onclick="guardarSolicitudEnviada()">Guardar</button>
+      <button class="btn primary" onclick="guardarYEnviarCorreo()">✉️ Guardar y Correo</button>
     </div>`;
 
   document.getElementById('emailModal').style.display = 'flex';
@@ -2118,8 +2009,6 @@ function updateEmailPreview(asig, pers) {
   const userLogin = pers.user || '—';
   const mail = pers.mail || userLogin+'@telconet.ec';
   const curso = asig;
-  const cursoDetalle = cursosCache.find(c => String(c.id) === String(curso?.curso_id)) || {};
-  const idiomaCurso = cursoDetalle.idioma || curso?.curso_idioma || '—';
   const thS = 'border:1px solid #ddd;padding:6px 10px;background:#0d1b2e;color:#fff;font-size:12px;text-align:left;white-space:nowrap';
   const tdS = 'border:1px solid #ddd;padding:6px 10px;font-size:12px;white-space:nowrap';
   const html = `<p><strong>Para:</strong> ${telcouMail}; telcou_uio@telconet.ec<br>
@@ -2142,7 +2031,7 @@ function updateEmailPreview(asig, pers) {
   <td style="${tdS}">${curso?.curso_id?'CCID:4-CID:'+curso.curso_id:'—'}</td>
   <td style="${tdS}">${curso?.curso_id||'—'}</td>
   <td style="${tdS}">${curso?.curso_titulo||'—'}</td>
-  <td style="${tdS}">${curso?.curso_idioma||curso?.idioma||idiomaCurso}</td>
+  <td style="${tdS}">—</td>
 </tr></tbody></table>
 <p id="eqJustPreview">${(document.getElementById('eqJustificacion')?.value||'').split(String.fromCharCode(10)).join('<br>')}</p>
 <p>Agradezco su gentil ayuda.</p><p>Saludos cordiales,</p><br>
@@ -2185,37 +2074,6 @@ async function guardarYEnviarCorreo() {
 }
 
 function closeEmailModal() { document.getElementById('emailModal').style.display = 'none'; currentEmailAsigId = null; }
-
-function copiarCorreo() {
-  const preview = document.getElementById('emailPreview');
-  if (!preview) return;
-  // Copia HTML rico para que las tablas se peguen con formato en Outlook/Gmail
-  try {
-    const htmlBlob  = new Blob([preview.innerHTML], { type: 'text/html' });
-    const textBlob  = new Blob([preview.innerText],  { type: 'text/plain' });
-    navigator.clipboard.write([new ClipboardItem({ 'text/html': htmlBlob, 'text/plain': textBlob })])
-      .then(() => showToast('✅ Correo copiado — pega con Ctrl+V en Outlook o Gmail'))
-      .catch(() => fallbackCopy(preview));
-  } catch(e) {
-    fallbackCopy(preview);
-  }
-}
-
-function fallbackCopy(preview) {
-  // Fallback: seleccionar el nodo completo y usar execCommand
-  const range = document.createRange();
-  range.selectNodeContents(preview);
-  const sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
-  try {
-    document.execCommand('copy');
-    showToast('✅ Correo copiado — pega con Ctrl+V en Outlook o Gmail');
-  } catch(e) {
-    showToast('⚠️ No se pudo copiar automáticamente — selecciona y copia manualmente');
-  }
-  sel.removeAllRanges();
-}
 
 // ═══════════════════════════════════════════════════════════════
 //  ALERTS & WORKFLOW COUNTS
