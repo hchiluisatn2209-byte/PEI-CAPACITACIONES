@@ -832,7 +832,8 @@ async function confirmarAutorizar(id) {
     <div class="form-row">
       <div class="form-field full">
         <label>Nota para el colaborador (opcional)</label>
-        <textarea id="notaAutorizacion" rows="2" placeholder="Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas."></textarea>
+        //<textarea id="notaAutorizacion" rows="2" placeholder="Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas."></textarea>
+        <textarea id="notaAutorizacion" rows="2" placeholder="Ingresa a la plataforma de Udemy direcatmente y haz uso de tu licencia habilitada para este curso.  No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación a tiempo, ya que esta licencia será transferida a otra persona una vez que la concluyas. "></textarea>
       </div>
     </div>
     <!-- Correo a Telco U no aplica aquí: la confirmación ya fue recibida manualmente -->
@@ -845,7 +846,8 @@ async function confirmarAutorizar(id) {
 
 async function ejecutarAutorizacion() {
   const nota = document.getElementById('notaAutorizacion')?.value || '';
-  const obs = nota ? nota : 'Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.';
+ // const obs = nota ? nota : 'Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.';
+  const obs = nota ? nota : 'Ingresa a la plataforma de Udemy direcatmente y haz uso de tu licencia habilitada para este curso.  No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación a tiempo, ya que esta licencia será transferida a otra persona una vez que la concluyas. ';
   const { error } = await sb.from('asignaciones')
     .update({ estado: 'Autorizado', observaciones_admin: obs })
     .eq('id', editingId);
