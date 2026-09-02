@@ -706,6 +706,21 @@ function renderSolicitudes() {
 
 function adminKanbanCard(a, col) {
   const btns = solicitudButtons(a);
+  // Fecha del estado actual: fecha_estado si existe, si no created_at (solo fecha)
+  const fechaEstado = a.fecha_estado
+    ? a.fecha_estado
+    : a.created_at
+      ? a.created_at.slice(0,10)
+      : null;
+  const labelFecha = {
+    'Pendiente':   '📥 Registrado',
+    'En revisión': '🔎 En revisión desde',
+    'Autorizado':  '✔ Autorizado el',
+    'En curso':    '▶ En curso desde',
+    'Culminado':   '✅ Culminado el',
+    'Rechazado':   '✕ Rechazado el',
+  }[a.estado] || '📅';
+
   return `<div style="background:#fff;border-radius:10px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);border:1px solid rgba(0,0,0,.06)">
     <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:5px;line-height:1.4">${a.curso_titulo||'Sin curso'}</div>
     <div style="font-size:11px;color:var(--text3);display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
@@ -713,6 +728,7 @@ function adminKanbanCard(a, col) {
       ${equipoBadgeStr(a.equipo)}
       ${a.horas_curso?`<span>⏱ ${Number(a.horas_curso).toFixed(0)}h</span>`:''}
     </div>
+    ${fechaEstado?`<div style="font-size:10px;color:var(--text3);background:var(--gray-bg);padding:3px 8px;border-radius:4px;margin-bottom:6px;display:inline-block">${labelFecha}: <strong style="color:var(--text2)">${fechaEstado}</strong></div>`:''}
     ${a.observaciones?`<div style="font-size:11px;color:var(--text2);background:var(--gray-bg);padding:5px 8px;border-radius:5px;margin-bottom:8px;font-style:italic">"${a.observaciones}"</div>`:''}
     ${a.fecha_telcou_inicio||a.fecha_telcou_fin?`<div style="font-size:10px;color:var(--blue);background:var(--blue-lt);padding:3px 7px;border-radius:4px;margin-bottom:6px">📅 ${a.fecha_telcou_inicio||'—'} → ${a.fecha_telcou_fin||'—'}</div>`:''}
     ${a.avance?`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px"><span style="color:var(--text3)">Avance</span><span style="color:${col.color};font-weight:700">${a.avance}%</span></div><div style="height:4px;background:var(--gray-bg);border-radius:3px;overflow:hidden"><div style="height:100%;width:${a.avance}%;background:${col.bd};border-radius:3px"></div></div></div>`:''}
@@ -770,7 +786,7 @@ function solicitudCard(a, borderColor) {
 }
 
 async function marcarEnRevision(id) {
-  const { error } = await sb.from('asignaciones').update({ estado: 'En revisión' }).eq('id', id);
+  const { error } = await sb.from('asignaciones').update({ estado: 'En revisión', fecha_estado: new Date().toISOString().slice(0,10) }).eq('id', id);
   if (!error) { showToast('Marcado en revisión con Telco U ✓'); await loadAll(); renderSolicitudes(); }
   else showToast('Error: ' + error.message);
 }
@@ -789,7 +805,7 @@ async function confirmarAutorizar(id) {
     <div class="form-row">
       <div class="form-field full">
         <label>Nota para el colaborador (opcional)</label>
-        <textarea id="notaAutorizacion" rows="4">Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.</textarea>
+        <textarea id="notaAutorizacion" rows="2" placeholder="Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas."></textarea>
       </div>
     </div>
     <!-- Correo a Telco U no aplica aquí: la confirmación ya fue recibida manualmente -->
@@ -801,9 +817,10 @@ async function confirmarAutorizar(id) {
 }
 
 async function ejecutarAutorizacion() {
-  const obs = (document.getElementById('notaAutorizacion')?.value || '').trim();
+  const nota = document.getElementById('notaAutorizacion')?.value || '';
+  const obs = nota ? nota : 'Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.';
   const { error } = await sb.from('asignaciones')
-    .update({ estado: 'Autorizado', observaciones_admin: obs })
+    .update({ estado: 'Autorizado', observaciones_admin: obs, fecha_estado: new Date().toISOString().slice(0,10) })
     .eq('id', editingId);
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal();
@@ -816,7 +833,7 @@ async function ejecutarAutorizacion() {
 
 async function rechazarSolicitud(id) {
   const motivo = prompt('Motivo del rechazo (opcional):') ?? '';
-  const { error } = await sb.from('asignaciones').update({ estado: 'Rechazado', observaciones_admin: motivo }).eq('id', id);
+  const { error } = await sb.from('asignaciones').update({ estado: 'Rechazado', observaciones_admin: motivo, fecha_estado: new Date().toISOString().slice(0,10) }).eq('id', id);
   if (!error) { showToast('Solicitud rechazada'); await loadAll(); renderSolicitudes(); }
   else showToast('Error: ' + error.message);
 }
@@ -2042,7 +2059,7 @@ function updateEmailPreview(asig, pers) {
 
 async function guardarSolicitudEnviada() {
   if (currentEmailAsigId) {
-    await sb.from('asignaciones').update({ estado: 'Autorizado' }).eq('id', currentEmailAsigId);
+    await sb.from('asignaciones').update({ estado: 'Autorizado', fecha_estado: new Date().toISOString().slice(0,10) }).eq('id', currentEmailAsigId);
     showToast('Estado actualizado ✓');
     await loadAll();
     renderSolicitudes();
@@ -2052,7 +2069,7 @@ async function guardarSolicitudEnviada() {
 
 async function guardarYEnviarCorreo() {
   if (currentEmailAsigId) {
-    await sb.from('asignaciones').update({ estado: 'Autorizado' }).eq('id', currentEmailAsigId);
+    await sb.from('asignaciones').update({ estado: 'Autorizado', fecha_estado: new Date().toISOString().slice(0,10) }).eq('id', currentEmailAsigId);
     await loadAll();
   }
   const a = asignaciones.find(x => x.id === currentEmailAsigId);
