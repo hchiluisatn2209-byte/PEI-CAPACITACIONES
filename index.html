@@ -706,21 +706,6 @@ function renderSolicitudes() {
 
 function adminKanbanCard(a, col) {
   const btns = solicitudButtons(a);
-  // Fecha del estado actual: fecha_estado si existe, si no created_at (solo fecha)
-  const fechaEstado = a.fecha_estado
-    ? a.fecha_estado
-    : a.created_at
-      ? a.created_at.slice(0,10)
-      : null;
-  const labelFecha = {
-    'Pendiente':   '📥 Registrado',
-    'En revisión': '🔎 En revisión desde',
-    'Autorizado':  '✔ Autorizado el',
-    'En curso':    '▶ En curso desde',
-    'Culminado':   '✅ Culminado el',
-    'Rechazado':   '✕ Rechazado el',
-  }[a.estado] || '📅';
-
   return `<div style="background:#fff;border-radius:10px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);border:1px solid rgba(0,0,0,.06)">
     <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:5px;line-height:1.4">${a.curso_titulo||'Sin curso'}</div>
     <div style="font-size:11px;color:var(--text3);display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
@@ -728,7 +713,6 @@ function adminKanbanCard(a, col) {
       ${equipoBadgeStr(a.equipo)}
       ${a.horas_curso?`<span>⏱ ${Number(a.horas_curso).toFixed(0)}h</span>`:''}
     </div>
-    ${fechaEstado?`<div style="font-size:10px;color:var(--text3);background:var(--gray-bg);padding:3px 8px;border-radius:4px;margin-bottom:6px;display:inline-block">${labelFecha}: <strong style="color:var(--text2)">${fechaEstado}</strong></div>`:''}
     ${a.observaciones?`<div style="font-size:11px;color:var(--text2);background:var(--gray-bg);padding:5px 8px;border-radius:5px;margin-bottom:8px;font-style:italic">"${a.observaciones}"</div>`:''}
     ${a.fecha_telcou_inicio||a.fecha_telcou_fin?`<div style="font-size:10px;color:var(--blue);background:var(--blue-lt);padding:3px 7px;border-radius:4px;margin-bottom:6px">📅 ${a.fecha_telcou_inicio||'—'} → ${a.fecha_telcou_fin||'—'}</div>`:''}
     ${a.avance?`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px"><span style="color:var(--text3)">Avance</span><span style="color:${col.color};font-weight:700">${a.avance}%</span></div><div style="height:4px;background:var(--gray-bg);border-radius:3px;overflow:hidden"><div style="height:100%;width:${a.avance}%;background:${col.bd};border-radius:3px"></div></div></div>`:''}
@@ -786,7 +770,7 @@ function solicitudCard(a, borderColor) {
 }
 
 async function marcarEnRevision(id) {
-  const { error } = await sb.from('asignaciones').update({ estado: 'En revisión', fecha_estado: new Date().toISOString().slice(0,10) }).eq('id', id);
+  const { error } = await sb.from('asignaciones').update({ estado: 'En revisión' }).eq('id', id);
   if (!error) { showToast('Marcado en revisión con Telco U ✓'); await loadAll(); renderSolicitudes(); }
   else showToast('Error: ' + error.message);
 }
@@ -820,7 +804,7 @@ async function ejecutarAutorizacion() {
   const nota = document.getElementById('notaAutorizacion')?.value || '';
   const obs = nota ? nota : 'Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.';
   const { error } = await sb.from('asignaciones')
-    .update({ estado: 'Autorizado', observaciones_admin: obs, fecha_estado: new Date().toISOString().slice(0,10) })
+    .update({ estado: 'Autorizado', observaciones_admin: obs })
     .eq('id', editingId);
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal();
@@ -833,7 +817,7 @@ async function ejecutarAutorizacion() {
 
 async function rechazarSolicitud(id) {
   const motivo = prompt('Motivo del rechazo (opcional):') ?? '';
-  const { error } = await sb.from('asignaciones').update({ estado: 'Rechazado', observaciones_admin: motivo, fecha_estado: new Date().toISOString().slice(0,10) }).eq('id', id);
+  const { error } = await sb.from('asignaciones').update({ estado: 'Rechazado', observaciones_admin: motivo }).eq('id', id);
   if (!error) { showToast('Solicitud rechazada'); await loadAll(); renderSolicitudes(); }
   else showToast('Error: ' + error.message);
 }
@@ -1991,8 +1975,7 @@ function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
     <div class="email-preview-box" id="emailPreview"></div>
     <div class="form-actions">
       <button class="btn" onclick="closeEmailModal()">Cancelar</button>
-      <button class="btn navy" onclick="guardarSolicitudEnviada()">Guardar</button>
-      <button class="btn primary" onclick="guardarYEnviarCorreo()">✉️ Guardar y Correo</button>
+      <button class="btn primary" onclick="copiarCorreo()">📋 Copiar Correo</button>
     </div>`;
 
   document.getElementById('emailModal').style.display = 'flex';
@@ -2059,7 +2042,7 @@ function updateEmailPreview(asig, pers) {
 
 async function guardarSolicitudEnviada() {
   if (currentEmailAsigId) {
-    await sb.from('asignaciones').update({ estado: 'Autorizado', fecha_estado: new Date().toISOString().slice(0,10) }).eq('id', currentEmailAsigId);
+    await sb.from('asignaciones').update({ estado: 'Autorizado' }).eq('id', currentEmailAsigId);
     showToast('Estado actualizado ✓');
     await loadAll();
     renderSolicitudes();
@@ -2069,7 +2052,7 @@ async function guardarSolicitudEnviada() {
 
 async function guardarYEnviarCorreo() {
   if (currentEmailAsigId) {
-    await sb.from('asignaciones').update({ estado: 'Autorizado', fecha_estado: new Date().toISOString().slice(0,10) }).eq('id', currentEmailAsigId);
+    await sb.from('asignaciones').update({ estado: 'Autorizado' }).eq('id', currentEmailAsigId);
     await loadAll();
   }
   const a = asignaciones.find(x => x.id === currentEmailAsigId);
@@ -2091,6 +2074,33 @@ async function guardarYEnviarCorreo() {
 }
 
 function closeEmailModal() { document.getElementById('emailModal').style.display = 'none'; currentEmailAsigId = null; }
+
+function copiarCorreo() {
+  const preview = document.getElementById('emailPreview');
+  if (!preview) return;
+  try {
+    const htmlBlob = new Blob([preview.innerHTML], { type: 'text/html' });
+    const textBlob = new Blob([preview.innerText],  { type: 'text/plain' });
+    navigator.clipboard.write([new ClipboardItem({ 'text/html': htmlBlob, 'text/plain': textBlob })])
+      .then(() => showToast('✅ Correo copiado — pega con Ctrl+V en Outlook o Gmail'))
+      .catch(() => fallbackCopy(preview));
+  } catch(e) { fallbackCopy(preview); }
+}
+
+function fallbackCopy(preview) {
+  const range = document.createRange();
+  range.selectNodeContents(preview);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  try {
+    document.execCommand('copy');
+    showToast('✅ Correo copiado — pega con Ctrl+V en Outlook o Gmail');
+  } catch(e) {
+    showToast('⚠️ No se pudo copiar automáticamente — selecciona y copia manualmente');
+  }
+  sel.removeAllRanges();
+}
 
 // ═══════════════════════════════════════════════════════════════
 //  ALERTS & WORKFLOW COUNTS
