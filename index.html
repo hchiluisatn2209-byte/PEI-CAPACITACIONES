@@ -735,8 +735,7 @@ function solicitudButtons(a) {
             <button class="btn navy" style="font-size:12px;width:100%" onclick="openEmailFromRowNoState(${id})">✉️ Correo Telco U</button>
             <button class="btn" style="font-size:12px;color:var(--red);border-color:var(--border-danger);width:100%" onclick="rechazarSolicitud(${id})">✕ Rechazar</button>`;
   } else if (a.estado === 'Autorizado') {
-    return `<button class="btn" style="font-size:12px;width:100%;background:var(--navy);color:#fff;border-color:var(--navy)" onclick="verDetalleSolicitud(${id})">📋 Ver detalle</button>
-            <button class="btn" style="font-size:12px;width:100%;color:var(--amber);border-color:var(--amber)" onclick="editarNotaAutorizado(${id})">✏️ Editar nota</button>`;
+    return `<button class="btn" style="font-size:12px;width:100%;background:var(--navy);color:#fff;border-color:var(--navy)" onclick="verDetalleSolicitud(${id})">📋 Ver detalle</button>`;
   } else if (a.estado === 'En curso' || a.estado === 'Culminado') {
     return `<button class="btn" style="font-size:12px;width:100%;color:var(--blue);border-color:var(--blue-lt);background:var(--blue-lt)" onclick="verDetalleSolicitud(${id})">📋 Ver detalle</button>`;
   }
@@ -1976,7 +1975,8 @@ function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
     <div class="email-preview-box" id="emailPreview"></div>
     <div class="form-actions">
       <button class="btn" onclick="closeEmailModal()">Cancelar</button>
-      <button class="btn primary" onclick="copiarCorreo()">📋 Copiar Correo</button>
+      <button class="btn navy" onclick="guardarSolicitudEnviada()">Guardar</button>
+      <button class="btn primary" onclick="guardarYEnviarCorreo()">✉️ Guardar y Correo</button>
     </div>`;
 
   document.getElementById('emailModal').style.display = 'flex';
@@ -2075,72 +2075,6 @@ async function guardarYEnviarCorreo() {
 }
 
 function closeEmailModal() { document.getElementById('emailModal').style.display = 'none'; currentEmailAsigId = null; }
-
-async function editarNotaAutorizado(id) {
-  const a = asignaciones.find(x => x.id === id);
-  if (!a) return;
-  const notaActual = a.observaciones_admin ||
-    'Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.';
-
-  editingId = id;
-  document.getElementById('modalTitle').textContent = '✏️ Editar nota al colaborador';
-  document.getElementById('modalSubtitle').textContent = a.curso_titulo || '';
-  document.getElementById('modalBody').innerHTML = `
-    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">
-      Colaborador: <strong>${a.nombre}</strong>
-    </div>
-    <div class="form-row">
-      <div class="form-field full">
-        <label>Nota para el colaborador</label>
-        <textarea id="notaEdit" rows="5">${notaActual}</textarea>
-      </div>
-    </div>
-    <div class="form-actions">
-      <button class="btn" onclick="closeModal()">Cancelar</button>
-      <button class="btn success" onclick="guardarNotaAutorizado()">💾 Guardar nota</button>
-    </div>`;
-  document.getElementById('modal').style.display = 'flex';
-}
-
-async function guardarNotaAutorizado() {
-  const nota = (document.getElementById('notaEdit')?.value || '').trim();
-  if (!nota) { showToast('⚠️ La nota no puede estar vacía'); return; }
-  const { error } = await sb.from('asignaciones')
-    .update({ observaciones_admin: nota })
-    .eq('id', editingId);
-  if (error) { showToast('Error: ' + error.message); return; }
-  closeModal();
-  showToast('✅ Nota actualizada correctamente');
-  await loadAll();
-  renderSolicitudes();
-}
-
-function copiarCorreo() {
-  const preview = document.getElementById('emailPreview');
-  if (!preview) return;
-  try {
-    const htmlBlob = new Blob([preview.innerHTML], { type: 'text/html' });
-    const textBlob = new Blob([preview.innerText],  { type: 'text/plain' });
-    navigator.clipboard.write([new ClipboardItem({ 'text/html': htmlBlob, 'text/plain': textBlob })])
-      .then(() => showToast('✅ Correo copiado — pega con Ctrl+V en Outlook o Gmail'))
-      .catch(() => fallbackCopy(preview));
-  } catch(e) { fallbackCopy(preview); }
-}
-
-function fallbackCopy(preview) {
-  const range = document.createRange();
-  range.selectNodeContents(preview);
-  const sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
-  try {
-    document.execCommand('copy');
-    showToast('✅ Correo copiado — pega con Ctrl+V en Outlook o Gmail');
-  } catch(e) {
-    showToast('⚠️ No se pudo copiar automáticamente — selecciona y copia manualmente');
-  }
-  sel.removeAllRanges();
-}
 
 // ═══════════════════════════════════════════════════════════════
 //  ALERTS & WORKFLOW COUNTS
@@ -2279,7 +2213,12 @@ function verDetalleSolicitud(id) {
       ${a.certificado_enviado===true?'✅ Certificado enviado':'⚠️ Certificado pendiente'}${a.fecha_certificado?' · '+a.fecha_certificado:''}
       ${a.ref_certificado?`<div style="margin-top:3px;font-size:11px;color:var(--text2)">${a.ref_certificado}</div>`:''}
     </div>`:''}
-    ${a.observaciones_admin?`<div style="background:var(--amber-lt);border:1px solid var(--border-warning);border-radius:var(--radius);padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--amber)">📢 <strong>Nota al colaborador:</strong> ${a.observaciones_admin}</div>`:''}
+    ${(a.estado==='Autorizado'||a.estado==='En curso'||a.estado==='Culminado')?`
+    <div style="background:var(--amber-lt);border:1px solid var(--border-warning);border-radius:var(--radius);padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--amber)">
+      📢 <strong>Nota al colaborador:</strong><br>
+      <span style="display:block;margin-top:4px;line-height:1.5">${a.observaciones_admin||'Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.'}</span>
+    </div>`:
+    (a.observaciones_admin&&a.estado==='Rechazado'?`<div style="background:var(--red-lt);border:1px solid var(--border-danger);border-radius:var(--radius);padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--red)">❌ <strong>Motivo de rechazo:</strong> ${a.observaciones_admin}</div>`:'')}
     <div class="form-actions">
       <button class="btn" onclick="closeModal()">Cerrar</button>
       <button class="btn navy" onclick="closeModal();openEmailFromRowNoState(${a.id})">✉️ Correo Telco U</button>
