@@ -1811,23 +1811,25 @@ function asignarCursoDirecto(id) {
 // ═══════════════════════════════════════════════════════════════
 function renderPersonal() {
   const html = `
-    <div class="sub-tabs" id="subTabsP">
-      <div class="sub-tab active" onclick="switchSubTabP(this,'Todos')">🗂 Todos</div>
-      <div class="sub-tab" onclick="switchSubTabP(this,'Planificación')">📐 Planificación</div>
-      <div class="sub-tab" onclick="switchSubTabP(this,'Implementación')">⚙️ Implementación</div>
-      <div class="sub-tab" onclick="switchSubTabP(this,'O&M')">🖥 O&M</div>
-    </div>
-    <div class="toolbar" style="gap:8px;flex-wrap:wrap">
-      <input type="text" id="filtroPersonal" placeholder="Buscar..." oninput="window._pPage=1;renderPersonalTabla()">
-      <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
-        <span style="font-size:12px;color:var(--text3)">Mostrar:</span>
-        <select id="pPageSize" onchange="window._pPage=1;renderPersonalTabla()" style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);font-size:12px;color:var(--text2);background:var(--surface-2)">
-          <option value="5">5</option>
-          <option value="10" selected>10</option>
-          <option value="15">15</option>
-          <option value="20">20</option>
-          <option value="9999">Todos</option>
-        </select>
+    <div style="position:sticky;top:var(--sticky-offset,113px);z-index:48;background:var(--surface);padding-bottom:4px;border-bottom:1px solid var(--gray-bd)">
+      <div class="sub-tabs" id="subTabsP">
+        <div class="sub-tab active" onclick="switchSubTabP(this,'Todos')">🗂 Todos</div>
+        <div class="sub-tab" onclick="switchSubTabP(this,'Planificación')">📐 Planificación</div>
+        <div class="sub-tab" onclick="switchSubTabP(this,'Implementación')">⚙️ Implementación</div>
+        <div class="sub-tab" onclick="switchSubTabP(this,'O&M')">🖥 O&M</div>
+      </div>
+      <div class="toolbar" style="gap:8px;flex-wrap:wrap">
+        <input type="text" id="filtroPersonal" placeholder="Buscar..." oninput="window._pPage=1;renderPersonalTabla()">
+        <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+          <span style="font-size:12px;color:var(--text3)">Mostrar:</span>
+          <select id="pPageSize" onchange="window._pPage=1;renderPersonalTabla()" style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);font-size:12px;color:var(--text2);background:var(--surface-2)">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="9999">Todos</option>
+          </select>
+        </div>
       </div>
     </div>
     <div class="table-wrap-free">
@@ -1841,6 +1843,13 @@ function renderPersonal() {
     </div>
     <div id="pPager" style="display:flex;align-items:center;justify-content:space-between;padding:10px 4px;font-size:12px;color:var(--text3)"></div>`;
   document.getElementById('mainContent').innerHTML = html;
+  // Calcular offset exacto del sticky-top para que quede justo debajo del nav
+  requestAnimationFrame(() => {
+    const stickyTop = document.querySelector('.sticky-top');
+    if (stickyTop) {
+      document.documentElement.style.setProperty('--sticky-offset', stickyTop.offsetHeight + 'px');
+    }
+  });
   window._subTabP = 'Todos';
   window._pPage = 1;
   renderPersonalTabla();
