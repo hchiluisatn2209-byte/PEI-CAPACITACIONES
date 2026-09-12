@@ -136,6 +136,7 @@ body{font-family:'Segoe UI','Inter',Arial,sans-serif;font-size:14px;color:var(--
 
 /* ── TABLE ── */
 .table-wrap{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 320px);border:1px solid var(--gray-bd);border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);scrollbar-width:thin;scrollbar-color:var(--orange) var(--gray-bd)}
+.table-wrap-free{overflow-x:auto;border:1px solid var(--gray-bd);border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .table-wrap::-webkit-scrollbar{width:7px;height:7px}
 .table-wrap::-webkit-scrollbar-track{background:var(--gray-bd);border-radius:4px}
 .table-wrap::-webkit-scrollbar-thumb{background:var(--orange);border-radius:4px}
@@ -1829,7 +1830,7 @@ function renderPersonal() {
         </select>
       </div>
     </div>
-    <div class="table-wrap">
+    <div class="table-wrap-free">
       <table>
         <thead><tr>
           <th style="position:sticky;left:0;z-index:2;background:var(--navy)">Usuario</th>
