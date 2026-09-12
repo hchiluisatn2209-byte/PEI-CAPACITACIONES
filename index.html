@@ -1836,7 +1836,7 @@ function renderPersonal() {
       <table>
         <thead><tr>
           <th style="position:sticky;left:0;z-index:2;background:var(--navy)">Usuario</th>
-          <th>Nombre</th><th>Ciudad</th><th>Código</th><th>Cédula</th><th>Celular</th><th>Mail</th><th>Equipo</th><th>Registrados</th><th>En Curso</th><th>Culminados</th><th style="background:#3a0a0a">Rechazados</th><th>Avance</th>
+          <th>Nombre</th><th>Ciudad</th><th>Código</th><th>Cédula</th><th>Celular</th><th>Mail</th><th>Equipo</th><th>Registrados</th><th>En Curso</th><th style="cursor:pointer" title="Ordenado mayor a menor">Culminados ↓</th><th style="background:#3a0a0a">Rechazados</th><th>Avance</th>
         </tr></thead>
         <tbody id="tbPersonal"></tbody>
       </table>
@@ -1865,6 +1865,13 @@ function renderPersonalTabla() {
   let data = personal;
   if (eq !== 'Todos') data = data.filter(p => p.equipo === eq);
   if (q) data = data.filter(p => p.nombre.toLowerCase().includes(q) || p.user.toLowerCase().includes(q));
+
+  // Ordenar por Culminados de mayor a menor
+  data = [...data].sort((a, b) => {
+    const doneA = asignaciones.filter(x => x.user_login === a.user && x.estado === 'Culminado').length;
+    const doneB = asignaciones.filter(x => x.user_login === b.user && x.estado === 'Culminado').length;
+    return doneB - doneA;
+  });
 
   const total = data.length;
   const pages = size >= 9999 ? 1 : Math.ceil(total / size);
