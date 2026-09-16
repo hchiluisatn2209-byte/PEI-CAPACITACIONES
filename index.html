@@ -683,7 +683,10 @@ function teamCard(icon, name, email, bg, color, d, barColor) {
       </svg>`;
 
   // Detalle por persona — barra apilada
-  const personas = personal.filter(p => p.equipo === name);
+  const personas = personal.filter(p => p.equipo === name)
+    .map(p => ({ p, total: asignaciones.filter(a => a.user_login === p.user).length }))
+    .sort((a, b) => b.total - a.total)
+    .map(x => x.p);
   const personasRows = personas.map(p => {
     const asig = asignaciones.filter(a => a.user_login === p.user);
     const total = asig.length;
