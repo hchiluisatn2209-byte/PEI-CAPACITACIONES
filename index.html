@@ -623,7 +623,15 @@ function renderAdminDashboard() {
 
   const byEquipo = (eq) => {
     const d = asignaciones.filter(a => a.equipo === eq);
-    return {total: personal.filter(p=>p.equipo===eq).length, culminados: d.filter(a=>a.estado==='Culminado').length, encurso: d.filter(a=>a.estado==='En curso').length, pendientes: d.filter(a=>a.estado==='Pendiente').length};
+    return {
+      total:      personal.filter(p=>p.equipo===eq).length,
+      pendientes: d.filter(a=>a.estado==='Pendiente').length,
+      revision:   d.filter(a=>a.estado==='En revisión').length,
+      autorizado: d.filter(a=>a.estado==='Autorizado').length,
+      encurso:    d.filter(a=>a.estado==='En curso').length,
+      culminados: d.filter(a=>a.estado==='Culminado').length,
+      rechazados: d.filter(a=>a.estado==='Rechazado').length,
+    };
   };
   const pl = byEquipo('Planificación'), im = byEquipo('Implementación'), om = byEquipo('O&M');
 
@@ -646,6 +654,34 @@ function renderAdminDashboard() {
 
 function teamCard(icon, name, email, bg, color, d, barColor) {
   const pct = d.total ? Math.round(d.culminados/d.total*100) : 0;
+
+  // Datos del gráfico de barras
+  const bars = [
+    { label:'Pendiente',   val: d.pendientes, color:'#f5a623' },
+    { label:'En revisión', val: d.revision,   color:'#5b9bd5' },
+    { label:'Autorizado',  val: d.autorizado, color:'#8b6fe8' },
+    { label:'En curso',    val: d.encurso,    color:'#1a73c8' },
+    { label:'Culminado',   val: d.culminados, color:'#1b7a3e' },
+    { label:'Rechazado',   val: d.rechazados, color:'#c0392b' },
+  ].filter(b => b.val > 0);
+
+  const maxVal = Math.max(...bars.map(b=>b.val), 1);
+  const chartW = 280, barH = 18, gap = 8, labelW = 74, numW = 24;
+  const chartH = bars.length ? bars.length * (barH + gap) : 30;
+
+  const chartSVG = bars.length === 0
+    ? `<div style="font-size:11px;color:var(--text3);text-align:center;padding:10px 0">Sin registros aún</div>`
+    : `<svg width="100%" viewBox="0 0 ${chartW} ${chartH}" xmlns="http://www.w3.org/2000/svg" style="display:block;margin-top:4px;overflow:visible">
+        ${bars.map((b, i) => {
+          const y   = i * (barH + gap);
+          const bw  = Math.max(4, Math.round((b.val / maxVal) * (chartW - labelW - numW - 8)));
+          return `
+            <text x="0" y="${y + barH - 4}" font-size="10" fill="var(--text3)" font-family="sans-serif">${b.label}</text>
+            <rect x="${labelW}" y="${y}" width="${bw}" height="${barH}" rx="4" fill="${b.color}" opacity="0.85"/>
+            <text x="${labelW + bw + 5}" y="${y + barH - 4}" font-size="11" font-weight="700" fill="${b.color}" font-family="sans-serif">${b.val}</text>`;
+        }).join('')}
+      </svg>`;
+
   return `<div class="team-card">
     <div class="team-header">
       <div class="team-icon" style="background:${bg};font-size:18px">${icon}</div>
@@ -658,6 +694,10 @@ function teamCard(icon, name, email, bg, color, d, barColor) {
       <div class="ts-item"><span class="ts-num" style="color:var(--green)">${d.culminados}</span><span class="ts-lab">culminados</span></div>
     </div>
     <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+    <div style="margin-top:14px;border-top:1px solid var(--gray-bd);padding-top:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Cursos por estado</div>
+      ${chartSVG}
+    </div>
   </div>`;
 }
 
