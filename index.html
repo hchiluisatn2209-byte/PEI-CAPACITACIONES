@@ -67,7 +67,7 @@ body{font-family:'Segoe UI','Inter',Arial,sans-serif;font-size:14px;color:var(--
 
 /* ── APP ── */
 #app{display:none;flex-direction:column;min-height:100vh}
-.header{background:var(--navy);border-bottom:1px solid rgba(255,255,255,.08);padding:13px 20px;display:flex;align-items:center;justify-content:space-between}
+.header{background:var(--navy);border-bottom:1px solid rgba(255,255,255,.08);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .header-left{display:flex;align-items:center;gap:10px}
 .logo{width:32px;height:32px;background:var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
 .header-title{font-size:15px;font-weight:700;color:#fff}
@@ -82,7 +82,6 @@ body{font-family:'Segoe UI','Inter',Arial,sans-serif;font-size:14px;color:var(--
 
 /* ── NAV ── */
 .nav{display:flex;border-bottom:1px solid rgba(255,255,255,.08);background:var(--navy2);padding:0 20px;overflow-x:auto}
-.sticky-top{position:sticky;top:0;z-index:200}
 .nav-tab{padding:10px 14px;font-size:13px;color:#8ba3c4;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .12s}
 .nav-tab:hover{color:#fff}
 .nav-tab.active{color:var(--orange);border-bottom-color:var(--orange);font-weight:600}
@@ -136,7 +135,6 @@ body{font-family:'Segoe UI','Inter',Arial,sans-serif;font-size:14px;color:var(--
 
 /* ── TABLE ── */
 .table-wrap{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 320px);border:1px solid var(--gray-bd);border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);scrollbar-width:thin;scrollbar-color:var(--orange) var(--gray-bd)}
-.table-wrap-free{overflow-x:auto;border:1px solid var(--gray-bd);border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .table-wrap::-webkit-scrollbar{width:7px;height:7px}
 .table-wrap::-webkit-scrollbar-track{background:var(--gray-bd);border-radius:4px}
 .table-wrap::-webkit-scrollbar-thumb{background:var(--orange);border-radius:4px}
@@ -261,40 +259,38 @@ tr:hover td{background:var(--gray-bg)}
 
 <!-- APP -->
 <div id="app">
-  <div class="sticky-top">
-    <div class="header">
-      <div class="header-left">
-        <div class="logo">🎓</div>
-        <div>
-          <div class="header-title">Proyectos Corporativos · Capacitaciones</div>
-          <div class="header-meta">Portal de gestión de formación</div>
-        </div>
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">🎓</div>
+      <div>
+        <div class="header-title">Proyectos Corporativos · Capacitaciones</div>
+        <div class="header-meta">Portal de gestión de formación</div>
       </div>
-      <div class="header-right">
-        <span class="role-badge" id="roleBadge"></span>
-        <div style="position:relative">
-          <div class="user-pill" id="userPill" onclick="toggleProfileMenu()" style="cursor:pointer">
-            <div id="userAvatar" class="avatar" style="background:var(--orange);color:#fff">?</div>
-            <span id="userName">...</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <div class="header-right">
+      <span class="role-badge" id="roleBadge"></span>
+      <div style="position:relative">
+        <div class="user-pill" id="userPill" onclick="toggleProfileMenu()" style="cursor:pointer">
+          <div id="userAvatar" class="avatar" style="background:var(--orange);color:#fff">?</div>
+          <span id="userName">...</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="profile-menu" id="profileMenu">
+          <div class="pm-item" id="menuUserInfo" style="flex-direction:column;align-items:flex-start;gap:2px;pointer-events:none">
+            <span id="menuUserName" style="font-weight:700;color:#fff"></span>
+            <span id="menuUserEmail" style="font-size:11px;color:#8ba3c4"></span>
           </div>
-          <div class="profile-menu" id="profileMenu">
-            <div class="pm-item" id="menuUserInfo" style="flex-direction:column;align-items:flex-start;gap:2px;pointer-events:none">
-              <span id="menuUserName" style="font-weight:700;color:#fff"></span>
-              <span id="menuUserEmail" style="font-size:11px;color:#8ba3c4"></span>
-            </div>
-            <hr class="pm-divider">
-            <div class="pm-item" onclick="signOut()" style="color:var(--red-lt)">
-              🚪 Cerrar sesión
-            </div>
+          <hr class="pm-divider">
+          <div class="pm-item" onclick="signOut()" style="color:var(--red-lt)">
+            🚪 Cerrar sesión
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="nav" id="mainNav">
-      <!-- tabs injected by JS based on role -->
-    </div>
+  <div class="nav" id="mainNav">
+    <!-- tabs injected by JS based on role -->
   </div>
 
   <div class="content" id="mainContent">
@@ -1743,10 +1739,57 @@ function renderCatalogoList() {
 
 function debounceCursos() {
   clearTimeout(cursosSearchTimer);
-  cursosSearchTimer = setTimeout(() => {
-    // Call renderCatalogo which handles both admin and user contexts
-    renderCatalogo();
-  }, 400);
+  cursosSearchTimer = setTimeout(buscarCursosAdmin, 350);
+}
+
+async function buscarCursosAdmin() {
+  const lista = document.getElementById('listaCursos');
+  if (!lista) return;
+  const q   = (document.getElementById('filtroCurso')?.value  || '').trim();
+  const cat = (document.getElementById('filtroCat')?.value    || '');
+  const idi = (document.getElementById('filtroIdioma')?.value || '');
+
+  if (!q && !cat && !idi) {
+    lista.innerHTML = '<div class="empty">Escribe para buscar en 34,055 cursos</div>';
+    return;
+  }
+
+  lista.innerHTML = '<div style="text-align:center;padding:20px"><span class="spinner"></span> Buscando...</div>';
+
+  let query = sb.from('cursos_udemy').select('*');
+  if (q)   query = query.or(`titulo.ilike.%${q}%,instructor.ilike.%${q}%`);
+  if (cat) query = query.eq('categoria', cat);
+  if (idi) query = query.eq('idioma', idi);
+  query = query.order('rating', { ascending: false }).limit(50);
+
+  const { data, error } = await query;
+  if (error) { lista.innerHTML = `<div class="empty">Error: ${error.message}</div>`; return; }
+  cursosCache = data || [];
+
+  if (!cursosCache.length) {
+    lista.innerHTML = '<div class="empty">Sin resultados — intenta con otras palabras</div>';
+    return;
+  }
+
+  lista.innerHTML = cursosCache.map(c => `
+    <div class="curso-item" onclick="asignarCursoDirecto('${c.id}')">
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span style="font-size:10px;color:var(--text3);font-family:monospace">ID:${c.id}</span>
+        <div class="curso-title">${c.titulo}</div>
+      </div>
+      <div class="curso-meta">
+        <span>👤 ${c.instructor||''}</span>
+        <span>🏷 ${c.categoria||''}</span>
+        <span>⏱ <strong>${Number(c.horas||0).toFixed(0)}h</strong></span>
+        ${c.rating?`<span>⭐${c.rating}</span>`:''}
+        <span>${c.nivel||''}</span>
+        <span>🌐 ${c.idioma||''}</span>
+        ${c.practica?'<span style="color:var(--green)">✓ práctica</span>':''}
+      </div>
+    </div>`).join('')
+    + (cursosCache.length === 50
+      ? '<div style="text-align:center;padding:8px;font-size:11px;color:var(--text3)">Mostrando 50 resultados — refina la búsqueda</div>'
+      : '');
 }
 
 async function enviarSolicitud() {
@@ -1786,11 +1829,11 @@ function renderCatalogo() {
   document.getElementById('mainContent').innerHTML = `
     <div class="toolbar">
       <input type="text" id="filtroCurso" placeholder="Buscar curso, instructor..." oninput="debounceCursos()" style="max-width:280px;flex:2">
-      <select id="filtroCat" onchange="renderCatalogo()">
+      <select id="filtroCat" onchange="buscarCursosAdmin()">
         <option value="">Todas las categorías</option>
         ${CATEGORIAS_UDEMY.map(c=>`<option>${c}</option>`).join('')}
       </select>
-      <select id="filtroIdioma" onchange="renderCatalogo()">
+      <select id="filtroIdioma" onchange="buscarCursosAdmin()">
         <option value="">Todos los idiomas</option>
         <option>English</option><option>Spanish</option><option>Portuguese</option>
         <option>French</option><option>German</option><option>Italian</option>
@@ -1810,96 +1853,48 @@ function asignarCursoDirecto(id) {
 //  ADMIN PERSONAL TAB
 // ═══════════════════════════════════════════════════════════════
 function renderPersonal() {
+  let subTabP = 'Todos';
   const html = `
-    <div id="personalFilters">
-      <div class="sub-tabs" id="subTabsP">
-        <div class="sub-tab active" onclick="switchSubTabP(this,'Todos')">🗂 Todos</div>
-        <div class="sub-tab" onclick="switchSubTabP(this,'Planificación')">📐 Planificación</div>
-        <div class="sub-tab" onclick="switchSubTabP(this,'Implementación')">⚙️ Implementación</div>
-        <div class="sub-tab" onclick="switchSubTabP(this,'O&M')">🖥 O&M</div>
-      </div>
-      <div class="toolbar" style="gap:8px;flex-wrap:wrap">
-        <input type="text" id="filtroPersonal" placeholder="Buscar..." oninput="window._pPage=1;renderPersonalTabla()">
-        <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
-          <span style="font-size:12px;color:var(--text3)">Mostrar:</span>
-          <select id="pPageSize" onchange="window._pPage=1;renderPersonalTabla()" style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);font-size:12px;color:var(--text2);background:var(--surface-2)">
-            <option value="5">5</option>
-            <option value="10" selected>10</option>
-            <option value="15">15</option>
-            <option value="20">20</option>
-            <option value="9999">Todos</option>
-          </select>
-        </div>
-      </div>
+    <div class="sub-tabs" id="subTabsP">
+      <div class="sub-tab active" onclick="switchSubTabP(this,'Todos')">🗂 Todos</div>
+      <div class="sub-tab" onclick="switchSubTabP(this,'Planificación')">📐 Planificación</div>
+      <div class="sub-tab" onclick="switchSubTabP(this,'Implementación')">⚙️ Implementación</div>
+      <div class="sub-tab" onclick="switchSubTabP(this,'O&M')">🖥 O&M</div>
     </div>
-    <div class="table-wrap-free">
+    <div class="toolbar"><input type="text" id="filtroPersonal" placeholder="Buscar..." oninput="renderPersonalTabla()"></div>
+    <div class="table-wrap">
       <table>
         <thead><tr>
           <th style="position:sticky;left:0;z-index:2;background:var(--navy)">Usuario</th>
-          <th>Nombre</th><th>Ciudad</th><th>Código</th><th>Cédula</th><th>Celular</th><th>Mail</th><th>Equipo</th><th>Registrados</th><th>En Curso</th><th style="cursor:pointer" title="Ordenado mayor a menor">Culminados ↓</th><th style="background:#3a0a0a">Rechazados</th><th>Avance</th>
+          <th>Nombre</th><th>Ciudad</th><th>Código</th><th>Cédula</th><th>Celular</th><th>Mail</th><th>Equipo</th><th>Asignados</th><th>Culminados</th><th>Avance</th>
         </tr></thead>
         <tbody id="tbPersonal"></tbody>
       </table>
-    </div>
-    <div id="pPager" style="display:flex;align-items:center;justify-content:space-between;padding:10px 4px;font-size:12px;color:var(--text3)"></div>`;
+    </div>`;
   document.getElementById('mainContent').innerHTML = html;
   window._subTabP = 'Todos';
-  window._pPage = 1;
   renderPersonalTabla();
 }
 
 function switchSubTabP(el, eq) {
   window._subTabP = eq;
-  window._pPage = 1;
   document.querySelectorAll('#subTabsP .sub-tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   renderPersonalTabla();
 }
 
 function renderPersonalTabla() {
-  const q    = (document.getElementById('filtroPersonal')?.value||'').toLowerCase();
-  const eq   = window._subTabP || 'Todos';
-  const size = parseInt(document.getElementById('pPageSize')?.value||'10');
-  const page = window._pPage || 1;
-
+  const q = (document.getElementById('filtroPersonal')?.value||'').toLowerCase();
+  const eq = window._subTabP || 'Todos';
   let data = personal;
   if (eq !== 'Todos') data = data.filter(p => p.equipo === eq);
   if (q) data = data.filter(p => p.nombre.toLowerCase().includes(q) || p.user.toLowerCase().includes(q));
-
-  // Ordenar por Culminados de mayor a menor
-  data = [...data].sort((a, b) => {
-    const doneA = asignaciones.filter(x => x.user_login === a.user && x.estado === 'Culminado').length;
-    const doneB = asignaciones.filter(x => x.user_login === b.user && x.estado === 'Culminado').length;
-    return doneB - doneA;
-  });
-
-  const total = data.length;
-  const pages = size >= 9999 ? 1 : Math.ceil(total / size);
-  const start = size >= 9999 ? 0 : (page - 1) * size;
-  const slice = size >= 9999 ? data : data.slice(start, start + size);
-
   const tb = document.getElementById('tbPersonal');
   if (!tb) return;
-
-  tb.innerHTML = slice.map(per => {
-    const asig        = asignaciones.filter(a => a.user_login === per.user);
-    const registrados = asig.filter(a => ['Pendiente','En revisión','Autorizado'].includes(a.estado)).length;
-    const enCurso     = asig.filter(a => a.estado === 'En curso').length;
-    const done        = asig.filter(a => a.estado === 'Culminado').length;
-    const rech        = asig.filter(a => a.estado === 'Rechazado').length;
-    const certPend    = done > 0 && asig.filter(a => a.estado === 'Culminado' && !a.certificado_enviado).length > 0;
-    const pct         = registrados ? Math.round(done / registrados * 100) : 0;
-
-    const culminadoCell = done > 0
-      ? `${done}${certPend?`<br><span style="font-size:9px;color:var(--red);white-space:nowrap">⚠ Cert. pendiente</span>`:''}`
-      : `0`;
-    const rechCell = rech > 0
-      ? `<span style="font-weight:700;color:var(--red)">${rech}</span>`
-      : `<span style="color:var(--text3)">—</span>`;
-    const avanceCell = registrados===0
-      ? `<span style="color:var(--text3)">—</span>`
-      : `<span style="font-size:12px">${pct}%</span><div class="pct-bar"><div class="pct-fill" style="width:${pct}%"></div></div>`;
-
+  tb.innerHTML = data.map(per => {
+    const asig = asignaciones.filter(a => a.user_login === per.user);
+    const done = asig.filter(a => a.estado === 'Culminado').length;
+    const avg = asig.length ? Math.round(asig.reduce((s,a)=>s+(a.avance||0),0)/asig.length) : 0;
     return `<tr>
       <td style="position:sticky;left:0;background:var(--surface-2);z-index:1;font-size:12px;color:var(--text3)">${per.user}</td>
       <td style="font-weight:600">${per.nombre}</td>
@@ -1909,42 +1904,11 @@ function renderPersonalTabla() {
       <td style="font-size:12px">${per.celular||'—'}</td>
       <td style="font-size:12px"><a href="mailto:${per.mail}" style="color:var(--blue);text-decoration:none">${per.mail||'—'}</a></td>
       <td>${equipoBadgeStr(per.equipo)}</td>
-      <td style="text-align:center;font-weight:600;color:var(--blue)">${registrados}</td>
-      <td style="text-align:center">${enCurso > 0 ? `<span style="color:#1a73c8;font-weight:700">${enCurso}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
-      <td style="text-align:center">${culminadoCell}</td>
-      <td style="text-align:center;background:rgba(226,75,74,.04)">${rechCell}</td>
-      <td>${avanceCell}</td>
+      <td style="text-align:center">${asig.length}</td>
+      <td style="text-align:center">${done}</td>
+      <td><span style="font-size:12px">${avg}%</span><div class="pct-bar"><div class="pct-fill" style="width:${avg}%"></div></div></td>
     </tr>`;
-  }).join('') || `<tr><td colspan="13" style="text-align:center;padding:20px;color:var(--text3)">Sin resultados</td></tr>`;
-
-  // Pager
-  const pager = document.getElementById('pPager');
-  if (!pager) return;
-  const from = total === 0 ? 0 : start + 1;
-  const to   = size >= 9999 ? total : Math.min(start + size, total);
-  if (pages <= 1) {
-    pager.innerHTML = `<span>${total} registro${total!==1?'s':''}</span>`;
-    return;
-  }
-  const btnStyle = (disabled, active) =>
-    `style="padding:4px 10px;border-radius:5px;border:1px solid var(--border);cursor:${disabled?'default':'pointer'};background:${active?'var(--orange)':'var(--surface-2)'};color:${active?'#fff':disabled?'var(--text3)':'var(--text2)'};font-size:12px;font-weight:${active?'700':'400'}"`;
-
-  let pagesBtns = '';
-  for (let i = 1; i <= pages; i++) {
-    if (pages > 7 && i > 2 && i < pages - 1 && Math.abs(i - page) > 1) {
-      if (i === 3 || i === pages - 2) pagesBtns += `<span style="padding:0 4px;color:var(--text3)">…</span>`;
-      continue;
-    }
-    pagesBtns += `<button ${btnStyle(false, i===page)} onclick="window._pPage=${i};renderPersonalTabla()">${i}</button>`;
-  }
-
-  pager.innerHTML = `
-    <span>${from}–${to} de ${total} registros</span>
-    <div style="display:flex;align-items:center;gap:4px">
-      <button ${btnStyle(page===1,false)} onclick="if(window._pPage>1){window._pPage--;renderPersonalTabla()}">‹</button>
-      ${pagesBtns}
-      <button ${btnStyle(page===pages,false)} onclick="if(window._pPage<${pages}){window._pPage++;renderPersonalTabla()}">›</button>
-    </div>`;
+  }).join('');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2058,7 +2022,8 @@ function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
     <div class="email-preview-box" id="emailPreview"></div>
     <div class="form-actions">
       <button class="btn" onclick="closeEmailModal()">Cancelar</button>
-      <button class="btn primary" onclick="copiarCorreo()">📋 Copiar Correo</button>
+      <button class="btn navy" onclick="guardarSolicitudEnviada()">Guardar</button>
+      <button class="btn primary" onclick="guardarYEnviarCorreo()">✉️ Guardar y Correo</button>
     </div>`;
 
   document.getElementById('emailModal').style.display = 'flex';
@@ -2308,33 +2273,6 @@ function verDetalleSolicitud(id) {
   await initSupabase();
   startAuth();
 })();
-
-function copiarCorreo() {
-  const preview = document.getElementById('emailPreview');
-  if (!preview) return;
-  try {
-    const htmlBlob = new Blob([preview.innerHTML], { type: 'text/html' });
-    const textBlob = new Blob([preview.innerText],  { type: 'text/plain' });
-    navigator.clipboard.write([new ClipboardItem({ 'text/html': htmlBlob, 'text/plain': textBlob })])
-      .then(() => showToast('✅ Correo copiado — pega con Ctrl+V en Outlook o Gmail'))
-      .catch(() => fallbackCopy(preview));
-  } catch(e) { fallbackCopy(preview); }
-}
-
-function fallbackCopy(preview) {
-  const range = document.createRange();
-  range.selectNodeContents(preview);
-  const sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
-  try {
-    document.execCommand('copy');
-    showToast('✅ Correo copiado — pega con Ctrl+V en Outlook o Gmail');
-  } catch(e) {
-    showToast('⚠️ No se pudo copiar — selecciona y copia manualmente');
-  }
-  sel.removeAllRanges();
-}
 </script>
 </body>
 </html>
