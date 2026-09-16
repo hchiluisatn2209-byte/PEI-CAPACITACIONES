@@ -682,6 +682,49 @@ function teamCard(icon, name, email, bg, color, d, barColor) {
         }).join('')}
       </svg>`;
 
+  // Detalle por persona — barra apilada
+  const personas = personal.filter(p => p.equipo === name);
+  const personasRows = personas.map(p => {
+    const asig = asignaciones.filter(a => a.user_login === p.user);
+    const total = asig.length;
+    if (total === 0) return '';
+    const segs = [
+      { estado:'Pendiente',   color:'#f5a623', val: asig.filter(a=>a.estado==='Pendiente').length },
+      { estado:'En revisión', color:'#5b9bd5', val: asig.filter(a=>a.estado==='En revisión').length },
+      { estado:'Autorizado',  color:'#8b6fe8', val: asig.filter(a=>a.estado==='Autorizado').length },
+      { estado:'En curso',    color:'#1a73c8', val: asig.filter(a=>a.estado==='En curso').length },
+      { estado:'Culminado',   color:'#1b7a3e', val: asig.filter(a=>a.estado==='Culminado').length },
+      { estado:'Rechazado',   color:'#c0392b', val: asig.filter(a=>a.estado==='Rechazado').length },
+    ].filter(s => s.val > 0);
+
+    const barSegs = segs.map(s => {
+      const pct = Math.round(s.val / total * 100);
+      return `<div title="${s.estado}: ${s.val}" style="width:${pct}%;background:${s.color};height:100%;transition:width .3s" ></div>`;
+    }).join('');
+
+    const nombre = p.nombre.split(' ').slice(0,2).join(' ');
+    return `<div style="margin-bottom:7px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+        <span style="font-size:11px;color:var(--text2);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${nombre}</span>
+        <span style="font-size:10px;color:var(--text3)">${total} curso${total>1?'s':''}</span>
+      </div>
+      <div style="height:10px;border-radius:5px;overflow:hidden;display:flex;background:var(--gray-bg)">
+        ${barSegs}
+      </div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  const personasSection = personasRows
+    ? `<div style="margin-top:14px;border-top:1px solid var(--gray-bd);padding-top:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Detalle por persona</div>
+        ${personasRows}
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+          ${[['#f5a623','Pendiente'],['#5b9bd5','En revisión'],['#8b6fe8','Autorizado'],['#1a73c8','En curso'],['#1b7a3e','Culminado'],['#c0392b','Rechazado']]
+            .map(([c,l])=>`<span style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:50%;background:${c};display:inline-block"></span>${l}</span>`).join('')}
+        </div>
+      </div>`
+    : '';
+
   return `<div class="team-card">
     <div class="team-header">
       <div class="team-icon" style="background:${bg};font-size:18px">${icon}</div>
@@ -698,6 +741,7 @@ function teamCard(icon, name, email, bg, color, d, barColor) {
       <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Cursos por estado</div>
       ${chartSVG}
     </div>
+    ${personasSection}
   </div>`;
 }
 
