@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
 <title>Proyectos Corporativos · Capacitaciones</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -201,7 +200,7 @@ tr:hover td{background:var(--gray-bg)}
 .locked-notice{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px;margin-top:8px;background:var(--gray-bg);padding:6px 10px;border-radius:6px}
 
 /* ── EMAIL MODAL ── */
-.email-preview-box{background:#fff;border:1px solid var(--gray-bd);border-radius:var(--radius);padding:16px;font-size:13px;line-height:1.7;max-height:480px;overflow-y:auto;color:var(--text)}
+.email-preview-box{background:#fff;border:1px solid var(--gray-bd);border-radius:var(--radius);padding:16px;font-size:13px;line-height:1.7;max-height:300px;overflow-y:auto;color:var(--text)}
 
 /* ── PROFILE MENU ── */
 .profile-menu{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--navy2);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px;z-index:300;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
@@ -1740,10 +1739,45 @@ function renderCatalogoList() {
 
 function debounceCursos() {
   clearTimeout(cursosSearchTimer);
-  cursosSearchTimer = setTimeout(() => {
-    // Call renderCatalogo which handles both admin and user contexts
-    renderCatalogo();
-  }, 400);
+  cursosSearchTimer = setTimeout(buscarCursosAdmin, 350);
+}
+
+async function buscarCursosAdmin() {
+  const lista = document.getElementById('listaCursos');
+  if (!lista) return;
+  const q   = (document.getElementById('filtroCurso')?.value  || '').trim();
+  const cat = (document.getElementById('filtroCat')?.value    || '');
+  const idi = (document.getElementById('filtroIdioma')?.value || '');
+  if (!q && !cat && !idi) {
+    lista.innerHTML = '<div class="empty">Escribe para buscar en 34,055 cursos</div>';
+    return;
+  }
+  lista.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3)">🔍 Buscando...</div>';
+  let query = sb.from('cursos_udemy').select('*');
+  if (q)   query = query.or(`titulo.ilike.%${q}%,instructor.ilike.%${q}%`);
+  if (cat) query = query.eq('categoria', cat);
+  if (idi) query = query.eq('idioma', idi);
+  query = query.order('rating', { ascending: false }).limit(50);
+  const { data, error } = await query;
+  if (error) { lista.innerHTML = `<div class="empty">Error: ${error.message}</div>`; return; }
+  cursosCache = data || [];
+  if (!cursosCache.length) { lista.innerHTML = '<div class="empty">Sin resultados — intenta con otras palabras</div>'; return; }
+  lista.innerHTML = cursosCache.map(c => `
+    <div class="curso-item" onclick="asignarCursoDirecto('${c.id}')">
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span style="font-size:10px;color:var(--text3);font-family:monospace">ID:${c.id}</span>
+        <div class="curso-title">${c.titulo}</div>
+      </div>
+      <div class="curso-meta">
+        <span>👤 ${c.instructor||''}</span>
+        <span>🏷 ${c.categoria||''}</span>
+        <span>⏱ <strong>${Number(c.horas||0).toFixed(0)}h</strong></span>
+        ${c.rating?`<span>⭐${c.rating}</span>`:''}
+        <span>${c.nivel||''}</span>
+        <span>🌐 ${c.idioma||''}</span>
+      </div>
+    </div>`).join('')
+    + (cursosCache.length===50 ? '<div style="text-align:center;padding:8px;font-size:11px;color:var(--text3)">Mostrando 50 resultados — refina la búsqueda</div>' : '');
 }
 
 async function enviarSolicitud() {
@@ -1783,11 +1817,11 @@ function renderCatalogo() {
   document.getElementById('mainContent').innerHTML = `
     <div class="toolbar">
       <input type="text" id="filtroCurso" placeholder="Buscar curso, instructor..." oninput="debounceCursos()" style="max-width:280px;flex:2">
-      <select id="filtroCat" onchange="renderCatalogo()">
+      <select id="filtroCat" onchange="buscarCursosAdmin()">
         <option value="">Todas las categorías</option>
         ${CATEGORIAS_UDEMY.map(c=>`<option>${c}</option>`).join('')}
       </select>
-      <select id="filtroIdioma" onchange="renderCatalogo()">
+      <select id="filtroIdioma" onchange="buscarCursosAdmin()">
         <option value="">Todos los idiomas</option>
         <option>English</option><option>Spanish</option><option>Portuguese</option>
         <option>French</option><option>German</option><option>Italian</option>
@@ -1904,7 +1938,7 @@ function openEmailFromRowNoState(id) {
   // Opens email modal WITHOUT changing the estado
   const a = asignaciones.find(x => x.id === id);
   if (!a) return;
-  currentEmailAsigId = id; // Keep id so generarVistaPrevia can find asig
+  currentEmailAsigId = null; // Don't link to state change
   const pers = personal.find(p => p.user === a.user_login) || {};
   const ciudad = pers.ciudad || 'UIO';
   const telcouContacto = ciudad === 'GYE' ? 'Carlos Ruilova' : 'Melissa Zurita';
@@ -1925,14 +1959,6 @@ function openEmailFromRow(id) {
 }
 
 function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
-  // Personal del mismo equipo para el select "Hereda de"
-  const equipoP = personal.filter(p => p.equipo === a.equipo && p.user !== a.user_login)
-    .sort((x,y) => x.nombre.localeCompare(y.nombre));
-  const heredaOpts = equipoP.map(p =>
-    `<option value="${p.user}" ${(a.heredada_de||'').includes(p.user)?'selected':''}>${p.nombre}${p.ciudad?' ['+p.ciudad+']':''}</option>`
-  ).join('');
-  const heredaVal = a.heredada_de || '';
-
   document.getElementById('emailModalBody').innerHTML = `
     <div class="form-row">
       <div class="form-field">
@@ -1976,65 +2002,21 @@ function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
     </div>
     <div class="form-row">
       <div class="form-field full">
-        <label>🔗 Hereda de (opcional)</label>
-        <select id="eqHeredaDe" onchange="updateEmailPreview()" style="width:100%">
-          <option value="">— No aplica —</option>
-          ${heredaOpts}
-        </select>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-field full">
         <label>Justificación</label>
         <textarea id="eqJustificacion" rows="2">Esta capacitación fortalecerá competencias clave relacionadas con el pensamiento crítico, el análisis de situaciones, la priorización de actividades y la toma de decisiones efectivas, habilidades que contribuirán positivamente a su desempeño profesional y al logro de los objetivos del área.</textarea>
       </div>
     </div>
-    <div style="margin:12px 0;text-align:center">
-      <button class="btn success" style="width:100%;padding:10px;font-size:14px" onclick="generarVistaPrevia()">👁 Generar vista previa</button>
-    </div>
-    <div id="emailPreviewWrap" style="display:none">
-      <div class="section-label">Vista previa</div>
-      <div class="email-preview-box" id="emailPreview"></div>
-      <div class="form-actions">
-        <button class="btn" onclick="closeEmailModal()">Cancelar</button>
-        <button class="btn primary" onclick="copiarCorreo()">📋 Copiar Correo</button>
-      </div>
-    </div>
-    <div class="form-actions" id="emailActionsInit">
+    <div class="section-label">Vista previa</div>
+    <div class="email-preview-box" id="emailPreview"></div>
+    <div class="form-actions">
       <button class="btn" onclick="closeEmailModal()">Cancelar</button>
+      <button class="btn navy" onclick="guardarSolicitudEnviada()">Guardar</button>
+      <button class="btn primary" onclick="guardarYEnviarCorreo()">✉️ Guardar y Correo</button>
     </div>`;
 
   document.getElementById('emailModal').style.display = 'flex';
-  // Solo inicializar el select con valor guardado si existe
-  setTimeout(() => {
-    const selHereda = document.getElementById('eqHeredaDe');
-    if (selHereda && a.heredada_de) {
-      const userMatch = a.heredada_de.includes(' · ')
-        ? a.heredada_de.split(' · ').pop().trim()
-        : a.heredada_de.trim();
-      selHereda.value = userMatch;
-    }
-  }, 30);
-}
-
-function generarVistaPrevia() {
-  const wrap = document.getElementById('emailPreviewWrap');
-  const initActions = document.getElementById('emailActionsInit');
-  if (wrap) wrap.style.display = 'block';
-  if (initActions) initActions.style.display = 'none';
-
-  setTimeout(() => {
-    const asig = asignaciones.find(x => x.id === currentEmailAsigId);
-    const pers = personal.find(p => p.user === asig?.user_login) || {};
-    if (!asig) {
-      const preview = document.getElementById('emailPreview');
-      if (preview) preview.innerHTML = '<p style="color:red">Error: no se encontró la asignación.</p>';
-      return;
-    }
-    updateEmailPreview(asig, pers);
-    const preview = document.getElementById('emailPreview');
-    if (preview) preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 30);
+  // Let DOM render before updating preview
+  setTimeout(() => updateEmailPreview(a, pers), 30);
 }
 
 function updateTelcouContact(ciudad) {
@@ -2057,45 +2039,12 @@ function updateEmailPreview(asig, pers) {
   const codigo = document.getElementById('eqCodigo')?.value || pers.codigo || '—';
   const cedula = document.getElementById('eqCedula')?.value || pers.cedula || '—';
   const aprobado = document.getElementById('eqAprobado')?.value || '—';
-  const heredaDe = (() => {
-    const el = document.getElementById('eqHeredaDe');
-    if (el) return el.value || '';
-    return asig?.heredada_de || '';
-  })();
   const telcouMail = document.getElementById('eqTelcouMail')?.value || 'mdzurita@telconet.ec';
   const contacto = document.getElementById('eqTelcouContacto')?.value || 'Melissa Zurita';
   const nombre = (pers.nombre||'').toUpperCase();
   const userLogin = pers.user || '—';
   const mail = pers.mail || userLogin+'@telconet.ec';
   const curso = asig;
-  const thSH = 'border:1px solid #ddd;padding:6px 10px;background:#0d1b2e;color:#fff;font-size:12px;text-align:left';
-  const tdSH = 'border:1px solid #ddd;padding:6px 10px;font-size:12px';
-  // heredaDe ahora es el user login directamente
-  const heredaPersona = heredaDe
-    ? personal.find(p => p.user === heredaDe) || null
-    : null;
-
-  const thSO = 'border:1px solid #ddd;padding:6px 10px;background:#e07b00;color:#fff;font-size:12px;text-align:left;white-space:nowrap';
-  const heredaDeRow = heredaPersona
-    ? '<p><strong>HEREDA LICENCIA DE:</strong></p>'
-      + '<table style="border-collapse:collapse;margin:6px 0 12px 0"><thead><tr>'
-      + '<th style="' + thSO + '">CIUDAD</th>'
-      + '<th style="' + thSO + '">CÓDIGO</th>'
-      + '<th style="' + thSO + '">CÉDULA</th>'
-      + '<th style="' + thSO + '">USER</th>'
-      + '<th style="' + thSO + '">APELLIDOS Y NOMBRES</th>'
-      + '<th style="' + thSO + '">MAIL</th>'
-      + '</tr></thead><tbody><tr>'
-      + '<td style="' + tdSH + '">' + (heredaPersona.ciudad||'—') + '</td>'
-      + '<td style="' + tdSH + '">' + (heredaPersona.codigo||'—') + '</td>'
-      + '<td style="' + tdSH + '">' + (heredaPersona.cedula||'—') + '</td>'
-      + '<td style="' + tdSH + '">' + (heredaPersona.user||'—') + '</td>'
-      + '<td style="' + tdSH + '">' + (heredaPersona.nombre||'—').toUpperCase() + '</td>'
-      + '<td style="' + tdSH + '">' + (heredaPersona.mail||'—') + '</td>'
-      + '</tr></tbody></table>'
-    : (heredaDe
-      ? '<p><strong>HEREDA LICENCIA DE:</strong> ' + heredaDe + '</p>'
-      : '');
   const thS = 'border:1px solid #ddd;padding:6px 10px;background:#0d1b2e;color:#fff;font-size:12px;text-align:left;white-space:nowrap';
   const tdS = 'border:1px solid #ddd;padding:6px 10px;font-size:12px;white-space:nowrap';
   const html = `<p><strong>Para:</strong> ${telcouMail}; telcou_uio@telconet.ec<br>
@@ -2110,7 +2059,6 @@ function updateEmailPreview(asig, pers) {
   <td style="${tdS}">${ciudad}</td><td style="${tdS}">${codigo}</td><td style="${tdS}">${cedula}</td>
   <td style="${tdS}">${userLogin}</td><td style="${tdS}">${nombre}</td><td style="${tdS}">${mail}</td>
 </tr></tbody></table>
-${heredaDeRow}
 <p><strong>CURSO SOLICITADO:</strong></p>
 <table style="border-collapse:collapse;margin:10px 0"><thead><tr>
   <th style="${thS}">content_collection_course_identifier</th><th style="${thS}">UB Course ID</th>
@@ -2307,27 +2255,6 @@ function verDetalleSolicitud(id) {
       <button class="btn primary" onclick="closeModal();editAsig(${a.id})">✏️ Editar</button>
     </div>`;
   document.getElementById('modal').style.display = 'flex';
-}
-
-function copiarCorreo() {
-  const preview = document.getElementById('emailPreview');
-  if (!preview) return;
-  try {
-    const htmlBlob = new Blob([preview.innerHTML], { type: 'text/html' });
-    const textBlob = new Blob([preview.innerText],  { type: 'text/plain' });
-    navigator.clipboard.write([new ClipboardItem({ 'text/html': htmlBlob, 'text/plain': textBlob })])
-      .then(() => showToast('✅ Correo copiado — pega con Ctrl+V en Outlook o Gmail'))
-      .catch(() => fallbackCopy(preview));
-  } catch(e) { fallbackCopy(preview); }
-}
-function fallbackCopy(preview) {
-  const range = document.createRange();
-  range.selectNodeContents(preview);
-  const sel = window.getSelection();
-  sel.removeAllRanges(); sel.addRange(range);
-  try { document.execCommand('copy'); showToast('✅ Correo copiado — pega con Ctrl+V en Outlook o Gmail'); }
-  catch(e) { showToast('⚠️ No se pudo copiar — selecciona y copia manualmente'); }
-  sel.removeAllRanges();
 }
 
 (async function init() {
