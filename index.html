@@ -2049,11 +2049,7 @@ function updateEmailPreview(asig, pers) {
   <td style="${tdS}">${ciudad}</td><td style="${tdS}">${codigo}</td><td style="${tdS}">${cedula}</td>
   <td style="${tdS}">${userLogin}</td><td style="${tdS}">${nombre}</td><td style="${tdS}">${mail}</td>
 </tr></tbody></table>
-${heredaDe ? `<table style="border-collapse:collapse;margin:4px 0 10px 0;width:auto"><thead><tr>
-  <th style="${thS}">HEREDA DE</th>
-</tr></thead><tbody><tr>
-  <td style="${tdS};color:#b45309;font-weight:600">${heredaDe}</td>
-</tr></tbody></table>` : ''}
+${heredaDe ? '<table style="border-collapse:collapse;margin:4px 0 10px 0"><thead><tr><th style="' + thS + '">HEREDA DE</th></tr></thead><tbody><tr><td style="' + tdS + ';color:#b45309;font-weight:700">' + heredaDe + '</td></tr></tbody></table>' : ''}
 <p><strong>CURSO SOLICITADO:</strong></p>
 <table style="border-collapse:collapse;margin:10px 0"><thead><tr>
   <th style="${thS}">content_collection_course_identifier</th><th style="${thS}">UB Course ID</th>
