@@ -623,7 +623,15 @@ function renderAdminDashboard() {
 
   const byEquipo = (eq) => {
     const d = asignaciones.filter(a => a.equipo === eq);
-    return {total: personal.filter(p=>p.equipo===eq).length, culminados: d.filter(a=>a.estado==='Culminado').length, encurso: d.filter(a=>a.estado==='En curso').length, pendientes: d.filter(a=>a.estado==='Pendiente').length};
+    return {
+      total:      personal.filter(p=>p.equipo===eq).length,
+      pendientes: d.filter(a=>a.estado==='Pendiente').length,
+      revision:   d.filter(a=>a.estado==='En revisión').length,
+      autorizado: d.filter(a=>a.estado==='Autorizado').length,
+      encurso:    d.filter(a=>a.estado==='En curso').length,
+      culminados: d.filter(a=>a.estado==='Culminado').length,
+      rechazados: d.filter(a=>a.estado==='Rechazado').length,
+    };
   };
   const pl = byEquipo('Planificación'), im = byEquipo('Implementación'), om = byEquipo('O&M');
 
@@ -642,23 +650,130 @@ function renderAdminDashboard() {
     </div>
     ${pendientes > 0 ? `<div class="alert-banner">⚠️ <span><strong>${pendientes} solicitud(es) pendiente(s)</strong> de aprobación — ve a la pestaña Solicitudes</span></div>` : ''}
   `;
+  // Render per-person bars after DOM is ready
+  ['Planificación','Implementación','O&M'].forEach(eq => renderPersonasCard(eq.replace(/[^a-z]/gi,'')));
 }
+
+const ESTADO_COLORES = {
+  'Pendiente':   '#f5a623',
+  'En revisión': '#5b9bd5',
+  'Autorizado':  '#8b6fe8',
+  'En curso':    '#1a73c8',
+  'Culminado':   '#1b7a3e',
+  'Rechazado':   '#c0392b',
+};
 
 function teamCard(icon, name, email, bg, color, d, barColor) {
   const pct = d.total ? Math.round(d.culminados/d.total*100) : 0;
-  return `<div class="team-card">
-    <div class="team-header">
-      <div class="team-icon" style="background:${bg};font-size:18px">${icon}</div>
-      <div><div class="team-name">${name}</div><div class="team-email">${email}</div></div>
-    </div>
-    <div class="team-stats">
-      <div class="ts-item"><span class="ts-num">${d.total}</span><span class="ts-lab">personas</span></div>
-      <div class="ts-item"><span class="ts-num" style="color:var(--amber)">${d.pendientes}</span><span class="ts-lab">pendientes</span></div>
-      <div class="ts-item"><span class="ts-num" style="color:var(--blue)">${d.encurso}</span><span class="ts-lab">en curso</span></div>
-      <div class="ts-item"><span class="ts-num" style="color:var(--green)">${d.culminados}</span><span class="ts-lab">culminados</span></div>
-    </div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
-  </div>`;
+  const cardId = name.replace(/[^a-z]/gi,'');
+
+  // Gráfico de barras por estado
+  const bars = [
+    { label:'Pendiente',   val:d.pendientes, color:'#f5a623' },
+    { label:'En revisión', val:d.revision,   color:'#5b9bd5' },
+    { label:'Autorizado',  val:d.autorizado, color:'#8b6fe8' },
+    { label:'En curso',    val:d.encurso,    color:'#1a73c8' },
+    { label:'Culminado',   val:d.culminados, color:'#1b7a3e' },
+    { label:'Rechazado',   val:d.rechazados, color:'#c0392b' },
+  ].filter(b=>b.val>0);
+  const maxVal = Math.max(...bars.map(b=>b.val),1);
+  const chartW=280, barH=16, gap=7, labelW=78, numW=24, chartH=bars.length*(barH+gap);
+  const chartSVG = bars.length===0
+    ? '<div style="font-size:11px;color:var(--text3);text-align:center;padding:8px 0">Sin registros</div>'
+    : '<svg width="100%" viewBox="0 0 '+chartW+' '+chartH+'" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">'
+      + bars.map((b,i)=>{
+          const y=i*(barH+gap);
+          const bw=Math.max(4,Math.round((b.val/maxVal)*(chartW-labelW-numW-8)));
+          return '<text x="0" y="'+(y+barH-3)+'" font-size="10" fill="var(--text3)" font-family="sans-serif">'+b.label+'</text>'
+            +'<rect x="'+labelW+'" y="'+y+'" width="'+bw+'" height="'+barH+'" rx="3" fill="'+b.color+'" opacity="0.85"/>'
+            +'<text x="'+(labelW+bw+5)+'" y="'+(y+barH-3)+'" font-size="11" font-weight="700" fill="'+b.color+'" font-family="sans-serif">'+b.val+'</text>';
+        }).join('')
+      +'</svg>';
+
+  // Ciudades disponibles en este equipo
+  const ciudades = [...new Set(personal.filter(p=>p.equipo===name).map(p=>p.ciudad).filter(Boolean))].sort();
+
+  return '<div class="team-card">'
+    +'<div class="team-header">'
+    +'<div class="team-icon" style="background:'+bg+';font-size:18px">'+icon+'</div>'
+    +'<div><div class="team-name">'+name+'</div><div class="team-email">'+email+'</div></div>'
+    +'</div>'
+    +'<div class="team-stats">'
+    +'<div class="ts-item"><span class="ts-num">'+d.total+'</span><span class="ts-lab">personas</span></div>'
+    +'<div class="ts-item"><span class="ts-num" style="color:var(--amber)">'+d.pendientes+'</span><span class="ts-lab">pendientes</span></div>'
+    +'<div class="ts-item"><span class="ts-num" style="color:var(--blue)">'+d.encurso+'</span><span class="ts-lab">en curso</span></div>'
+    +'<div class="ts-item"><span class="ts-num" style="color:var(--green)">'+d.culminados+'</span><span class="ts-lab">culminados</span></div>'
+    +'</div>'
+    +'<div class="progress-bar-bg"><div class="progress-bar-fill" style="width:'+pct+'%;background:'+barColor+'"></div></div>'
+    +'<div style="margin-top:14px;border-top:1px solid var(--gray-bd);padding-top:12px">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Cursos por estado</div>'
+    +chartSVG
+    +'</div>'
+    +'<div style="margin-top:14px;border-top:1px solid var(--gray-bd);padding-top:12px">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Detalle por persona</div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">'
+    +'<select id="fCiudad_'+cardId+'" onchange="renderPersonasCard(\''+cardId+'\')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text2)">'
+    +'<option value="">Todas las ciudades</option>'
+    +ciudades.map(c=>'<option value="'+c+'">'+c+'</option>').join('')
+    +'</select>'
+    +'<select id="fEstado_'+cardId+'" onchange="renderPersonasCard(\''+cardId+'\')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text2)">'
+    +'<option value="">Todos los estados</option>'
+    +'<option value="Pendiente">🟡 Pendiente</option>'
+    +'<option value="En revisión">🔵 En revisión</option>'
+    +'<option value="Autorizado">🟣 Autorizado</option>'
+    +'<option value="En curso">🔵 En curso</option>'
+    +'<option value="Culminado">🟢 Culminado</option>'
+    +'<option value="Rechazado">🔴 Rechazado</option>'
+    +'</select>'
+    +'</div>'
+    +'<div id="personasRows_'+cardId+'"></div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">'
+    +Object.entries(ESTADO_COLORES).map(([l,c])=>'<span style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:50%;background:'+c+';display:inline-block"></span>'+l+'</span>').join('')
+    +'</div>'
+    +'</div>'
+    +'</div>';
+}
+
+function renderPersonasCard(cardId) {
+  const container = document.getElementById('personasRows_'+cardId);
+  if (!container) return;
+  const filtroCiudad = document.getElementById('fCiudad_'+cardId)?.value||'';
+  const filtroEstado = document.getElementById('fEstado_'+cardId)?.value||'';
+  const equipo = ['Planificación','Implementación','O&M'].find(e=>e.replace(/[^a-z]/gi,'')===cardId)||'';
+
+  let lista = personal.filter(p=>p.equipo===equipo);
+  if (filtroCiudad) lista = lista.filter(p=>p.ciudad===filtroCiudad);
+
+  lista = lista.map(p=>{
+    let asig = asignaciones.filter(a=>a.user_login===p.user);
+    if (filtroEstado) asig = asig.filter(a=>a.estado===filtroEstado);
+    return {p, asig, total:asig.length};
+  }).filter(x=>x.total>0).sort((a,b)=>b.total-a.total);
+
+  if (!lista.length) {
+    container.innerHTML='<div style="font-size:11px;color:var(--text3);padding:4px 0">Sin resultados</div>';
+    return;
+  }
+
+  container.innerHTML = lista.map(({p,asig,total})=>{
+    const segs = Object.entries(ESTADO_COLORES).map(([estado,color])=>{
+      const val = asig.filter(a=>a.estado===estado).length;
+      return val>0 ? {estado,color,val} : null;
+    }).filter(Boolean);
+    const barSegs = segs.map(s=>{
+      const pct=Math.round(s.val/total*100);
+      return '<div title="'+s.estado+': '+s.val+'" style="width:'+pct+'%;background:'+s.color+';height:100%"></div>';
+    }).join('');
+    const nombre = p.nombre.split(' ').slice(0,2).join(' ');
+    const ciudad = p.ciudad?'<span style="font-size:9px;background:var(--gray-bg);padding:1px 5px;border-radius:4px;color:var(--text3);margin-left:4px">'+p.ciudad+'</span>':'';
+    return '<div style="margin-bottom:7px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">'
+      +'<span style="font-size:11px;color:var(--text2);font-weight:600">'+nombre+ciudad+'</span>'
+      +'<span style="font-size:10px;color:var(--text3)">'+total+' curso'+(total>1?'s':'')+'</span>'
+      +'</div>'
+      +'<div style="height:10px;border-radius:5px;overflow:hidden;display:flex;background:var(--gray-bg)">'+barSegs+'</div>'
+      +'</div>';
+  }).join('');
 }
 
 // ── SOLICITUDES (Admin review) ────────────────────────────────
