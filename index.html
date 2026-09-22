@@ -1928,7 +1928,7 @@ function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
   const equipoP = personal.filter(p => p.equipo === a.equipo && p.user !== a.user_login)
     .sort((x,y) => x.nombre.localeCompare(y.nombre));
   const heredaOpts = equipoP.map(p =>
-    `<option value="${p.nombre} · ${p.user}" ${a.heredada_de===p.nombre+' · '+p.user?'selected':''}>${p.nombre}${p.ciudad?' ['+p.ciudad+']':''}</option>`
+    `<option value="${p.user}" ${(a.heredada_de||'').includes(p.user)?'selected':''}>${p.nombre}${p.ciudad?' ['+p.ciudad+']':''}</option>`
   ).join('');
   const heredaVal = a.heredada_de || '';
 
@@ -1999,7 +1999,13 @@ function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
   // Set heredaDe select value after DOM renders, then update preview
   setTimeout(() => {
     const selHereda = document.getElementById('eqHeredaDe');
-    if (selHereda && a.heredada_de) selHereda.value = a.heredada_de;
+    if (selHereda && a.heredada_de) {
+      // heredada_de puede ser "Nombre · user" o solo el user
+      const userMatch = a.heredada_de.includes(' · ')
+        ? a.heredada_de.split(' · ').pop().trim()
+        : a.heredada_de.trim();
+      selHereda.value = userMatch;
+    }
     updateEmailPreview(a, pers);
   }, 50);
 }
@@ -2037,9 +2043,9 @@ function updateEmailPreview(asig, pers) {
   const curso = asig;
   const thSH = 'border:1px solid #ddd;padding:6px 10px;background:#0d1b2e;color:#fff;font-size:12px;text-align:left';
   const tdSH = 'border:1px solid #ddd;padding:6px 10px;font-size:12px';
-  // Buscar datos completos de la persona que hereda la licencia
+  // heredaDe ahora es el user login directamente
   const heredaPersona = heredaDe
-    ? personal.find(p => heredaDe.includes(p.user)) || null
+    ? personal.find(p => p.user === heredaDe) || null
     : null;
 
   const thSO = 'border:1px solid #ddd;padding:6px 10px;background:#e07b00;color:#fff;font-size:12px;text-align:left;white-space:nowrap';
