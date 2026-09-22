@@ -823,12 +823,6 @@ async function ejecutarAutorizacion() {
   await loadAll();
   renderSolicitudes();
 }
-  if (error) { showToast('Error: ' + error.message); return; }
-  closeModal();
-  showToast('Licencia autorizada ✓ — el colaborador verá el estado actualizado');
-  await loadAll();
-  renderSolicitudes();
-}
 
 // aprobarSolicitud replaced by confirmarAutorizar flow
 
