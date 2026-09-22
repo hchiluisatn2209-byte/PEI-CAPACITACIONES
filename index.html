@@ -2037,13 +2037,32 @@ function updateEmailPreview(asig, pers) {
   const curso = asig;
   const thSH = 'border:1px solid #ddd;padding:6px 10px;background:#0d1b2e;color:#fff;font-size:12px;text-align:left';
   const tdSH = 'border:1px solid #ddd;padding:6px 10px;font-size:12px';
-  const heredaDeRow = heredaDe
-    ? '<table style="border-collapse:collapse;margin:4px 0 10px 0"><thead><tr>'
-      + '<th style="' + thSH + '">HEREDA DE</th>'
+  // Buscar datos completos de la persona que hereda la licencia
+  const heredaPersona = heredaDe
+    ? personal.find(p => heredaDe.includes(p.user)) || null
+    : null;
+
+  const thSO = 'border:1px solid #ddd;padding:6px 10px;background:#e07b00;color:#fff;font-size:12px;text-align:left;white-space:nowrap';
+  const heredaDeRow = heredaPersona
+    ? '<p><strong>HEREDA LICENCIA DE:</strong></p>'
+      + '<table style="border-collapse:collapse;margin:6px 0 12px 0"><thead><tr>'
+      + '<th style="' + thSO + '">CIUDAD</th>'
+      + '<th style="' + thSO + '">CÓDIGO</th>'
+      + '<th style="' + thSO + '">CÉDULA</th>'
+      + '<th style="' + thSO + '">USER</th>'
+      + '<th style="' + thSO + '">APELLIDOS Y NOMBRES</th>'
+      + '<th style="' + thSO + '">MAIL</th>'
       + '</tr></thead><tbody><tr>'
-      + '<td style="' + tdSH + ';color:#b45309;font-weight:700">' + heredaDe + '</td>'
+      + '<td style="' + tdSH + '">' + (heredaPersona.ciudad||'—') + '</td>'
+      + '<td style="' + tdSH + '">' + (heredaPersona.codigo||'—') + '</td>'
+      + '<td style="' + tdSH + '">' + (heredaPersona.cedula||'—') + '</td>'
+      + '<td style="' + tdSH + '">' + (heredaPersona.user||'—') + '</td>'
+      + '<td style="' + tdSH + '">' + (heredaPersona.nombre||'—').toUpperCase() + '</td>'
+      + '<td style="' + tdSH + '">' + (heredaPersona.mail||'—') + '</td>'
       + '</tr></tbody></table>'
-    : '';
+    : (heredaDe
+      ? '<p><strong>HEREDA LICENCIA DE:</strong> ' + heredaDe + '</p>'
+      : '');
   const thS = 'border:1px solid #ddd;padding:6px 10px;background:#0d1b2e;color:#fff;font-size:12px;text-align:left;white-space:nowrap';
   const tdS = 'border:1px solid #ddd;padding:6px 10px;font-size:12px;white-space:nowrap';
   const html = `<p><strong>Para:</strong> ${telcouMail}; telcou_uio@telconet.ec<br>
