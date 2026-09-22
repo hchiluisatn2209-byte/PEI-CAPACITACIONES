@@ -2017,16 +2017,17 @@ function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
 }
 
 function generarVistaPrevia() {
-  updateEmailPreview();
+  // Mostrar primero para que el div sea visible antes de insertar contenido
   const wrap = document.getElementById('emailPreviewWrap');
   const initActions = document.getElementById('emailActionsInit');
   if (wrap) wrap.style.display = 'block';
   if (initActions) initActions.style.display = 'none';
-  // Scroll al preview
+  // Generar con pequeño delay para asegurar que el DOM está listo
   setTimeout(() => {
+    updateEmailPreview();
     const preview = document.getElementById('emailPreview');
     if (preview) preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 50);
+  }, 30);
 }
 
 function updateTelcouContact(ciudad) {
