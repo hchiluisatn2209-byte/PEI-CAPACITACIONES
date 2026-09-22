@@ -2052,7 +2052,7 @@ function updateEmailPreview(asig, pers) {
   <td style="${tdS}">—</td>
 </tr></tbody></table>
 <p id="eqJustPreview">${(document.getElementById('eqJustificacion')?.value||'').split(String.fromCharCode(10)).join('<br>')}</p>
-${heredaDe ? `<p><strong>HEREDA DE:</strong> ${heredaDe}</p>` : ''}
+${heredaDe ? `<p style="margin:8px 0;padding:6px 10px;background:#fff8e1;border-left:4px solid #f5a623;font-size:13px"><strong>HEREDA DE:</strong> ${heredaDe}</p>` : ''}
 <p>Agradezco su gentil ayuda.</p><p>Saludos cordiales,</p><br>
 <strong>${aprobado}</strong><br>Coordinador Nacional – Proyectos e Implementación<br>TELCONET LATAM<br>Quito - Ecuador`;
   const preview = document.getElementById('emailPreview');
