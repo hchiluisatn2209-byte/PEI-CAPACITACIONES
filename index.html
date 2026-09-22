@@ -782,35 +782,17 @@ async function confirmarAutorizar(id) {
   editingId = id;
   document.getElementById('modalTitle').textContent = '✔ Confirmar autorización de licencia';
   document.getElementById('modalSubtitle').textContent = a.curso_titulo || '';
-  // Personal del mismo equipo (excluir al propio colaborador)
-  const equipoPersonal = personal
-    .filter(p => p.equipo === a.equipo && p.user !== a.user_login)
-    .sort((x,y) => x.nombre.localeCompare(y.nombre));
-
-  const opcionesPersonal = equipoPersonal.map(p =>
-    `<option value="${p.nombre} · ${p.user}">${p.nombre}${p.ciudad ? ' ['+p.ciudad+']' : ''}</option>`
-  ).join('');
-
   document.getElementById('modalBody').innerHTML = `
     <div style="background:var(--green-lt);border:1px solid var(--green);border-radius:var(--radius);padding:14px;margin-bottom:16px;font-size:13px;color:var(--green)">
       ✅ Al autorizar, el colaborador <strong>${a.nombre}</strong> recibirá el estado <strong>Autorizado</strong> y verá el mensaje de que debe esperar el correo de Telco U con el acceso a la licencia.
     </div>
     <div class="form-row">
       <div class="form-field full">
-        <label>🔗 Licencia heredada de (opcional)</label>
-        <select id="heredadaDe" style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:13px;color:var(--text-main);background:var(--surface-2)">
-          <option value="">— No aplica / Sin transferencia —</option>
-          ${opcionesPersonal}
-        </select>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px">Personal de ${a.equipo} — selecciona de quién se transfiere esta licencia, si aplica.</div>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-field full">
         <label>Nota para el colaborador (opcional)</label>
-        <textarea id="notaAutorizacion" rows="4">Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.</textarea>
+        <textarea id="notaAutorizacion" rows="2" placeholder="Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas."></textarea>
       </div>
     </div>
+    <!-- Correo a Telco U no aplica aquí: la confirmación ya fue recibida manualmente -->
     <div class="form-actions">
       <button class="btn" onclick="closeModal()">Cancelar</button>
       <button class="btn success" onclick="ejecutarAutorizacion()">✔ Confirmar autorización</button>
@@ -819,15 +801,11 @@ async function confirmarAutorizar(id) {
 }
 
 async function ejecutarAutorizacion() {
-  const heredadaDe = (document.getElementById('heredadaDe')?.value || '').trim();
-  const notaBase   = (document.getElementById('notaAutorizacion')?.value || '').trim()
-    || 'Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.';
-  const obs = heredadaDe
-    ? `${notaBase}\n\n🔗 Licencia heredada de: ${heredadaDe}`
-    : notaBase;
-  const payload = { estado: 'Autorizado', observaciones_admin: obs, fecha_estado: new Date().toISOString().slice(0,10) };
-  if (heredadaDe) payload.heredada_de = heredadaDe;
-  const { error } = await sb.from('asignaciones').update(payload).eq('id', editingId);
+  const nota = document.getElementById('notaAutorizacion')?.value || '';
+  const obs = nota ? nota : 'Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.';
+  const { error } = await sb.from('asignaciones')
+    .update({ estado: 'Autorizado', observaciones_admin: obs })
+    .eq('id', editingId);
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal();
   showToast('Licencia autorizada ✓ — el colaborador verá el estado actualizado');
@@ -1946,6 +1924,14 @@ function openEmailFromRow(id) {
 }
 
 function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
+  // Personal del mismo equipo para el select "Hereda de"
+  const equipoP = personal.filter(p => p.equipo === a.equipo && p.user !== a.user_login)
+    .sort((x,y) => x.nombre.localeCompare(y.nombre));
+  const heredaOpts = equipoP.map(p =>
+    `<option value="${p.nombre} · ${p.user}" ${a.heredada_de===p.nombre+' · '+p.user?'selected':''}>${p.nombre}${p.ciudad?' ['+p.ciudad+']':''}</option>`
+  ).join('');
+  const heredaVal = a.heredada_de || '';
+
   document.getElementById('emailModalBody').innerHTML = `
     <div class="form-row">
       <div class="form-field">
@@ -1989,16 +1975,24 @@ function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
     </div>
     <div class="form-row">
       <div class="form-field full">
+        <label>🔗 Hereda de (opcional)</label>
+        <select id="eqHeredaDe" onchange="updateEmailPreview()" style="width:100%">
+          <option value="">— No aplica —</option>
+          ${heredaOpts}
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field full">
         <label>Justificación</label>
-        <textarea id="eqJustificacion" rows="2">Esta capacitación fortalecerá competencias clave relacionadas con el pensamiento crítico, el análisis de situaciones, la priorización de actividades y la toma de decisiones efectivas, habilidades que contribuirán positivamente a su desempeño profesional y al logro de los objetivos del área.</textarea>
+        <textarea id="eqJustificacion" rows="2" oninput="updateEmailPreview()">Esta capacitación fortalecerá competencias clave relacionadas con el pensamiento crítico, el análisis de situaciones, la priorización de actividades y la toma de decisiones efectivas, habilidades que contribuirán positivamente a su desempeño profesional y al logro de los objetivos del área.</textarea>
       </div>
     </div>
     <div class="section-label">Vista previa</div>
     <div class="email-preview-box" id="emailPreview"></div>
     <div class="form-actions">
       <button class="btn" onclick="closeEmailModal()">Cancelar</button>
-      <button class="btn navy" onclick="guardarSolicitudEnviada()">Guardar</button>
-      <button class="btn primary" onclick="guardarYEnviarCorreo()">✉️ Guardar y Correo</button>
+      <button class="btn primary" onclick="copiarCorreo()">📋 Copiar Correo</button>
     </div>`;
 
   document.getElementById('emailModal').style.display = 'flex';
@@ -2026,6 +2020,7 @@ function updateEmailPreview(asig, pers) {
   const codigo = document.getElementById('eqCodigo')?.value || pers.codigo || '—';
   const cedula = document.getElementById('eqCedula')?.value || pers.cedula || '—';
   const aprobado = document.getElementById('eqAprobado')?.value || '—';
+  const heredaDe = document.getElementById('eqHeredaDe')?.value || asig?.heredada_de || '';
   const telcouMail = document.getElementById('eqTelcouMail')?.value || 'mdzurita@telconet.ec';
   const contacto = document.getElementById('eqTelcouContacto')?.value || 'Melissa Zurita';
   const nombre = (pers.nombre||'').toUpperCase();
@@ -2057,6 +2052,7 @@ function updateEmailPreview(asig, pers) {
   <td style="${tdS}">—</td>
 </tr></tbody></table>
 <p id="eqJustPreview">${(document.getElementById('eqJustificacion')?.value||'').split(String.fromCharCode(10)).join('<br>')}</p>
+${heredaDe ? `<p><strong>HEREDA DE:</strong> ${heredaDe}</p>` : ''}
 <p>Agradezco su gentil ayuda.</p><p>Saludos cordiales,</p><br>
 <strong>${aprobado}</strong><br>Coordinador Nacional – Proyectos e Implementación<br>TELCONET LATAM<br>Quito - Ecuador`;
   const preview = document.getElementById('emailPreview');
@@ -2242,6 +2238,27 @@ function verDetalleSolicitud(id) {
       <button class="btn primary" onclick="closeModal();editAsig(${a.id})">✏️ Editar</button>
     </div>`;
   document.getElementById('modal').style.display = 'flex';
+}
+
+function copiarCorreo() {
+  const preview = document.getElementById('emailPreview');
+  if (!preview) return;
+  try {
+    const htmlBlob = new Blob([preview.innerHTML], { type: 'text/html' });
+    const textBlob = new Blob([preview.innerText],  { type: 'text/plain' });
+    navigator.clipboard.write([new ClipboardItem({ 'text/html': htmlBlob, 'text/plain': textBlob })])
+      .then(() => showToast('✅ Correo copiado — pega con Ctrl+V en Outlook o Gmail'))
+      .catch(() => fallbackCopy(preview));
+  } catch(e) { fallbackCopy(preview); }
+}
+function fallbackCopy(preview) {
+  const range = document.createRange();
+  range.selectNodeContents(preview);
+  const sel = window.getSelection();
+  sel.removeAllRanges(); sel.addRange(range);
+  try { document.execCommand('copy'); showToast('✅ Correo copiado — pega con Ctrl+V en Outlook o Gmail'); }
+  catch(e) { showToast('⚠️ No se pudo copiar — selecciona y copia manualmente'); }
+  sel.removeAllRanges();
 }
 
 (async function init() {
