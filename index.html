@@ -1985,28 +1985,47 @@ function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
     <div class="form-row">
       <div class="form-field full">
         <label>Justificación</label>
-        <textarea id="eqJustificacion" rows="2" oninput="updateEmailPreview()">Esta capacitación fortalecerá competencias clave relacionadas con el pensamiento crítico, el análisis de situaciones, la priorización de actividades y la toma de decisiones efectivas, habilidades que contribuirán positivamente a su desempeño profesional y al logro de los objetivos del área.</textarea>
+        <textarea id="eqJustificacion" rows="2">Esta capacitación fortalecerá competencias clave relacionadas con el pensamiento crítico, el análisis de situaciones, la priorización de actividades y la toma de decisiones efectivas, habilidades que contribuirán positivamente a su desempeño profesional y al logro de los objetivos del área.</textarea>
       </div>
     </div>
-    <div class="section-label">Vista previa</div>
-    <div class="email-preview-box" id="emailPreview"></div>
-    <div class="form-actions">
+    <div style="margin:12px 0;text-align:center">
+      <button class="btn success" style="width:100%;padding:10px;font-size:14px" onclick="generarVistaPrevia()">👁 Generar vista previa</button>
+    </div>
+    <div id="emailPreviewWrap" style="display:none">
+      <div class="section-label">Vista previa</div>
+      <div class="email-preview-box" id="emailPreview"></div>
+      <div class="form-actions">
+        <button class="btn" onclick="closeEmailModal()">Cancelar</button>
+        <button class="btn primary" onclick="copiarCorreo()">📋 Copiar Correo</button>
+      </div>
+    </div>
+    <div class="form-actions" id="emailActionsInit">
       <button class="btn" onclick="closeEmailModal()">Cancelar</button>
-      <button class="btn primary" onclick="copiarCorreo()">📋 Copiar Correo</button>
     </div>`;
 
   document.getElementById('emailModal').style.display = 'flex';
-  // Set heredaDe select value after DOM renders, then update preview
+  // Solo inicializar el select con valor guardado si existe
   setTimeout(() => {
     const selHereda = document.getElementById('eqHeredaDe');
     if (selHereda && a.heredada_de) {
-      // heredada_de puede ser "Nombre · user" o solo el user
       const userMatch = a.heredada_de.includes(' · ')
         ? a.heredada_de.split(' · ').pop().trim()
         : a.heredada_de.trim();
       selHereda.value = userMatch;
     }
-    updateEmailPreview(a, pers);
+  }, 30);
+}
+
+function generarVistaPrevia() {
+  updateEmailPreview();
+  const wrap = document.getElementById('emailPreviewWrap');
+  const initActions = document.getElementById('emailActionsInit');
+  if (wrap) wrap.style.display = 'block';
+  if (initActions) initActions.style.display = 'none';
+  // Scroll al preview
+  setTimeout(() => {
+    const preview = document.getElementById('emailPreview');
+    if (preview) preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 50);
 }
 
