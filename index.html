@@ -1996,8 +1996,12 @@ function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
     </div>`;
 
   document.getElementById('emailModal').style.display = 'flex';
-  // Let DOM render before updating preview
-  setTimeout(() => updateEmailPreview(a, pers), 30);
+  // Set heredaDe select value after DOM renders, then update preview
+  setTimeout(() => {
+    const selHereda = document.getElementById('eqHeredaDe');
+    if (selHereda && a.heredada_de) selHereda.value = a.heredada_de;
+    updateEmailPreview(a, pers);
+  }, 50);
 }
 
 function updateTelcouContact(ciudad) {
@@ -2020,7 +2024,11 @@ function updateEmailPreview(asig, pers) {
   const codigo = document.getElementById('eqCodigo')?.value || pers.codigo || '—';
   const cedula = document.getElementById('eqCedula')?.value || pers.cedula || '—';
   const aprobado = document.getElementById('eqAprobado')?.value || '—';
-  const heredaDe = document.getElementById('eqHeredaDe')?.value || asig?.heredada_de || '';
+  const heredaDe = (() => {
+    const el = document.getElementById('eqHeredaDe');
+    if (el) return el.value || '';
+    return asig?.heredada_de || '';
+  })();
   const telcouMail = document.getElementById('eqTelcouMail')?.value || 'mdzurita@telconet.ec';
   const contacto = document.getElementById('eqTelcouContacto')?.value || 'Melissa Zurita';
   const nombre = (pers.nombre||'').toUpperCase();
