@@ -1904,7 +1904,7 @@ function openEmailFromRowNoState(id) {
   // Opens email modal WITHOUT changing the estado
   const a = asignaciones.find(x => x.id === id);
   if (!a) return;
-  currentEmailAsigId = null; // Don't link to state change
+  currentEmailAsigId = id; // Keep id so generarVistaPrevia can find asig
   const pers = personal.find(p => p.user === a.user_login) || {};
   const ciudad = pers.ciudad || 'UIO';
   const telcouContacto = ciudad === 'GYE' ? 'Carlos Ruilova' : 'Melissa Zurita';
