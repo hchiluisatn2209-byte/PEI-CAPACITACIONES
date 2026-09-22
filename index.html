@@ -782,6 +782,15 @@ async function confirmarAutorizar(id) {
   editingId = id;
   document.getElementById('modalTitle').textContent = '✔ Confirmar autorización de licencia';
   document.getElementById('modalSubtitle').textContent = a.curso_titulo || '';
+  // Personal del mismo equipo (excluir al propio colaborador)
+  const equipoPersonal = personal
+    .filter(p => p.equipo === a.equipo && p.user !== a.user_login)
+    .sort((x,y) => x.nombre.localeCompare(y.nombre));
+
+  const opcionesPersonal = equipoPersonal.map(p =>
+    `<option value="${p.nombre} · ${p.user}">${p.nombre}${p.ciudad ? ' ['+p.ciudad+']' : ''}</option>`
+  ).join('');
+
   document.getElementById('modalBody').innerHTML = `
     <div style="background:var(--green-lt);border:1px solid var(--green);border-radius:var(--radius);padding:14px;margin-bottom:16px;font-size:13px;color:var(--green)">
       ✅ Al autorizar, el colaborador <strong>${a.nombre}</strong> recibirá el estado <strong>Autorizado</strong> y verá el mensaje de que debe esperar el correo de Telco U con el acceso a la licencia.
@@ -789,9 +798,11 @@ async function confirmarAutorizar(id) {
     <div class="form-row">
       <div class="form-field full">
         <label>🔗 Licencia heredada de (opcional)</label>
-        <input type="text" id="heredadaDe" placeholder="Ej: Juan Pérez · vperez · o descripción de origen de la licencia"
-          style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:13px;color:var(--text-main);background:var(--surface-2)">
-        <div style="font-size:11px;color:var(--text3);margin-top:4px">Indica de quién se transfiere esta licencia, si aplica.</div>
+        <select id="heredadaDe" style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:13px;color:var(--text-main);background:var(--surface-2)">
+          <option value="">— No aplica / Sin transferencia —</option>
+          ${opcionesPersonal}
+        </select>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Personal de ${a.equipo} — selecciona de quién se transfiere esta licencia, si aplica.</div>
       </div>
     </div>
     <div class="form-row">
