@@ -2049,6 +2049,11 @@ function updateEmailPreview(asig, pers) {
   <td style="${tdS}">${ciudad}</td><td style="${tdS}">${codigo}</td><td style="${tdS}">${cedula}</td>
   <td style="${tdS}">${userLogin}</td><td style="${tdS}">${nombre}</td><td style="${tdS}">${mail}</td>
 </tr></tbody></table>
+${heredaDe ? `<table style="border-collapse:collapse;margin:4px 0 10px 0;width:auto"><thead><tr>
+  <th style="${thS}">HEREDA DE</th>
+</tr></thead><tbody><tr>
+  <td style="${tdS};color:#b45309;font-weight:600">${heredaDe}</td>
+</tr></tbody></table>` : ''}
 <p><strong>CURSO SOLICITADO:</strong></p>
 <table style="border-collapse:collapse;margin:10px 0"><thead><tr>
   <th style="${thS}">content_collection_course_identifier</th><th style="${thS}">UB Course ID</th>
@@ -2060,7 +2065,6 @@ function updateEmailPreview(asig, pers) {
   <td style="${tdS}">—</td>
 </tr></tbody></table>
 <p id="eqJustPreview">${(document.getElementById('eqJustificacion')?.value||'').split(String.fromCharCode(10)).join('<br>')}</p>
-${heredaDe ? `<p style="margin:8px 0;padding:6px 10px;background:#fff8e1;border-left:4px solid #f5a623;font-size:13px"><strong>HEREDA DE:</strong> ${heredaDe}</p>` : ''}
 <p>Agradezco su gentil ayuda.</p><p>Saludos cordiales,</p><br>
 <strong>${aprobado}</strong><br>Coordinador Nacional – Proyectos e Implementación<br>TELCONET LATAM<br>Quito - Ecuador`;
   const preview = document.getElementById('emailPreview');
