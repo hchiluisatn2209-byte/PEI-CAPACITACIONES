@@ -2018,14 +2018,20 @@ function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
 }
 
 function generarVistaPrevia() {
-  // Mostrar primero para que el div sea visible antes de insertar contenido
   const wrap = document.getElementById('emailPreviewWrap');
   const initActions = document.getElementById('emailActionsInit');
   if (wrap) wrap.style.display = 'block';
   if (initActions) initActions.style.display = 'none';
-  // Generar con pequeño delay para asegurar que el DOM está listo
+
   setTimeout(() => {
-    updateEmailPreview();
+    const asig = asignaciones.find(x => x.id === currentEmailAsigId);
+    const pers = personal.find(p => p.user === asig?.user_login) || {};
+    if (!asig) {
+      const preview = document.getElementById('emailPreview');
+      if (preview) preview.innerHTML = '<p style="color:red">Error: no se encontró la asignación.</p>';
+      return;
+    }
+    updateEmailPreview(asig, pers);
     const preview = document.getElementById('emailPreview');
     if (preview) preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 30);
