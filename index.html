@@ -623,15 +623,7 @@ function renderAdminDashboard() {
 
   const byEquipo = (eq) => {
     const d = asignaciones.filter(a => a.equipo === eq);
-    return {
-      total:      personal.filter(p=>p.equipo===eq).length,
-      pendientes: d.filter(a=>a.estado==='Pendiente').length,
-      revision:   d.filter(a=>a.estado==='En revisión').length,
-      autorizado: d.filter(a=>a.estado==='Autorizado').length,
-      encurso:    d.filter(a=>a.estado==='En curso').length,
-      culminados: d.filter(a=>a.estado==='Culminado').length,
-      rechazados: d.filter(a=>a.estado==='Rechazado').length,
-    };
+    return {total: personal.filter(p=>p.equipo===eq).length, culminados: d.filter(a=>a.estado==='Culminado').length, encurso: d.filter(a=>a.estado==='En curso').length, pendientes: d.filter(a=>a.estado==='Pendiente').length};
   };
   const pl = byEquipo('Planificación'), im = byEquipo('Implementación'), om = byEquipo('O&M');
 
@@ -650,130 +642,23 @@ function renderAdminDashboard() {
     </div>
     ${pendientes > 0 ? `<div class="alert-banner">⚠️ <span><strong>${pendientes} solicitud(es) pendiente(s)</strong> de aprobación — ve a la pestaña Solicitudes</span></div>` : ''}
   `;
-  // Render per-person bars after DOM is ready
-  ['Planificación','Implementación','O&M'].forEach(eq => renderPersonasCard(eq.replace(/[^a-z]/gi,'')));
 }
-
-const ESTADO_COLORES = {
-  'Pendiente':   '#f5a623',
-  'En revisión': '#5b9bd5',
-  'Autorizado':  '#8b6fe8',
-  'En curso':    '#1a73c8',
-  'Culminado':   '#1b7a3e',
-  'Rechazado':   '#c0392b',
-};
 
 function teamCard(icon, name, email, bg, color, d, barColor) {
   const pct = d.total ? Math.round(d.culminados/d.total*100) : 0;
-  const cardId = name.replace(/[^a-z]/gi,'');
-
-  // Gráfico de barras por estado
-  const bars = [
-    { label:'Pendiente',   val:d.pendientes, color:'#f5a623' },
-    { label:'En revisión', val:d.revision,   color:'#5b9bd5' },
-    { label:'Autorizado',  val:d.autorizado, color:'#8b6fe8' },
-    { label:'En curso',    val:d.encurso,    color:'#1a73c8' },
-    { label:'Culminado',   val:d.culminados, color:'#1b7a3e' },
-    { label:'Rechazado',   val:d.rechazados, color:'#c0392b' },
-  ].filter(b=>b.val>0);
-  const maxVal = Math.max(...bars.map(b=>b.val),1);
-  const chartW=280, barH=16, gap=7, labelW=78, numW=24, chartH=bars.length*(barH+gap);
-  const chartSVG = bars.length===0
-    ? '<div style="font-size:11px;color:var(--text3);text-align:center;padding:8px 0">Sin registros</div>'
-    : '<svg width="100%" viewBox="0 0 '+chartW+' '+chartH+'" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">'
-      + bars.map((b,i)=>{
-          const y=i*(barH+gap);
-          const bw=Math.max(4,Math.round((b.val/maxVal)*(chartW-labelW-numW-8)));
-          return '<text x="0" y="'+(y+barH-3)+'" font-size="10" fill="var(--text3)" font-family="sans-serif">'+b.label+'</text>'
-            +'<rect x="'+labelW+'" y="'+y+'" width="'+bw+'" height="'+barH+'" rx="3" fill="'+b.color+'" opacity="0.85"/>'
-            +'<text x="'+(labelW+bw+5)+'" y="'+(y+barH-3)+'" font-size="11" font-weight="700" fill="'+b.color+'" font-family="sans-serif">'+b.val+'</text>';
-        }).join('')
-      +'</svg>';
-
-  // Ciudades disponibles en este equipo
-  const ciudades = [...new Set(personal.filter(p=>p.equipo===name).map(p=>p.ciudad).filter(Boolean))].sort();
-
-  return '<div class="team-card">'
-    +'<div class="team-header">'
-    +'<div class="team-icon" style="background:'+bg+';font-size:18px">'+icon+'</div>'
-    +'<div><div class="team-name">'+name+'</div><div class="team-email">'+email+'</div></div>'
-    +'</div>'
-    +'<div class="team-stats">'
-    +'<div class="ts-item"><span class="ts-num">'+d.total+'</span><span class="ts-lab">personas</span></div>'
-    +'<div class="ts-item"><span class="ts-num" style="color:var(--amber)">'+d.pendientes+'</span><span class="ts-lab">pendientes</span></div>'
-    +'<div class="ts-item"><span class="ts-num" style="color:var(--blue)">'+d.encurso+'</span><span class="ts-lab">en curso</span></div>'
-    +'<div class="ts-item"><span class="ts-num" style="color:var(--green)">'+d.culminados+'</span><span class="ts-lab">culminados</span></div>'
-    +'</div>'
-    +'<div class="progress-bar-bg"><div class="progress-bar-fill" style="width:'+pct+'%;background:'+barColor+'"></div></div>'
-    +'<div style="margin-top:14px;border-top:1px solid var(--gray-bd);padding-top:12px">'
-    +'<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Cursos por estado</div>'
-    +chartSVG
-    +'</div>'
-    +'<div style="margin-top:14px;border-top:1px solid var(--gray-bd);padding-top:12px">'
-    +'<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Detalle por persona</div>'
-    +'<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">'
-    +'<select id="fCiudad_'+cardId+'" onchange="renderPersonasCard(\''+cardId+'\')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text2)">'
-    +'<option value="">Todas las ciudades</option>'
-    +ciudades.map(c=>'<option value="'+c+'">'+c+'</option>').join('')
-    +'</select>'
-    +'<select id="fEstado_'+cardId+'" onchange="renderPersonasCard(\''+cardId+'\')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text2)">'
-    +'<option value="">Todos los estados</option>'
-    +'<option value="Pendiente">🟡 Pendiente</option>'
-    +'<option value="En revisión">🔵 En revisión</option>'
-    +'<option value="Autorizado">🟣 Autorizado</option>'
-    +'<option value="En curso">🔵 En curso</option>'
-    +'<option value="Culminado">🟢 Culminado</option>'
-    +'<option value="Rechazado">🔴 Rechazado</option>'
-    +'</select>'
-    +'</div>'
-    +'<div id="personasRows_'+cardId+'"></div>'
-    +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">'
-    +Object.entries(ESTADO_COLORES).map(([l,c])=>'<span style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:50%;background:'+c+';display:inline-block"></span>'+l+'</span>').join('')
-    +'</div>'
-    +'</div>'
-    +'</div>';
-}
-
-function renderPersonasCard(cardId) {
-  const container = document.getElementById('personasRows_'+cardId);
-  if (!container) return;
-  const filtroCiudad = document.getElementById('fCiudad_'+cardId)?.value||'';
-  const filtroEstado = document.getElementById('fEstado_'+cardId)?.value||'';
-  const equipo = ['Planificación','Implementación','O&M'].find(e=>e.replace(/[^a-z]/gi,'')===cardId)||'';
-
-  let lista = personal.filter(p=>p.equipo===equipo);
-  if (filtroCiudad) lista = lista.filter(p=>p.ciudad===filtroCiudad);
-
-  lista = lista.map(p=>{
-    let asig = asignaciones.filter(a=>a.user_login===p.user);
-    if (filtroEstado) asig = asig.filter(a=>a.estado===filtroEstado);
-    return {p, asig, total:asig.length};
-  }).filter(x=>x.total>0).sort((a,b)=>b.total-a.total);
-
-  if (!lista.length) {
-    container.innerHTML='<div style="font-size:11px;color:var(--text3);padding:4px 0">Sin resultados</div>';
-    return;
-  }
-
-  container.innerHTML = lista.map(({p,asig,total})=>{
-    const segs = Object.entries(ESTADO_COLORES).map(([estado,color])=>{
-      const val = asig.filter(a=>a.estado===estado).length;
-      return val>0 ? {estado,color,val} : null;
-    }).filter(Boolean);
-    const barSegs = segs.map(s=>{
-      const pct=Math.round(s.val/total*100);
-      return '<div title="'+s.estado+': '+s.val+'" style="width:'+pct+'%;background:'+s.color+';height:100%"></div>';
-    }).join('');
-    const nombre = p.nombre.split(' ').slice(0,2).join(' ');
-    const ciudad = p.ciudad?'<span style="font-size:9px;background:var(--gray-bg);padding:1px 5px;border-radius:4px;color:var(--text3);margin-left:4px">'+p.ciudad+'</span>':'';
-    return '<div style="margin-bottom:7px">'
-      +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">'
-      +'<span style="font-size:11px;color:var(--text2);font-weight:600">'+nombre+ciudad+'</span>'
-      +'<span style="font-size:10px;color:var(--text3)">'+total+' curso'+(total>1?'s':'')+'</span>'
-      +'</div>'
-      +'<div style="height:10px;border-radius:5px;overflow:hidden;display:flex;background:var(--gray-bg)">'+barSegs+'</div>'
-      +'</div>';
-  }).join('');
+  return `<div class="team-card">
+    <div class="team-header">
+      <div class="team-icon" style="background:${bg};font-size:18px">${icon}</div>
+      <div><div class="team-name">${name}</div><div class="team-email">${email}</div></div>
+    </div>
+    <div class="team-stats">
+      <div class="ts-item"><span class="ts-num">${d.total}</span><span class="ts-lab">personas</span></div>
+      <div class="ts-item"><span class="ts-num" style="color:var(--amber)">${d.pendientes}</span><span class="ts-lab">pendientes</span></div>
+      <div class="ts-item"><span class="ts-num" style="color:var(--blue)">${d.encurso}</span><span class="ts-lab">en curso</span></div>
+      <div class="ts-item"><span class="ts-num" style="color:var(--green)">${d.culminados}</span><span class="ts-lab">culminados</span></div>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+  </div>`;
 }
 
 // ── SOLICITUDES (Admin review) ────────────────────────────────
@@ -903,24 +788,41 @@ async function confirmarAutorizar(id) {
     </div>
     <div class="form-row">
       <div class="form-field full">
-        <label>Nota para el colaborador (opcional)</label>
-        <textarea id="notaAutorizacion" rows="2" placeholder="Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas."></textarea>
+        <label>Hereda licencia de (opcional)</label>
+        <select id="heredaDeSelect" style="width:100%">
+          <option value="">— Ninguno —</option>
+        </select>
       </div>
     </div>
-    <!-- Correo a Telco U no aplica aquí: la confirmación ya fue recibida manualmente -->
+    <div class="form-row">
+      <div class="form-field full">
+        <label style="display:flex;align-items:center;gap:6px">
+          <span>✏️ Nota para el colaborador (opcional)</span>
+          <span style="font-size:11px;color:var(--text3);font-weight:400">— edita el mensaje antes de confirmar</span>
+        </label>
+        <textarea id="notaAutorizacion" rows="5" style="width:100%;border:2px solid var(--blue);border-radius:var(--radius);padding:10px;font-size:13px;line-height:1.6;resize:vertical;background:#fff;color:var(--text);outline:none;transition:border-color .2s" onfocus="this.style.borderColor='var(--navy)'" onblur="this.style.borderColor='var(--blue)'">Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.</textarea>
+      </div>
+    </div>
     <div class="form-actions">
       <button class="btn" onclick="closeModal()">Cancelar</button>
       <button class="btn success" onclick="ejecutarAutorizacion()">✔ Confirmar autorización</button>
     </div>`;
+  // Build "hereda de" options from personal
+  const a2 = asignaciones.find(x => x.id === id);
+  const teamMembers = personal.filter(p => p.user && (!a2 || p.user !== a2.user_login));
+  const heredaOptions = '<option value="">— Ninguno —</option>' + teamMembers.map(p =>
+    `<option value="${p.user}">${p.nombre} · ${p.user}</option>`).join('');
+  document.getElementById('heredaDeSelect').innerHTML = heredaOptions;
   document.getElementById('modal').style.display = 'flex';
 }
 
 async function ejecutarAutorizacion() {
   const nota = document.getElementById('notaAutorizacion')?.value || '';
-  const obs = nota ? nota : 'Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.';
-  const { error } = await sb.from('asignaciones')
-    .update({ estado: 'Autorizado', observaciones_admin: obs })
-    .eq('id', editingId);
+  const heredaDe = document.getElementById('heredaDeSelect')?.value || '';
+  const obs = nota || 'Revisa el correo de Telco U que llegará a tu cuenta. No olvides registrar las fechas referenciales que te otorguen. Recuerda la importancia de cumplir la capacitación en el tiempo asignado, ya que esta licencia será transferida a otra persona una vez que la concluyas.';
+  const updateData = { estado: 'Autorizado', observaciones_admin: obs, fecha_estado: new Date().toISOString() };
+  if (heredaDe) updateData.heredada_de = heredaDe;
+  const { error } = await sb.from('asignaciones').update(updateData).eq('id', editingId);
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal();
   showToast('Licencia autorizada ✓ — el colaborador verá el estado actualizado');
@@ -1857,44 +1759,6 @@ function debounceCursos() {
   cursosSearchTimer = setTimeout(buscarCursosAdmin, 350);
 }
 
-async function buscarCursosAdmin() {
-  const lista = document.getElementById('listaCursos');
-  if (!lista) return;
-  const q   = (document.getElementById('filtroCurso')?.value  || '').trim();
-  const cat = (document.getElementById('filtroCat')?.value    || '');
-  const idi = (document.getElementById('filtroIdioma')?.value || '');
-  if (!q && !cat && !idi) {
-    lista.innerHTML = '<div class="empty">Escribe para buscar en 34,055 cursos</div>';
-    return;
-  }
-  lista.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3)">🔍 Buscando...</div>';
-  let query = sb.from('cursos_udemy').select('*');
-  if (q)   query = query.or(`titulo.ilike.%${q}%,instructor.ilike.%${q}%`);
-  if (cat) query = query.eq('categoria', cat);
-  if (idi) query = query.eq('idioma', idi);
-  query = query.order('rating', { ascending: false }).limit(50);
-  const { data, error } = await query;
-  if (error) { lista.innerHTML = `<div class="empty">Error: ${error.message}</div>`; return; }
-  cursosCache = data || [];
-  if (!cursosCache.length) { lista.innerHTML = '<div class="empty">Sin resultados — intenta con otras palabras</div>'; return; }
-  lista.innerHTML = cursosCache.map(c => `
-    <div class="curso-item" onclick="asignarCursoDirecto('${c.id}')">
-      <div style="display:flex;align-items:baseline;gap:8px">
-        <span style="font-size:10px;color:var(--text3);font-family:monospace">ID:${c.id}</span>
-        <div class="curso-title">${c.titulo}</div>
-      </div>
-      <div class="curso-meta">
-        <span>👤 ${c.instructor||''}</span>
-        <span>🏷 ${c.categoria||''}</span>
-        <span>⏱ <strong>${Number(c.horas||0).toFixed(0)}h</strong></span>
-        ${c.rating?`<span>⭐${c.rating}</span>`:''}
-        <span>${c.nivel||''}</span>
-        <span>🌐 ${c.idioma||''}</span>
-      </div>
-    </div>`).join('')
-    + (cursosCache.length===50 ? '<div style="text-align:center;padding:8px;font-size:11px;color:var(--text3)">Mostrando 50 resultados — refina la búsqueda</div>' : '');
-}
-
 async function enviarSolicitud() {
   if (!selectedCurso) { showToast('Selecciona un curso primero'); return; }
   const obs = document.getElementById('uSolObs')?.value;
@@ -1932,11 +1796,11 @@ function renderCatalogo() {
   document.getElementById('mainContent').innerHTML = `
     <div class="toolbar">
       <input type="text" id="filtroCurso" placeholder="Buscar curso, instructor..." oninput="debounceCursos()" style="max-width:280px;flex:2">
-      <select id="filtroCat" onchange="buscarCursosAdmin()">
+      <select id="filtroCat" onchange="renderCatalogo()">
         <option value="">Todas las categorías</option>
         ${CATEGORIAS_UDEMY.map(c=>`<option>${c}</option>`).join('')}
       </select>
-      <select id="filtroIdioma" onchange="buscarCursosAdmin()">
+      <select id="filtroIdioma" onchange="renderCatalogo()">
         <option value="">Todos los idiomas</option>
         <option>English</option><option>Spanish</option><option>Portuguese</option>
         <option>French</option><option>German</option><option>Italian</option>
@@ -2053,7 +1917,7 @@ function openEmailFromRowNoState(id) {
   // Opens email modal WITHOUT changing the estado
   const a = asignaciones.find(x => x.id === id);
   if (!a) return;
-  currentEmailAsigId = null; // Don't link to state change
+  currentEmailAsigId = id; // Set so preview can find asignacion
   const pers = personal.find(p => p.user === a.user_login) || {};
   const ciudad = pers.ciudad || 'UIO';
   const telcouContacto = ciudad === 'GYE' ? 'Carlos Ruilova' : 'Melissa Zurita';
@@ -2125,8 +1989,7 @@ function _buildEmailModal(a, pers, ciudad, telcouContacto, telcouMail) {
     <div class="email-preview-box" id="emailPreview"></div>
     <div class="form-actions">
       <button class="btn" onclick="closeEmailModal()">Cancelar</button>
-      <button class="btn navy" onclick="guardarSolicitudEnviada()">Guardar</button>
-      <button class="btn primary" onclick="guardarYEnviarCorreo()">✉️ Guardar y Correo</button>
+      <button class="btn primary" onclick="copiarCorreo()">📋 Copiar Correo</button>
     </div>`;
 
   document.getElementById('emailModal').style.display = 'flex';
@@ -2189,6 +2052,23 @@ function updateEmailPreview(asig, pers) {
 <strong>${aprobado}</strong><br>Coordinador Nacional – Proyectos e Implementación<br>TELCONET LATAM<br>Quito - Ecuador`;
   const preview = document.getElementById('emailPreview');
   if (preview) preview.innerHTML = html;
+}
+
+async function copiarCorreo() {
+  const preview = document.getElementById('emailPreview');
+  if (!preview) { showToast('No hay vista previa para copiar'); return; }
+  try {
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html': new Blob([preview.innerHTML], { type: 'text/html' }),
+        'text/plain': new Blob([preview.innerText], { type: 'text/plain' })
+      })
+    ]);
+    showToast('✓ Correo copiado — pega con Ctrl+V en Outlook');
+  } catch(e) {
+    try { await navigator.clipboard.writeText(preview.innerText); showToast('✓ Texto copiado'); }
+    catch(e2) { showToast('No se pudo copiar: ' + e2.message); }
+  }
 }
 
 async function guardarSolicitudEnviada() {
