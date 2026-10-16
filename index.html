@@ -663,11 +663,19 @@ function teamCard(icon, name, email, bg, color, d, barColor) {
 
 // ── SOLICITUDES (Admin review) ────────────────────────────────
 function renderSolicitudes() {
-  const totalPend = asignaciones.filter(a=>a.estado==='Pendiente').length;
-  const totalRev  = asignaciones.filter(a=>a.estado==='En revisión').length;
-  const totalAut  = asignaciones.filter(a=>a.estado==='Autorizado').length;
-  const totalCur  = asignaciones.filter(a=>a.estado==='En curso').length;
-  const totalCul  = asignaciones.filter(a=>a.estado==='Culminado').length;
+  const q   = (window._kanbanQ   || '').toLowerCase();
+  const eq  = (window._kanbanEq  || '');
+
+  const match = a =>
+    (!q  || (a.curso_titulo||'').toLowerCase().includes(q) || (a.nombre||'').toLowerCase().includes(q)) &&
+    (!eq || a.equipo === eq);
+
+  const all  = asignaciones.filter(match);
+  const totalPend = all.filter(a=>a.estado==='Pendiente').length;
+  const totalRev  = all.filter(a=>a.estado==='En revisión').length;
+  const totalAut  = all.filter(a=>a.estado==='Autorizado').length;
+  const totalCur  = all.filter(a=>a.estado==='En curso').length;
+  const totalCul  = all.filter(a=>a.estado==='Culminado').length;
 
   const cols = [
     { estado:'Pendiente',    label:'🕐 Pendiente',     color:'var(--amber)', bg:'#fffbf0', bd:'#f5a623' },
@@ -678,7 +686,25 @@ function renderSolicitudes() {
     { estado:'Rechazado',    label:'✕ Rechazado',      color:'var(--red)',   bg:'#fff5f5', bd:'#c0392b' },
   ];
 
-  let html = `<div class="stats-grid" style="margin-bottom:16px">
+  const equipos = [...new Set(asignaciones.map(a=>a.equipo).filter(Boolean))].sort();
+  const eqOpts  = `<option value="">Todos los equipos</option>` +
+    equipos.map(e=>`<option value="${e}" ${eq===e?'selected':''}>${e}</option>`).join('');
+
+  let html = `
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px">
+    <input id="kanbanSearch" type="text" value="${q.replace(/"/g,'&quot;')}"
+      placeholder="🔍 Buscar por curso o colaborador..."
+      oninput="window._kanbanQ=this.value;renderSolicitudes()"
+      style="flex:1;min-width:200px;max-width:340px;padding:8px 12px;border:1.5px solid var(--gray-bd);border-radius:8px;font-size:13px;outline:none"
+      onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--gray-bd)'">
+    <select onchange="window._kanbanEq=this.value;renderSolicitudes()"
+      style="padding:8px 12px;border:1.5px solid var(--gray-bd);border-radius:8px;font-size:13px;background:var(--surface-2);color:var(--text);outline:none">
+      ${eqOpts}
+    </select>
+    ${(q||eq)?`<button onclick="window._kanbanQ='';window._kanbanEq='';renderSolicitudes()"
+      style="padding:7px 12px;border:1px solid var(--gray-bd);border-radius:8px;font-size:12px;background:var(--surface-2);cursor:pointer;color:var(--text3)">✕ Limpiar</button>`:''}
+  </div>
+  <div class="stats-grid" style="margin-bottom:16px">
     <div class="stat-card" style="border-top-color:var(--amber)"><div class="stat-label">Nuevas</div><div class="stat-value" style="color:var(--amber)">${totalPend}</div></div>
     <div class="stat-card" style="border-top-color:var(--blue)"><div class="stat-label">En revisión</div><div class="stat-value" style="color:var(--blue)">${totalRev}</div></div>
     <div class="stat-card" style="border-top-color:var(--green)"><div class="stat-label">Autorizados</div><div class="stat-value" style="color:var(--green)">${totalAut}</div></div>
@@ -688,13 +714,13 @@ function renderSolicitudes() {
   html += `<div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;align-items:flex-start">`;
 
   cols.forEach(col => {
-    const items = asignaciones.filter(a => a.estado === col.estado);
+    const items = all.filter(a => a.estado === col.estado);
     html += `<div style="min-width:260px;max-width:280px;flex-shrink:0;background:${col.bg};border:1.5px solid ${col.bd};border-radius:14px;overflow:hidden">
       <div style="padding:10px 14px;background:${col.bd};display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.05em">${col.label}</span>
         <span style="background:rgba(255,255,255,.25);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px">${items.length}</span>
       </div>
-      <div style="padding:8px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 260px);overflow-y:auto">
+      <div style="padding:8px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 310px);overflow-y:auto">
         ${items.length ? items.map(a => adminKanbanCard(a, col)).join('') : '<div style="text-align:center;padding:20px 10px;color:#aaa;font-size:12px">Sin solicitudes</div>'}
       </div>
     </div>`;
@@ -1156,18 +1182,23 @@ async function loadUserData() {
 }
 
 function renderMisSolicitudes() {
-  const total = asignaciones.length;
-  const culminados = asignaciones.filter(a=>a.estado==='Culminado').length;
-  const encurso = asignaciones.filter(a=>a.estado==='En curso').length;
-  const pendientes = asignaciones.filter(a=>a.estado==='Pendiente').length;
-  const horas = asignaciones.reduce((s,a)=>s+(a.estado==='Culminado'?Number(a.horas_curso||0):0),0);
+  const uq = (window._userKanbanQ || '').toLowerCase();
 
-  // Stats row
-  let html = `<div class="stats-grid" style="margin-bottom:20px">
+  const match = a => !uq || (a.curso_titulo||'').toLowerCase().includes(uq);
+  const vis   = asignaciones.filter(match);
+
+  const total      = asignaciones.length;
+  const culminados = vis.filter(a=>a.estado==='Culminado').length;
+  const encurso    = vis.filter(a=>a.estado==='En curso').length;
+  const pendientes = vis.filter(a=>['Pendiente','En revisión'].includes(a.estado)).length;
+  const horas      = asignaciones.filter(a=>a.estado==='Culminado').reduce((s,a)=>s+Number(a.horas_curso||0),0);
+
+  // Stats row (always shows totals of ALL, not filtered)
+  let html = `<div class="stats-grid" style="margin-bottom:14px">
     <div class="stat-card" style="border-top-color:var(--navy)"><div class="stat-label">Mis cursos</div><div class="stat-value">${total}</div></div>
-    <div class="stat-card" style="border-top-color:var(--amber)"><div class="stat-label">Pendientes</div><div class="stat-value" style="color:var(--amber)">${pendientes}</div></div>
-    <div class="stat-card" style="border-top-color:var(--blue)"><div class="stat-label">En curso</div><div class="stat-value" style="color:var(--blue)">${encurso}</div></div>
-    <div class="stat-card" style="border-top-color:var(--green)"><div class="stat-label">Culminados · ${horas.toFixed(0)}h</div><div class="stat-value" style="color:var(--green)">${culminados}</div></div>
+    <div class="stat-card" style="border-top-color:var(--amber)"><div class="stat-label">Pendientes</div><div class="stat-value" style="color:var(--amber)">${asignaciones.filter(a=>['Pendiente','En revisión'].includes(a.estado)).length}</div></div>
+    <div class="stat-card" style="border-top-color:var(--blue)"><div class="stat-label">En curso</div><div class="stat-value" style="color:var(--blue)">${asignaciones.filter(a=>a.estado==='En curso').length}</div></div>
+    <div class="stat-card" style="border-top-color:var(--green)"><div class="stat-label">Culminados · ${horas.toFixed(0)}h</div><div class="stat-value" style="color:var(--green)">${asignaciones.filter(a=>a.estado==='Culminado').length}</div></div>
   </div>`;
 
   if (!total) {
@@ -1181,6 +1212,17 @@ function renderMisSolicitudes() {
     return;
   }
 
+  // Search bar
+  html += `<div style="display:flex;gap:10px;align-items:center;margin-bottom:14px">
+    <input id="userKanbanSearch" type="text" value="${uq.replace(/"/g,'&quot;')}"
+      placeholder="🔍 Buscar por nombre de curso..."
+      oninput="window._userKanbanQ=this.value;renderMisSolicitudes()"
+      style="flex:1;max-width:340px;padding:8px 12px;border:1.5px solid var(--gray-bd);border-radius:8px;font-size:13px;outline:none"
+      onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--gray-bd)'">
+    ${uq?`<button onclick="window._userKanbanQ='';renderMisSolicitudes()"
+      style="padding:7px 12px;border:1px solid var(--gray-bd);border-radius:8px;font-size:12px;background:var(--surface-2);cursor:pointer;color:var(--text3)">✕ Limpiar</button>`:''}
+  </div>`;
+
   // Kanban columns definition
   const cols = [
     { key:'pendiente',   label:'🕐 Pendiente',    color:'var(--amber)', bg:'#fffbf0', bd:'#f5a623', estados:['Pendiente','En revisión'] },
@@ -1188,20 +1230,18 @@ function renderMisSolicitudes() {
     { key:'encurso',     label:'▶ En curso',      color:'var(--blue)',  bg:'#f0f6ff', bd:'#1a73c8', estados:['En curso'] },
     { key:'culminado',   label:'✅ Culminado',     color:'var(--green)', bg:'#f0faf4', bd:'#1b7a3e', estados:['Culminado'] },
     { key:'rechazado',   label:'✕ Rechazado',     color:'var(--red)',   bg:'#fff5f5', bd:'#c0392b', estados:['Rechazado'] },
-  ]; // All columns always visible — Pendiente shows even at 0
+  ];
 
   html += `<div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:12px;align-items:flex-start">`;
 
   cols.forEach(col => {
-    const items = asignaciones.filter(a => col.estados.includes(a.estado));
+    const items = vis.filter(a => col.estados.includes(a.estado));
     html += `<div style="min-width:260px;max-width:280px;flex-shrink:0;background:${col.bg};border:1.5px solid ${col.bd};border-radius:14px;overflow:hidden">
-      <!-- Column header -->
       <div style="padding:12px 14px;background:${col.bd};display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.05em">${col.label}</span>
         <span style="background:rgba(255,255,255,.25);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px">${items.length}</span>
       </div>
-      <!-- Cards -->
-      <div style="padding:10px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 280px);overflow-y:auto">
+      <div style="padding:10px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 310px);overflow-y:auto">
         ${items.length ? items.map(a => kanbanCard(a, col)).join('') : '<div style="text-align:center;padding:20px 10px;color:#aaa;font-size:12px">Sin solicitudes</div>'}
       </div>
     </div>`;
