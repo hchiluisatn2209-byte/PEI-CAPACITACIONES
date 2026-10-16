@@ -617,15 +617,9 @@ async function loadAll() {
 
 function renderAdminDashboard() {
   const pendientes = asignaciones.filter(a => a.estado === 'Pendiente').length;
-  const encurso = asignaciones.filter(a => a.estado === 'En curso').length;
+  const encurso    = asignaciones.filter(a => a.estado === 'En curso').length;
   const culminados = asignaciones.filter(a => a.estado === 'Culminado').length;
-  const autorizados = asignaciones.filter(a => a.estado === 'Autorizado').length;
-
-  const byEquipo = (eq) => {
-    const d = asignaciones.filter(a => a.equipo === eq);
-    return {total: personal.filter(p=>p.equipo===eq).length, culminados: d.filter(a=>a.estado==='Culminado').length, encurso: d.filter(a=>a.estado==='En curso').length, pendientes: d.filter(a=>a.estado==='Pendiente').length};
-  };
-  const pl = byEquipo('Planificación'), im = byEquipo('Implementación'), om = byEquipo('O&M');
+  const autorizados= asignaciones.filter(a => a.estado === 'Autorizado').length;
 
   document.getElementById('mainContent').innerHTML = `
     <div class="stats-grid">
@@ -634,30 +628,119 @@ function renderAdminDashboard() {
       <div class="stat-card"><div class="stat-label">En curso</div><div class="stat-value accent">${encurso}</div></div>
       <div class="stat-card"><div class="stat-label">Culminados</div><div class="stat-value success">${culminados}</div></div>
     </div>
-    <div class="section-title">Equipos</div>
-    <div class="teams-grid">
-      ${teamCard('📐','Planificación','hchiluisatn2209@gmail.com','var(--blue-lt)','var(--blue)',pl,'var(--blue)')}
-      ${teamCard('⚙️','Implementación','geovanna.naranjo23@gmail.com','var(--green-lt)','var(--green)',im,'var(--green)')}
-      ${teamCard('🖥','O&M','cralarcontn1607@gmail.com','var(--amber-lt)','var(--amber)',om,'var(--amber)')}
-    </div>
     ${pendientes > 0 ? `<div class="alert-banner">⚠️ <span><strong>${pendientes} solicitud(es) pendiente(s)</strong> de aprobación — ve a la pestaña Solicitudes</span></div>` : ''}
+    <div class="section-title" style="margin-top:8px">Equipos</div>
+    <div style="display:flex;flex-direction:column;gap:20px">
+      ${teamCardFull('📐','Planificación','hchiluisatn2209@gmail.com','#1a73c8')}
+      ${teamCardFull('⚙️','Implementación','geovanna.naranjo23@gmail.com','#1b7a3e')}
+      ${teamCardFull('🖥','O&M','cralarcontn1607@gmail.com','#d97706')}
+    </div>
   `;
 }
 
-function teamCard(icon, name, email, bg, color, d, barColor) {
-  const pct = d.total ? Math.round(d.culminados/d.total*100) : 0;
-  return `<div class="team-card">
-    <div class="team-header">
-      <div class="team-icon" style="background:${bg};font-size:18px">${icon}</div>
-      <div><div class="team-name">${name}</div><div class="team-email">${email}</div></div>
+function teamCardFull(icon, equipo, email, color) {
+  const miembros = personal.filter(p => p.equipo === equipo);
+  const asigEq   = asignaciones.filter(a => a.equipo === equipo);
+
+  // Estado colors
+  const EC = {
+    'Pendiente':   '#f5a623',
+    'En revisión': '#1a73c8',
+    'Autorizado':  '#6c3fc5',
+    'En curso':    '#1a73c8',
+    'Culminado':   '#1b7a3e',
+    'Rechazado':   '#c0392b',
+  };
+
+  // Summary stats
+  const stats = {
+    pendientes: asigEq.filter(a=>['Pendiente','En revisión'].includes(a.estado)).length,
+    autorizados: asigEq.filter(a=>a.estado==='Autorizado').length,
+    encurso:    asigEq.filter(a=>a.estado==='En curso').length,
+    culminados: asigEq.filter(a=>a.estado==='Culminado').length,
+    rechazados: asigEq.filter(a=>a.estado==='Rechazado').length,
+  };
+  const total = asigEq.length;
+  const pct   = total ? Math.round(stats.culminados / total * 100) : 0;
+
+  // Per-person rows — sorted by total cursos desc
+  const personRows = miembros.map(p => {
+    const pa = asigEq.filter(a => a.user_login === p.user);
+    const totalP = pa.length;
+    return { p, pa, totalP };
+  }).sort((a,b) => b.totalP - a.totalP);
+
+  // Build stacked bar per person
+  const personRowsHtml = personRows.map(({ p, pa, totalP }) => {
+    if (!totalP) {
+      return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--gray-bd)">
+        <div style="min-width:150px;font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p.nombre}">${p.nombre}</div>
+        <div style="flex:1;font-size:11px;color:var(--text3);padding-left:4px">Sin cursos asignados</div>
+      </div>`;
+    }
+    // Count by estado
+    const counts = {};
+    pa.forEach(a => { counts[a.estado] = (counts[a.estado]||0) + 1; });
+    const ESTADOS = ['Pendiente','En revisión','Autorizado','En curso','Culminado','Rechazado'];
+    const segments = ESTADOS.filter(e => counts[e]).map(e =>
+      `<div title="${e}: ${counts[e]}" style="flex:${counts[e]};background:${EC[e]};height:100%;min-width:4px;transition:flex .3s"></div>`
+    ).join('');
+    const culminP = counts['Culminado']||0;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--gray-bd)">
+      <div style="min-width:150px;font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p.nombre}">${p.nombre}</div>
+      <div style="flex:1;height:14px;border-radius:7px;overflow:hidden;background:var(--gray-bg);display:flex">${segments}</div>
+      <div style="min-width:80px;display:flex;gap:6px;justify-content:flex-end;align-items:center">
+        <span style="font-size:11px;color:var(--text3)">${totalP} cur.</span>
+        <span style="font-size:11px;font-weight:700;color:${color}">${totalP ? Math.round(culminP/totalP*100) : 0}%</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Legend
+  const legendHtml = Object.entries(EC).map(([e,c]) =>
+    `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:var(--text3)">
+      <span style="width:8px;height:8px;border-radius:2px;background:${c};display:inline-block"></span>${e}
+    </span>`).join('');
+
+  return `<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:14px;overflow:hidden">
+    <!-- Header -->
+    <div style="background:${color};padding:12px 18px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">${icon}</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#fff">${equipo}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.7)">${email}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:center">
+        <div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#fff">${miembros.length}</div><div style="font-size:10px;color:rgba(255,255,255,.7)">personas</div></div>
+        <div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#fff">${total}</div><div style="font-size:10px;color:rgba(255,255,255,.7)">cursos</div></div>
+        <div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#fff">${pct}%</div><div style="font-size:10px;color:rgba(255,255,255,.7)">culminado</div></div>
+      </div>
     </div>
-    <div class="team-stats">
-      <div class="ts-item"><span class="ts-num">${d.total}</span><span class="ts-lab">personas</span></div>
-      <div class="ts-item"><span class="ts-num" style="color:var(--amber)">${d.pendientes}</span><span class="ts-lab">pendientes</span></div>
-      <div class="ts-item"><span class="ts-num" style="color:var(--blue)">${d.encurso}</span><span class="ts-lab">en curso</span></div>
-      <div class="ts-item"><span class="ts-num" style="color:var(--green)">${d.culminados}</span><span class="ts-lab">culminados</span></div>
+    <!-- Quick stats -->
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--gray-bd)">
+      ${[
+        ['Pend/Rev', stats.pendientes, '#f5a623'],
+        ['Autorizado', stats.autorizados, '#6c3fc5'],
+        ['En curso', stats.encurso, '#1a73c8'],
+        ['Culminado', stats.culminados, '#1b7a3e'],
+        ['Rechazado', stats.rechazados, '#c0392b'],
+      ].map(([lbl,val,col]) =>
+        `<div style="flex:1;padding:8px 4px;text-align:center;border-right:1px solid var(--gray-bd)">
+          <div style="font-size:16px;font-weight:700;color:${col}">${val}</div>
+          <div style="font-size:10px;color:var(--text3)">${lbl}</div>
+        </div>`).join('')}
     </div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+    <!-- Legend -->
+    <div style="padding:8px 16px;background:var(--gray-bg);display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--gray-bd)">
+      ${legendHtml}
+    </div>
+    <!-- Per-person breakdown -->
+    <div style="padding:10px 16px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Desglose por colaborador</div>
+      ${personRowsHtml || '<div style="font-size:12px;color:var(--text3);padding:8px 0">Sin miembros registrados</div>'}
+    </div>
   </div>`;
 }
 
