@@ -3194,9 +3194,14 @@ function _eKpi(label, value, color, bg) {
 
 // ── Modal: Nueva evaluación ───────────────────────────────────────────
 function openModalNuevaEval() {
-  const cursoOpts = catalogoCursos.map(c =>
-    '<option value="'+c.id+'">'+c.titulo+'</option>'
-  ).join('');
+  const cursosMap = {};
+  asignaciones.forEach(a => {
+    if (a.curso_id && a.curso_titulo) cursosMap[String(a.curso_id)] = a.curso_titulo;
+  });
+  const cursoOpts = Object.entries(cursosMap)
+    .sort((a,b) => a[1].localeCompare(b[1]))
+    .map(([id, titulo]) => '<option value="' + id + '">' + titulo + '</option>')
+    .join('');
   document.getElementById('modalTitle').textContent = '➕ Nueva evaluación';
   document.getElementById('modalSubtitle').textContent = 'Registra un módulo de capacitación interna';
   document.getElementById('modalBody').innerHTML =
@@ -3274,9 +3279,16 @@ async function guardarNuevaEval() {
 function openModalEditarEval(evalId) {
   const ev = evaluaciones.find(e => e.id === evalId);
   if (!ev) return;
-  const cursoOpts = catalogoCursos.map(c =>
-    '<option value="' + c.id + '"' + (String(ev.curso_id) === String(c.id) ? ' selected' : '') + '>' + c.titulo + '</option>'
-  ).join('');
+  // Construir lista de cursos únicos desde asignaciones
+  const cursosMap = {};
+  asignaciones.forEach(a => {
+    if (a.curso_id && a.curso_titulo) cursosMap[String(a.curso_id)] = a.curso_titulo;
+  });
+  const cursoOpts = Object.entries(cursosMap)
+    .sort((a,b) => a[1].localeCompare(b[1]))
+    .map(([id, titulo]) =>
+      '<option value="' + id + '"' + (String(ev.curso_id) === String(id) ? ' selected' : '') + '>' + titulo + '</option>'
+    ).join('');
   const equipos = ['Planificación','Implementación','O&M'];
   const eqOpts = equipos.map(e =>
     '<option value="' + e + '"' + (ev.equipo === e ? ' selected' : '') + '>' + e + '</option>'
