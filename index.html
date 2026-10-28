@@ -2205,8 +2205,11 @@ function asignarCursoDirecto(id) {
 // ═══════════════════════════════════════════════════════════════
 //  ADMIN PERSONAL TAB
 // ═══════════════════════════════════════════════════════════════
+// estado de orden para tabla Personal
+window._personalSort = { col: 'nombre', dir: 1 };
+
 function renderPersonal() {
-  let subTabP = 'Todos';
+  const thS = 'cursor:pointer;user-select:none;white-space:nowrap;padding-right:18px;position:relative';
   const html = `
     <div class="sub-tabs" id="subTabsP">
       <div class="sub-tab active" onclick="switchSubTabP(this,'Todos')">🗂 Todos</div>
@@ -2217,15 +2220,32 @@ function renderPersonal() {
     <div class="toolbar"><input type="text" id="filtroPersonal" placeholder="Buscar..." oninput="renderPersonalTabla()"></div>
     <div class="table-wrap">
       <table>
-        <thead><tr>
-          <th style="position:sticky;left:0;z-index:2;background:var(--navy)">Usuario</th>
-          <th>Nombre</th><th>Ciudad</th><th>Código</th><th>Cédula</th><th>Celular</th><th>Mail</th><th>Equipo</th><th>Asignados</th><th>Culminados</th><th>Avance</th>
+        <thead><tr id="thPersonal">
+          <th style="position:sticky;left:0;z-index:2;background:var(--navy);${thS}" onclick="sortPersonal('user')">USUARIO</th>
+          <th style="${thS}" onclick="sortPersonal('nombre')">NOMBRE</th>
+          <th style="${thS}" onclick="sortPersonal('ciudad')">CIUDAD</th>
+          <th style="${thS}" onclick="sortPersonal('codigo')">CÓDIGO</th>
+          <th style="${thS}" onclick="sortPersonal('cedula')">CÉDULA</th>
+          <th style="${thS}" onclick="sortPersonal('celular')">CELULAR</th>
+          <th style="${thS}" onclick="sortPersonal('mail')">MAIL</th>
+          <th style="${thS}" onclick="sortPersonal('equipo')">EQUIPO</th>
+          <th style="${thS};text-align:center" onclick="sortPersonal('asignados')">ASIGNADOS</th>
+          <th style="${thS};text-align:center" onclick="sortPersonal('culminados')">CULMINADOS</th>
+          <th style="${thS}" onclick="sortPersonal('avance')">AVANCE</th>
         </tr></thead>
         <tbody id="tbPersonal"></tbody>
       </table>
     </div>`;
   document.getElementById('mainContent').innerHTML = html;
   window._subTabP = 'Todos';
+  window._personalSort = { col: 'nombre', dir: 1 };
+  renderPersonalTabla();
+}
+
+function sortPersonal(col) {
+  const s = window._personalSort;
+  if (s.col === col) s.dir *= -1;
+  else { s.col = col; s.dir = 1; }
   renderPersonalTabla();
 }
 
@@ -2237,30 +2257,67 @@ function switchSubTabP(el, eq) {
 }
 
 function renderPersonalTabla() {
-  const q = (document.getElementById('filtroPersonal')?.value||'').toLowerCase();
+  const q  = (document.getElementById('filtroPersonal')?.value||'').toLowerCase();
   const eq = window._subTabP || 'Todos';
+  const { col, dir } = window._personalSort || { col:'nombre', dir:1 };
+
   let data = personal;
   if (eq !== 'Todos') data = data.filter(p => p.equipo === eq);
   if (q) data = data.filter(p => p.nombre.toLowerCase().includes(q) || p.user.toLowerCase().includes(q));
+
+  // Enriquecer con stats calculadas para poder ordenar por ellas
+  data = data.map(per => {
+    const asig = asignaciones.filter(a => a.user_login === per.user);
+    const done = asig.filter(a => a.estado === 'Culminado').length;
+    const avg  = asig.length ? Math.round(asig.reduce((s,a)=>s+(a.avance||0),0)/asig.length) : 0;
+    return { ...per, _asig: asig.length, _done: done, _avg: avg };
+  });
+
+  // Ordenar
+  const valOf = p => {
+    if (col === 'asignados')  return p._asig;
+    if (col === 'culminados') return p._done;
+    if (col === 'avance')     return p._avg;
+    return (p[col]||'').toString().toLowerCase();
+  };
+  data.sort((a,b) => {
+    const av = valOf(a), bv = valOf(b);
+    if (av < bv) return -1 * dir;
+    if (av > bv) return  1 * dir;
+    return 0;
+  });
+
+  // Actualizar flechas en encabezados
+  const COLS = ['user','nombre','ciudad','codigo','cedula','celular','mail','equipo','asignados','culminados','avance'];
+  document.querySelectorAll('#thPersonal th').forEach((th, i) => {
+    const c = COLS[i];
+    // quitar flecha vieja
+    th.querySelectorAll('.sort-arrow').forEach(e => e.remove());
+    if (c === col) {
+      const arr = document.createElement('span');
+      arr.className = 'sort-arrow';
+      arr.style.cssText = 'position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:10px;opacity:.9';
+      arr.textContent = dir === 1 ? '▲' : '▼';
+      th.appendChild(arr);
+    }
+  });
+
   const tb = document.getElementById('tbPersonal');
   if (!tb) return;
   tb.innerHTML = data.map(per => {
-    const asig = asignaciones.filter(a => a.user_login === per.user);
-    const done = asig.filter(a => a.estado === 'Culminado').length;
-    const avg = asig.length ? Math.round(asig.reduce((s,a)=>s+(a.avance||0),0)/asig.length) : 0;
-    return `<tr>
-      <td style="position:sticky;left:0;background:var(--surface-2);z-index:1;font-size:12px;color:var(--text3)">${per.user}</td>
-      <td style="font-weight:600">${per.nombre}</td>
-      <td><span class="badge" style="background:${per.ciudad==='UIO'?'var(--blue-lt)':'var(--green-lt)'};color:${per.ciudad==='UIO'?'var(--blue)':'var(--green)'}">${per.ciudad||'—'}</span></td>
-      <td style="font-size:12px">${per.codigo||'—'}</td>
-      <td style="font-size:12px">${per.cedula||'—'}</td>
-      <td style="font-size:12px">${per.celular||'—'}</td>
-      <td style="font-size:12px"><a href="mailto:${per.mail}" style="color:var(--blue);text-decoration:none">${per.mail||'—'}</a></td>
-      <td>${equipoBadgeStr(per.equipo)}</td>
-      <td style="text-align:center">${asig.length}</td>
-      <td style="text-align:center">${done}</td>
-      <td><span style="font-size:12px">${avg}%</span><div class="pct-bar"><div class="pct-fill" style="width:${avg}%"></div></div></td>
-    </tr>`;
+    return '<tr>'
+      + '<td style="position:sticky;left:0;background:var(--surface-2);z-index:1;font-size:12px;color:var(--text3)">' + per.user + '</td>'
+      + '<td style="font-weight:600">' + per.nombre + '</td>'
+      + '<td><span class="badge" style="background:' + (per.ciudad==='UIO'?'var(--blue-lt)':'var(--green-lt)') + ';color:' + (per.ciudad==='UIO'?'var(--blue)':'var(--green)') + '">' + (per.ciudad||'—') + '</span></td>'
+      + '<td style="font-size:12px">' + (per.codigo||'—') + '</td>'
+      + '<td style="font-size:12px">' + (per.cedula||'—') + '</td>'
+      + '<td style="font-size:12px">' + (per.celular||'—') + '</td>'
+      + '<td style="font-size:12px"><a href="mailto:' + per.mail + '" style="color:var(--blue);text-decoration:none">' + (per.mail||'—') + '</a></td>'
+      + '<td>' + equipoBadgeStr(per.equipo) + '</td>'
+      + '<td style="text-align:center">' + per._asig + '</td>'
+      + '<td style="text-align:center">' + per._done + '</td>'
+      + '<td><span style="font-size:12px">' + per._avg + '%</span><div class="pct-bar"><div class="pct-fill" style="width:' + per._avg + '%"></div></div></td>'
+      + '</tr>';
   }).join('');
 }
 
