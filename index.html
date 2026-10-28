@@ -1585,15 +1585,15 @@ function renderAdminDashboard() {
       (alertasArr || '<div style="text-align:center;padding:20px 0;color:#22c55e;font-size:13px;font-weight:500">✓ Sin alertas activas</div>')
     );
 
-  const row2 =
-    '<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px;align-items:start">' +
-      donaCard + alertasCard +
-    '</div>';
-
-  // C. Tendencia + Rankings
   const tendCard =
     card(sectionTitle('Evolución mensual · Culminados') + buildBars());
 
+  const row2 =
+    '<div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:14px;margin-bottom:14px;align-items:start">' +
+      donaCard + alertasCard + tendCard +
+    '</div>';
+
+  // C. Rankings + Próximas personas
   const topCard =
     card(
       sectionTitle('🏆 Top cumplimiento') +
@@ -1606,9 +1606,30 @@ function renderAdminDashboard() {
       bottom5.map((r,i) => rankRow(r, r.pct===0?'#cbd5e1':'#f59e0b', i+1)).join('')
     );
 
+  // Próximas personas a asignar licencia
+  const sinCursosPersonal = personalF.filter(p => !asigF.some(a => a.user_login === p.user));
+  const proximasRows = sinCursosPersonal.length
+    ? sinCursosPersonal.map((p,i) =>
+        '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #fde68a">' +
+          '<span style="font-size:11px;color:#94a3b8;width:16px">'+(i+1)+'</span>' +
+          '<div style="flex:1">' +
+            '<div style="font-size:12px;font-weight:600;color:#0d1b2e">'+p.nombre+'</div>' +
+            '<div style="font-size:10px;color:#64748b">'+(p.ciudad||'—')+'</div>' +
+          '</div>' +
+          '<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid #fbbf24">Sin asignación</span>' +
+        '</div>'
+      ).join('')
+    : '<div style="text-align:center;padding:12px 0;color:#16a34a;font-size:12px;font-weight:500">✅ Todo el personal tiene cursos asignados</div>';
+
+  const proximasCard =
+    '<div style="background:#fffbeb;border:1px solid #fbbf24;border-radius:14px;padding:20px">' +
+      sectionTitle('📋 Próximas personas a asignar licencia') +
+      proximasRows +
+    '</div>';
+
   const row3 =
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px">' +
-      tendCard + topCard + atencionCard +
+      topCard + atencionCard + proximasCard +
     '</div>';
 
   // D. Equipos — gestionado en el bloque final con dbFilterBar
