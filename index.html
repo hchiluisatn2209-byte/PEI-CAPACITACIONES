@@ -876,31 +876,50 @@ function asignarSlotAPersona(userLogin) {
 
 // ── FIN POOL DE LICENCIAS ────────────────────────────────────────────────────
 
+let currentDashFilter = 'Todos';
+
+function dbFilterTab(eq) {
+  currentDashFilter = eq;
+  renderAdminDashboard();
+}
+
 function renderAdminDashboard() {
+  const DB_EQUIPOS = [
+    {label:'Todos',        icon:'📊', eq:null,             color:'#1a73c8'},
+    {label:'Planificación',icon:'📐', eq:'Planificación',  color:'#1a73c8'},
+    {label:'Implementación',icon:'⚙️',eq:'Implementación', color:'#1b7a3e'},
+    {label:'O&M',          icon:'🖥', eq:'O&M',            color:'#d97706'},
+  ];
+  const activeTab = DB_EQUIPOS.find(t => t.label === currentDashFilter) || DB_EQUIPOS[0];
+
+  // ── Filtrar datos según equipo seleccionado ────────────────────────
+  const asigF    = activeTab.eq ? asignaciones.filter(a => a.equipo === activeTab.eq) : asignaciones;
+  const personalF = activeTab.eq ? personal.filter(p => p.activo !== false && p.equipo === activeTab.eq)
+                                  : personal.filter(p => p.activo !== false);
+
   // ── Datos base ────────────────────────────────────────────────────
-  const pendientes  = asignaciones.filter(a => a.estado === 'Pendiente').length;
-  const enRevision  = asignaciones.filter(a => a.estado === 'En revisión').length;
-  const encurso     = asignaciones.filter(a => a.estado === 'En curso').length;
-  const culminados  = asignaciones.filter(a => a.estado === 'Culminado').length;
-  const autorizados = asignaciones.filter(a => a.estado === 'Autorizado').length;
-  const rechazados  = asignaciones.filter(a => a.estado === 'Rechazado').length;
-  const totalCursos = asignaciones.length;
-  const totalPersonal = personal.filter(p => p.activo !== false).length;
-  const conCursos   = personal.filter(p => p.activo !== false && asignaciones.some(a => a.user_login === p.user)).length;
+  const pendientes  = asigF.filter(a => a.estado === 'Pendiente').length;
+  const enRevision  = asigF.filter(a => a.estado === 'En revisión').length;
+  const encurso     = asigF.filter(a => a.estado === 'En curso').length;
+  const culminados  = asigF.filter(a => a.estado === 'Culminado').length;
+  const autorizados = asigF.filter(a => a.estado === 'Autorizado').length;
+  const rechazados  = asigF.filter(a => a.estado === 'Rechazado').length;
+  const totalCursos = asigF.length;
+  const totalPersonal = personalF.length;
+  const conCursos   = personalF.filter(p => asigF.some(a => a.user_login === p.user)).length;
   const cumplTotal  = totalCursos ? Math.round(culminados/totalCursos*100) : 0;
-  const sinAsig     = personal.filter(p => p.activo !== false && !asignaciones.some(a => a.user_login === p.user)).length;
-  const requierenAtencion = personal.filter(p => {
-    if (p.activo === false) return false;
-    const pa = asignaciones.filter(a => a.user_login === p.user);
+  const sinAsig     = personalF.filter(p => !asigF.some(a => a.user_login === p.user)).length;
+  const requierenAtencion = personalF.filter(p => {
+    const pa = asigF.filter(a => a.user_login === p.user);
     if (!pa.length) return true;
     return Math.round(pa.filter(a=>a.estado==='Culminado').length/pa.length*100) < 30;
   }).length;
 
   // ── Ranking personas ──────────────────────────────────────────────
-  const rankData = personal
-    .filter(p => p.activo !== false && asignaciones.some(a => a.user_login === p.user))
+  const rankData = personalF
+    .filter(p => asigF.some(a => a.user_login === p.user))
     .map(p => {
-      const pa  = asignaciones.filter(a => a.user_login === p.user);
+      const pa  = asigF.filter(a => a.user_login === p.user);
       const pct = pa.length ? Math.round(pa.filter(a=>a.estado==='Culminado').length/pa.length*100) : 0;
       const parts = p.nombre.split(' ');
       const label = parts.length >= 2 ? parts[parts.length-2] + ' ' + parts[parts.length-1] : parts[0];
@@ -911,7 +930,7 @@ function renderAdminDashboard() {
 
   // ── Tendencia mensual ─────────────────────────────────────────────
   const mesMap = {};
-  asignaciones.filter(a => a.estado==='Culminado' && a.fecha_estado).forEach(a => {
+  asigF.filter(a => a.estado==='Culminado' && a.fecha_estado).forEach(a => {
     const d = new Date(a.fecha_estado);
     const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
     mesMap[key] = (mesMap[key]||0)+1;
@@ -1141,31 +1160,59 @@ function renderAdminDashboard() {
       tendCard + topCard + atencionCard +
     '</div>';
 
-  // D. Equipos — 3 columnas en una fila
-  const EQUIPOS_DEF = [
-    {icon:'📐', eq:'Planificación',   email:'hchiluisatn2209@gmail.com',  color:'#1a73c8'},
-    {icon:'⚙️', eq:'Implementación',  email:'geovanna.naranjo23@gmail.com', color:'#1b7a3e'},
-    {icon:'🖥',  eq:'O&M',            email:'cralarcontn1607@gmail.com',   color:'#d97706'},
-  ];
-  const eqTabs = EQUIPOS_DEF.map((e,i) =>
-    '<button onclick="tcShowEq(' + i + ')" id="eqTab' + i + '" style="padding:6px 16px;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;' +
-      (i===0 ? 'background:#1a73c8;color:#fff;box-shadow:0 2px 6px rgba(26,115,200,.3)' : 'background:#f1f5f9;color:#64748b') + '">' +
-      e.icon + ' ' + e.eq +
-    '</button>'
-  ).join('');
-  const eqPanels = EQUIPOS_DEF.map((e,i) =>
-    '<div id="eqPanel' + i + '" style="display:' + (i===0?'block':'none') + '">' +
-      teamCardFull(e.icon, e.eq, e.email, e.color) +
-    '</div>'
-  ).join('');
-  const equipos =
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e2e8f0">' +
-      '<span style="font-size:15px;font-weight:600;color:#0d1b2e">Seguimiento por equipo</span>' +
-      '<div style="display:flex;gap:6px">' + eqTabs + '</div>' +
-    '</div>' +
-    eqPanels;
+  // D. Equipos — gestionado en el bloque final con dbFilterBar
 
-  document.getElementById('mainContent').innerHTML = kpiRow + row2 + row3 + equipos;
+  // ── Barra de filtro de equipos (estilo Personal tab) ─────────────
+  const dbFilterBar =
+    '<div style="display:flex;gap:4px;margin-bottom:18px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:5px;box-shadow:0 1px 3px rgba(0,0,0,.04)">' +
+    DB_EQUIPOS.map(t => {
+      const isActive = t.label === currentDashFilter;
+      const col = isActive ? t.color : 'transparent';
+      const tc  = isActive ? '#fff' : '#64748b';
+      const sh  = isActive ? ';box-shadow:0 2px 6px rgba(0,0,0,.18)' : '';
+      return '<button onclick="dbFilterTab(\'' + t.label + '\')" style="flex:1;padding:7px 10px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:' + col + ';color:' + tc + sh + ';transition:all .18s;font-family:inherit">' +
+        t.icon + ' ' + t.label + '</button>';
+    }).join('') +
+    '</div>';
+
+  // En modo Todos, mostrar los 3 equipos con tabs; en modo equipo, solo ese equipo
+  let equipoSection;
+  if (!activeTab.eq) {
+    const EQUIPOS_DEF = [
+      {icon:'📐', eq:'Planificación',   email:'hchiluisatn2209@gmail.com',  color:'#1a73c8'},
+      {icon:'⚙️', eq:'Implementación',  email:'geovanna.naranjo23@gmail.com', color:'#1b7a3e'},
+      {icon:'🖥',  eq:'O&M',            email:'cralarcontn1607@gmail.com',   color:'#d97706'},
+    ];
+    const eqTabs = EQUIPOS_DEF.map((e,i) =>
+      '<button onclick="tcShowEq(' + i + ')" id="eqTab' + i + '" style="padding:6px 16px;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;' +
+        (i===0 ? 'background:#1a73c8;color:#fff;box-shadow:0 2px 6px rgba(26,115,200,.3)' : 'background:#f1f5f9;color:#64748b') + '">' +
+        e.icon + ' ' + e.eq +
+      '</button>'
+    ).join('');
+    const eqPanels = EQUIPOS_DEF.map((e,i) =>
+      '<div id="eqPanel' + i + '" style="display:' + (i===0?'block':'none') + '">' +
+        teamCardFull(e.icon, e.eq, e.email, e.color) +
+      '</div>'
+    ).join('');
+    equipoSection =
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e2e8f0">' +
+        '<span style="font-size:15px;font-weight:600;color:#0d1b2e">Seguimiento por equipo</span>' +
+        '<div style="display:flex;gap:6px">' + eqTabs + '</div>' +
+      '</div>' +
+      eqPanels;
+  } else {
+    const EQUIPOS_DEF = [
+      {icon:'📐', eq:'Planificación',   email:'hchiluisatn2209@gmail.com',  color:'#1a73c8'},
+      {icon:'⚙️', eq:'Implementación',  email:'geovanna.naranjo23@gmail.com', color:'#1b7a3e'},
+      {icon:'🖥',  eq:'O&M',            email:'cralarcontn1607@gmail.com',   color:'#d97706'},
+    ];
+    const eq = EQUIPOS_DEF.find(e => e.eq === activeTab.eq);
+    equipoSection = eq
+      ? '<div style="font-size:15px;font-weight:600;color:#0d1b2e;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e2e8f0">Seguimiento · ' + eq.icon + ' ' + eq.eq + '</div>' + teamCardFull(eq.icon, eq.eq, eq.email, eq.color)
+      : '';
+  }
+
+  document.getElementById('mainContent').innerHTML = dbFilterBar + kpiRow + row2 + row3 + equipoSection;
 }
 
 function dbKpi(label, value, sub, color, bg) {
