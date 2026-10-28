@@ -1921,6 +1921,7 @@ function renderAdminAsignaciones() {
         <thead><tr id="thAsig">
           <th style="position:sticky;left:0;z-index:2;background:var(--navy);cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('nombre')">Personal<span style="font-size:9px;opacity:.7" id="th_nombre"> ↕</span></th>
           <th style="cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('equipo')">Equipo<span style="font-size:9px;opacity:.7" id="th_equipo"> ↕</span></th>
+          <th style="cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('licencia')">Licencia<span style="font-size:9px;opacity:.7" id="th_licencia"> ↕</span></th>
           <th style="cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('curso_titulo')">Curso<span style="font-size:9px;opacity:.7" id="th_curso_titulo"> ↕</span></th>
           <th style="cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('horas_curso')">Duración<span style="font-size:9px;opacity:.7" id="th_horas_curso"> ↕</span></th>
           <th style="cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('fecha_inicio')">Inicio<span style="font-size:9px;opacity:.7" id="th_fecha_inicio"> ↕</span></th>
@@ -1973,7 +1974,7 @@ function renderAdminTabla() {
       return va < vb ? -dir : va > vb ? dir : 0;
     });
     // Actualizar indicadores de flecha en cabeceras
-    ['nombre','equipo','curso_titulo','horas_curso','fecha_inicio','fecha_fin','avance','estado','prioridad','certificado_enviado'].forEach(c => {
+    ['nombre','equipo','licencia','curso_titulo','horas_curso','fecha_inicio','fecha_fin','avance','estado','prioridad','certificado_enviado'].forEach(c => {
       const el = document.getElementById('th_' + c);
       if (!el) return;
       el.textContent = c === col ? (dir === 1 ? ' ↑' : ' ↓') : ' ↕';
@@ -1982,13 +1983,14 @@ function renderAdminTabla() {
   }
   const tb = document.getElementById('tbAsig');
   if (!tb) return;
-  if (!data.length) { tb.innerHTML = '<tr><td colspan="11" class="empty">No hay asignaciones</td></tr>'; return; }
+  if (!data.length) { tb.innerHTML = '<tr><td colspan="12" class="empty">No hay asignaciones</td></tr>'; return; }
   tb.innerHTML = data.map(a => `<tr>
     <td style="position:sticky;left:0;background:var(--surface-2);z-index:1;min-width:150px">
       <div style="font-weight:600">${a.nombre||''}</div>
       <div style="font-size:11px;color:var(--text3)">${a.user_login||''}</div>
     </td>
     <td>${equipoBadgeStr(a.equipo)}</td>
+    <td>${licenciaBadge(a.licencia)}</td>
     <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${a.curso_titulo||''}">${a.curso_titulo||'<span style="color:var(--text3)">Sin asignar</span>'}</td>
     <td style="font-size:12px;white-space:nowrap">${a.horas_curso ? '⏱ '+Number(a.horas_curso).toFixed(0)+'h' : '—'}</td>
     <td style="font-size:12px">${a.fecha_inicio||'—'}</td>
@@ -4083,6 +4085,13 @@ function equipoBadgeStr(e) {
 
 function prioridadBadge(p) {
   return p==='Alta'?'<span class="badge badge-alta">Alta</span>':p==='Baja'?'<span class="badge" style="background:var(--green-lt);color:var(--green)">Baja</span>':'<span class="badge badge-media">Media</span>';
+}
+
+function licenciaBadge(l) {
+  if (l === 'Telco U')  return '<span class="badge" style="background:#eff6ff;color:#1a73c8;border:1px solid #bfdbfe;font-size:11px">🎓 Telco U</span>';
+  if (l === 'Interna')  return '<span class="badge" style="background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;font-size:11px">🏢 Interna</span>';
+  if (l === 'Propia')   return '<span class="badge" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:11px">⭐ Propia</span>';
+  return '<span style="color:var(--text3);font-size:12px">—</span>';
 }
 
 function show(id) { document.getElementById(id).style.display='flex'; }
