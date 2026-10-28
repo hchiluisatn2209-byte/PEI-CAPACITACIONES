@@ -1635,6 +1635,22 @@ async function rechazarSolicitud(id) {
 }
 
 // ── ADMIN ASIGNACIONES ────────────────────────────────────────
+let _asigSortCol = '';
+let _asigSortDir = 1;
+
+function _asigTh(label, col) {
+  const active = _asigSortCol === col;
+  const arrow = active ? (_asigSortDir === 1 ? ' ↑' : ' ↓') : ' ↕';
+  const style = 'cursor:pointer;user-select:none;white-space:nowrap;' + (active ? 'color:#93c5fd' : '');
+  return '<th onclick="asigSort(\'' + col + '\')" style="' + style + '">' + label + '<span style="font-size:9px;opacity:.7">' + arrow + '</span></th>';
+}
+
+function asigSort(col) {
+  if (_asigSortCol === col) { _asigSortDir *= -1; }
+  else { _asigSortCol = col; _asigSortDir = 1; }
+  renderAdminTabla();
+}
+
 function renderAdminAsignaciones() {
   const subTabsHtml = `
     <div class="sub-tabs">
@@ -1664,16 +1680,26 @@ function renderAdminAsignaciones() {
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr>
-          <th style="position:sticky;left:0;z-index:2;background:var(--navy)">Personal</th>
-          <th>Equipo</th><th>Curso</th><th>Duración</th><th>Inicio</th><th>Fin</th>
-          <th>Avance</th><th>Estado</th><th>Prioridad</th><th>Certificado</th><th></th>
+        <thead><tr id="thAsig">
+          <th style="position:sticky;left:0;z-index:2;background:var(--navy);cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('nombre')">Personal<span style="font-size:9px;opacity:.7" id="th_nombre"> ↕</span></th>
+          <th style="cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('equipo')">Equipo<span style="font-size:9px;opacity:.7" id="th_equipo"> ↕</span></th>
+          <th style="cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('curso_titulo')">Curso<span style="font-size:9px;opacity:.7" id="th_curso_titulo"> ↕</span></th>
+          <th style="cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('horas_curso')">Duración<span style="font-size:9px;opacity:.7" id="th_horas_curso"> ↕</span></th>
+          <th style="cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('fecha_inicio')">Inicio<span style="font-size:9px;opacity:.7" id="th_fecha_inicio"> ↕</span></th>
+          <th style="cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('fecha_fin')">Fin<span style="font-size:9px;opacity:.7" id="th_fecha_fin"> ↕</span></th>
+          <th style="cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('avance')">Avance<span style="font-size:9px;opacity:.7" id="th_avance"> ↕</span></th>
+          <th style="cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('estado')">Estado<span style="font-size:9px;opacity:.7" id="th_estado"> ↕</span></th>
+          <th style="cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('prioridad')">Prioridad<span style="font-size:9px;opacity:.7" id="th_prioridad"> ↕</span></th>
+          <th style="cursor:pointer;user-select:none;white-space:nowrap" onclick="asigSort('certificado_enviado')">Certificado<span style="font-size:9px;opacity:.7" id="th_certificado_enviado"> ↕</span></th>
+          <th></th>
         </tr></thead>
         <tbody id="tbAsig"></tbody>
       </table>
     </div>`;
   document.getElementById('mainContent').innerHTML = subTabsHtml;
   currentSubTab = 'Todos';
+  _asigSortCol = '';
+  _asigSortDir = 1;
   renderAdminTabla();
   checkAlerts();
 }
@@ -1684,6 +1710,36 @@ function renderAdminTabla() {
   let data = currentSubTab === 'Todos' ? asignaciones : asignaciones.filter(a => a.equipo === currentSubTab);
   if (q) data = data.filter(a => (a.nombre||'').toLowerCase().includes(q) || (a.user_login||'').toLowerCase().includes(q));
   if (est) data = data.filter(a => a.estado === est);
+  // Ordenamiento
+  if (_asigSortCol) {
+    const col = _asigSortCol;
+    const dir = _asigSortDir;
+    data = [...data].sort((a, b) => {
+      let va = a[col], vb = b[col];
+      // Numérico
+      if (col === 'horas_curso' || col === 'avance') {
+        va = Number(va) || 0; vb = Number(vb) || 0;
+        return (va - vb) * dir;
+      }
+      // Booleano (certificado)
+      if (col === 'certificado_enviado') {
+        va = va === true ? 1 : va === false ? -1 : 0;
+        vb = vb === true ? 1 : vb === false ? -1 : 0;
+        return (va - vb) * dir;
+      }
+      // Texto / fechas
+      va = (va || '').toString().toLowerCase();
+      vb = (vb || '').toString().toLowerCase();
+      return va < vb ? -dir : va > vb ? dir : 0;
+    });
+    // Actualizar indicadores de flecha en cabeceras
+    ['nombre','equipo','curso_titulo','horas_curso','fecha_inicio','fecha_fin','avance','estado','prioridad','certificado_enviado'].forEach(c => {
+      const el = document.getElementById('th_' + c);
+      if (!el) return;
+      el.textContent = c === col ? (dir === 1 ? ' ↑' : ' ↓') : ' ↕';
+      el.closest('th').style.color = c === col ? '#93c5fd' : '';
+    });
+  }
   const tb = document.getElementById('tbAsig');
   if (!tb) return;
   if (!data.length) { tb.innerHTML = '<tr><td colspan="11" class="empty">No hay asignaciones</td></tr>'; return; }
