@@ -393,7 +393,20 @@ const ADMIN_MAP = {
   'cralarcontn1607@gmail.com':    {user:'cralarcon', nombre:'Alarcon Arreaga Carmen Rosa',         equipo:'O&M',           ciudad:'GYE',codigo:'101236',cedula:'0912112570',celular:'983323950',mail:'cralarcon@telconet.ec'},
 };
 
-const personal = Object.values({...USER_MAP, ...ADMIN_MAP}).filter(p => p.user);
+// Estado de activos guardado en localStorage (persiste entre sesiones)
+const _inactivosGuardados = (() => { try { return JSON.parse(localStorage.getItem('pei_inactivos')||'[]'); } catch(e){return[];} })();
+const personal = Object.values({...USER_MAP, ...ADMIN_MAP}).filter(p => p.user).map(p => ({
+  ...p, activo: !_inactivosGuardados.includes(p.user)
+}));
+
+function toggleActivo(userLogin) {
+  const p = personal.find(x => x.user === userLogin);
+  if (!p) return;
+  p.activo = !p.activo;
+  const inact = personal.filter(x => !x.activo).map(x => x.user);
+  try { localStorage.setItem('pei_inactivos', JSON.stringify(inact)); } catch(e){}
+  renderPersonalTabla();
+}
 
 const CATEGORIAS_UDEMY = ['Business Operations','Cloud Computing','Communication','Cybersecurity','Data Science','Design Tools','Development','Finance & Accounting','Generative AI','IT Operations','Language Learning','Leadership & Management','Marketing','Personal Development','Productivity','Project & Product Management','Sales & Customer Service','UX','Workplace & Human Resources'];
 
@@ -886,7 +899,7 @@ function renderAdminDashboard() {
 }
 
 function teamCardFull(icon, equipo, email, color) {
-  const miembros = personal.filter(p => p.equipo === equipo);
+  const miembros = personal.filter(p => p.equipo === equipo && p.activo !== false);
   const asigEq   = asignaciones.filter(a => a.equipo === equipo);
 
   const EC = {
@@ -1175,7 +1188,7 @@ async function confirmarAutorizar(id) {
     </div>`;
   // Build "hereda de" options from personal
   const a2 = asignaciones.find(x => x.id === id);
-  const teamMembers = personal.filter(p => p.user && (!a2 || p.user !== a2.user_login));
+  const teamMembers = personal.filter(p => p.user && p.activo !== false && (!a2 || p.user !== a2.user_login));
   const heredaOptions = '<option value="">— Ninguno —</option>' + teamMembers.map(p =>
     `<option value="${p.user}">${p.nombre} · ${p.user}</option>`).join('');
   document.getElementById('heredaDeSelect').innerHTML = heredaOptions;
@@ -1435,7 +1448,7 @@ function filterPersonalByEquipo() {
   if (!sel) return;
   sel.innerHTML = '<option value="">Seleccionar persona</option>';
   if (!eq) return;
-  personal.filter(p => p.equipo === eq).forEach(p => {
+  personal.filter(p => p.equipo === eq && p.activo !== false).forEach(p => {
     const o = document.createElement('option');
     o.value = p.user;
     o.textContent = p.nombre + ' [' + (p.ciudad||'') + '] (' + p.user + ')';
@@ -2216,7 +2229,13 @@ function renderPersonal() {
       <div class="sub-tab" onclick="switchSubTabP(this,'Implementación')">⚙️ Implementación</div>
       <div class="sub-tab" onclick="switchSubTabP(this,'O&M')">🖥 O&M</div>
     </div>
-    <div class="toolbar"><input type="text" id="filtroPersonal" placeholder="Buscar..." oninput="renderPersonalTabla()"></div>
+    <div class="toolbar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <input type="text" id="filtroPersonal" placeholder="Buscar..." oninput="renderPersonalTabla()" style="flex:1;min-width:160px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;user-select:none">
+        <input type="checkbox" id="chkInactivos" onchange="renderPersonalTabla()" style="width:14px;height:14px">
+        Mostrar inactivos
+      </label>
+    </div>
     <div class="table-wrap">
       <table>
         <thead><tr id="thPersonal">
@@ -2231,6 +2250,7 @@ function renderPersonal() {
           <th style="${thS};text-align:center" onclick="sortPersonal('asignados')">ASIGNADOS</th>
           <th style="${thS};text-align:center" onclick="sortPersonal('culminados')">CULMINADOS</th>
           <th style="${thS}" onclick="sortPersonal('avance')">AVANCE</th>
+          <th style="${thS}">ESTADO</th>
         </tr></thead>
         <tbody id="tbPersonal"></tbody>
       </table>
@@ -2260,7 +2280,9 @@ function renderPersonalTabla() {
   const eq = window._subTabP || 'Todos';
   const { col, dir } = window._personalSort || { col:'nombre', dir:1 };
 
+  const mostrarInactivos = document.getElementById('chkInactivos')?.checked;
   let data = personal;
+  if (!mostrarInactivos) data = data.filter(p => p.activo !== false);
   if (eq !== 'Todos') data = data.filter(p => p.equipo === eq);
   if (q) data = data.filter(p => p.nombre.toLowerCase().includes(q) || p.user.toLowerCase().includes(q));
 
@@ -2316,6 +2338,11 @@ function renderPersonalTabla() {
       + '<td style="text-align:center">' + per._asig + '</td>'
       + '<td style="text-align:center">' + per._done + '</td>'
       + '<td><span style="font-size:12px">' + per._avg + '%</span><div class="pct-bar"><div class="pct-fill" style="width:' + per._avg + '%"></div></div></td>'
+      + '<td style="text-align:center">'
+      + (per.activo !== false
+          ? '<button onclick="toggleActivo(\'' + per.user + '\')" style="font-size:11px;padding:3px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#f0fdf4;color:#16a34a;cursor:pointer;font-weight:600">✔ Activo</button>'
+          : '<button onclick="toggleActivo(\'' + per.user + '\')" style="font-size:11px;padding:3px 10px;border:1px solid #fca5a5;border-radius:8px;background:#fef2f2;color:#ef4444;cursor:pointer;font-weight:600">✕ Inactivo</button>')
+      + '</td>'
       + '</tr>';
   }).join('');
 }
