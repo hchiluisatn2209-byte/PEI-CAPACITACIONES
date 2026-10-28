@@ -1469,16 +1469,16 @@ function renderAdminDashboard() {
 }
 
 function dbKpiLicencias(label, total, telcoU, interna, propia) {
-  const dot = (color, txt, n) => n > 0
-    ? '<span style="display:inline-flex;align-items:center;gap:3px;background:' + color + ';border-radius:20px;padding:2px 7px;font-size:10px;font-weight:700;white-space:nowrap">' + txt + ' <b>' + n + '</b></span>'
+  const dot = (bg, color, icon, nombre, n) => n > 0
+    ? '<span style="display:inline-flex;align-items:center;gap:3px;background:' + bg + ';color:' + color + ';border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;white-space:nowrap">' + icon + ' ' + nombre + ' · <b>' + n + '</b></span>'
     : '';
   return '<div style="background:#eff6ff;border:1px solid #e2e8f0;border-radius:14px;padding:16px 18px;border-left:3px solid #1a73c8;box-shadow:0 1px 3px rgba(0,0,0,.04)">' +
     '<div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">' + label + '</div>' +
     '<div style="font-size:28px;font-weight:800;color:#1a73c8;line-height:1;margin-bottom:8px">' + total + '</div>' +
-    '<div style="display:flex;flex-wrap:wrap;gap:4px">' +
-      dot('#dbeafe;color:#1d4ed8', '🎓', telcoU) +
-      dot('#ede9fe;color:#6d28d9', '🏢', interna) +
-      dot('#dcfce7;color:#16a34a', '⭐', propia) +
+    '<div style="display:flex;flex-direction:column;gap:4px">' +
+      dot('#dbeafe','#1d4ed8','🎓','Telco U', telcoU) +
+      dot('#ede9fe','#6d28d9','🏢','Interna', interna) +
+      dot('#dcfce7','#16a34a','⭐','Propia',  propia) +
     '</div>' +
   '</div>';
 }
