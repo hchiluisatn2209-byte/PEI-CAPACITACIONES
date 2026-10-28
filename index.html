@@ -1059,15 +1059,45 @@ function renderAdminDashboard() {
     '</div>';
 
   // B. Velocímetro + Dona + Alertas
+  var pctColor2 = cumplTotal>=80?'#16a34a':cumplTotal>=60?'#3b82f6':cumplTotal>=30?'#f59e0b':'#ef4444';
+  var pctLabel2 = cumplTotal>=80?'Alto':cumplTotal>=60?'Medio':cumplTotal>=30?'Bajo':'Crítico';
+  var pctBg2    = cumplTotal>=80?'#f0fdf4':cumplTotal>=60?'#eff6ff':cumplTotal>=30?'#fffbeb':'#fef2f2';
+  var pctRest   = 100 - cumplTotal;
+  var barFill   = cumplTotal>=80?'#16a34a':cumplTotal>=60?'#3b82f6':cumplTotal>=30?'#f59e0b':'#ef4444';
+
   const velocCard =
     card(
       sectionTitle('Índice de cumplimiento') +
-      '<div style="display:flex;flex-direction:column;align-items:center;padding:8px 0 0">' +
-        buildVeloc(cumplTotal) +
-        '<div style="margin-top:4px;display:flex;gap:24px">' +
-          '<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:#0d1b2e">' + culminados + '</div><div style="font-size:10px;color:#94a3b8;margin-top:2px">Culminados</div></div>' +
-          '<div style="width:1px;background:#e2e8f0"></div>' +
-          '<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:#0d1b2e">' + totalCursos + '</div><div style="font-size:10px;color:#94a3b8;margin-top:2px">Total cursos</div></div>' +
+      // Número grande central
+      '<div style="text-align:center;padding:12px 0 8px">' +
+        '<div style="display:inline-flex;flex-direction:column;align-items:center;background:' + pctBg2 + ';border-radius:16px;padding:16px 32px;border:2px solid ' + pctColor2 + '20">' +
+          '<div style="font-size:52px;font-weight:900;color:' + pctColor2 + ';line-height:1">' + cumplTotal + '%</div>' +
+          '<div style="font-size:11px;font-weight:700;color:' + pctColor2 + ';letter-spacing:.1em;margin-top:4px">' + pctLabel2.toUpperCase() + '</div>' +
+        '</div>' +
+      '</div>' +
+      // Barra de progreso
+      '<div style="padding:0 4px 12px">' +
+        '<div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-bottom:4px">' +
+          '<span>Progreso general</span><span>' + cumplTotal + ' de 100%</span>' +
+        '</div>' +
+        '<div style="height:10px;background:#e2e8f0;border-radius:5px;overflow:hidden">' +
+          '<div style="height:100%;width:' + cumplTotal + '%;background:' + barFill + ';border-radius:5px;transition:width .6s"></div>' +
+        '</div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:9px;color:#cbd5e1;margin-top:3px"><span>0%</span><span>30%</span><span>60%</span><span>80%</span><span>100%</span></div>' +
+      '</div>' +
+      // Totales
+      '<div style="display:flex;border-top:1px solid #f1f5f9;padding-top:12px;gap:0">' +
+        '<div style="flex:1;text-align:center;border-right:1px solid #f1f5f9">' +
+          '<div style="font-size:22px;font-weight:800;color:#16a34a">' + culminados + '</div>' +
+          '<div style="font-size:10px;color:#94a3b8;margin-top:2px">Culminados</div>' +
+        '</div>' +
+        '<div style="flex:1;text-align:center;border-right:1px solid #f1f5f9">' +
+          '<div style="font-size:22px;font-weight:800;color:#64748b">' + pctRest + '%</div>' +
+          '<div style="font-size:10px;color:#94a3b8;margin-top:2px">Pendiente</div>' +
+        '</div>' +
+        '<div style="flex:1;text-align:center">' +
+          '<div style="font-size:22px;font-weight:800;color:#0d1b2e">' + totalCursos + '</div>' +
+          '<div style="font-size:10px;color:#94a3b8;margin-top:2px">Total cursos</div>' +
         '</div>' +
       '</div>'
     );
