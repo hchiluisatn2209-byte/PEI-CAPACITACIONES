@@ -875,6 +875,136 @@ function ejecutarLiberacion() {
   closeModal();
   showToast('Slot actualizado ✓ — recuerda actualizar el código con los nuevos usuarios del pool');
   renderLicencias();
+  // Si hay entrante, abrir correo de traspaso
+  if (entrante) {
+    setTimeout(() => openEmailTraspaso(userLogin, entrante), 300);
+  }
+}
+
+function openEmailTraspaso(salienteLogin, entranteLogin) {
+  const saliente = personal.find(x => x.user === salienteLogin) || { nombre: salienteLogin, user: salienteLogin };
+  const entrante = personal.find(x => x.user === entranteLogin) || { nombre: entranteLogin, user: entranteLogin };
+  const ciudad = entrante.ciudad || 'UIO';
+  const telcouContacto = ciudad === 'GYE' ? 'Carlos Ruilova' : 'Melissa Zurita';
+  const telcouMail     = ciudad === 'GYE' ? 'cruilova@telconet.ec' : 'mdzurita@telconet.ec';
+
+  // Curso de la persona entrante (el pendiente/en revisión que originó la cola)
+  const asigEntrante = asignaciones.find(a => a.user_login === entranteLogin
+    && a.licencia === 'Telco U'
+    && ['Pendiente','En revisión','Autorizado'].includes(a.estado)) || {};
+
+  window._emailTraspasoCtx = { saliente, entrante, asigEntrante };
+
+  document.getElementById('emailModalBody').innerHTML = `
+    <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#7c5a00">
+      🔄 Correo de <strong>traspaso de licencia</strong>: <strong>${saliente.nombre}</strong> libera → <strong>${entrante.nombre}</strong> hereda
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Ciudad</label>
+        <select id="eqCiudad" onchange="updateTelcouContact(this.value);updateEmailTraspasoPreview()">
+          <option ${ciudad==='UIO'?'selected':''}>UIO</option>
+          <option ${ciudad==='GYE'?'selected':''}>GYE</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Contacto Telco U</label>
+        <select id="eqTelcouContacto" onchange="updateTelcouMail(this.value);updateEmailTraspasoPreview()">
+          <option value="Melissa Zurita" ${telcouContacto==='Melissa Zurita'?'selected':''}>Melissa Zurita (UIO)</option>
+          <option value="Carlos Ruilova" ${telcouContacto==='Carlos Ruilova'?'selected':''}>Carlos Ruilova (GYE)</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Mail destino</label>
+        <input type="text" id="eqTelcouMail" value="${telcouMail}" readonly style="background:var(--gray-bg);color:var(--text3);font-size:12px">
+      </div>
+      <div class="form-field">
+        <label>Aprobado por</label>
+        <select id="eqAprobado" onchange="updateEmailTraspasoPreview()">
+          <option value="">Seleccionar...</option>
+          <option>Carmen Alarcón</option><option>Geovanna Naranjo</option>
+          <option>Haydi Chiluisa</option><option>Eduardo Nuñez</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Cédula (entrante)</label>
+        <input type="text" id="eqCedula" value="${entrante.cedula||''}" oninput="updateEmailTraspasoPreview()">
+      </div>
+      <div class="form-field">
+        <label>Código colaborador (entrante)</label>
+        <input type="text" id="eqCodigo" value="${entrante.codigo||''}" oninput="updateEmailTraspasoPreview()">
+      </div>
+    </div>
+    <div class="section-label">Vista previa</div>
+    <div class="email-preview-box" id="emailPreview"></div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeEmailModal()">Cancelar</button>
+      <button class="btn primary" onclick="copiarCorreo()">📋 Copiar Correo</button>
+    </div>`;
+
+  document.getElementById('emailModal').style.display = 'flex';
+  setTimeout(() => updateEmailTraspasoPreview(), 30);
+}
+
+function updateEmailTraspasoPreview() {
+  const ctx = window._emailTraspasoCtx;
+  if (!ctx) return;
+  const { saliente, entrante, asigEntrante } = ctx;
+  const ciudad    = document.getElementById('eqCiudad')?.value || entrante.ciudad || 'UIO';
+  const contacto  = document.getElementById('eqTelcouContacto')?.value || 'Melissa Zurita';
+  const telcouMail= document.getElementById('eqTelcouMail')?.value || 'mdzurita@telconet.ec';
+  const aprobado  = document.getElementById('eqAprobado')?.value || '—';
+  const cedula    = document.getElementById('eqCedula')?.value || entrante.cedula || '—';
+  const codigo    = document.getElementById('eqCodigo')?.value || entrante.codigo || '—';
+  const thS = 'border:1px solid #ddd;padding:6px 10px;background:#0d1b2e;color:#fff;font-size:12px;text-align:left;white-space:nowrap';
+  const tdS = 'border:1px solid #ddd;padding:6px 10px;font-size:12px;white-space:nowrap';
+  const mailEntrante = entrante.mail || entrante.user + '@telconet.ec';
+  const mailSaliente = saliente.mail || saliente.user + '@telconet.ec';
+  const cursoTitulo = asigEntrante.curso_titulo || '—';
+  const cursoId = asigEntrante.curso_id || '—';
+
+  const html = `<p><strong>Para:</strong> ${telcouMail}; telcou_uio@telconet.ec<br>
+<strong>CC:</strong> bnunez@telconet.ec; ganaranjo@telconet.ec; cralarcon@telconet.ec<br>
+<strong>Asunto:</strong> PEI: ${ciudad} - TRASPASO LICENCIA UDEMY - ${saliente.user} → ${entrante.user}</p><br>
+<p>Estimad${contacto.includes('Carlos')?'o':'a'} ${contacto.split(' ')[0]},</p>
+<p>Por medio de la presente, solicito su apoyo con el <strong>traspaso de licencia Udemy</strong>. El colaborador que se indica a continuación <strong>libera su licencia</strong>:</p>
+<table style="border-collapse:collapse;margin:10px 0"><thead><tr>
+  <th style="${thS}">CIUDAD</th><th style="${thS}">USER</th><th style="${thS}">APELLIDOS Y NOMBRES</th><th style="${thS}">MAIL</th>
+</tr></thead><tbody><tr>
+  <td style="${tdS}">${ciudad}</td>
+  <td style="${tdS}">${saliente.user||'—'}</td>
+  <td style="${tdS}">${(saliente.nombre||'').toUpperCase()}</td>
+  <td style="${tdS}">${mailSaliente}</td>
+</tr></tbody></table>
+<p>La licencia liberada se asigna al siguiente colaborador:</p>
+<table style="border-collapse:collapse;margin:10px 0"><thead><tr>
+  <th style="${thS}">CIUDAD</th><th style="${thS}">CÓDIGO</th><th style="${thS}">CÉDULA</th>
+  <th style="${thS}">USER</th><th style="${thS}">APELLIDOS Y NOMBRES</th><th style="${thS}">MAIL</th>
+</tr></thead><tbody><tr>
+  <td style="${tdS}">${ciudad}</td>
+  <td style="${tdS}">${codigo}</td>
+  <td style="${tdS}">${cedula}</td>
+  <td style="${tdS}">${entrante.user||'—'}</td>
+  <td style="${tdS}">${(entrante.nombre||'').toUpperCase()}</td>
+  <td style="${tdS}">${mailEntrante}</td>
+</tr></tbody></table>
+${cursoTitulo !== '—' ? `<p><strong>CURSO ASIGNADO:</strong></p>
+<table style="border-collapse:collapse;margin:10px 0"><thead><tr>
+  <th style="${thS}">content_collection_course_identifier</th><th style="${thS}">UB Course ID</th><th style="${thS}">Course title</th>
+</tr></thead><tbody><tr>
+  <td style="${tdS}">${cursoId!=='—'?'CCID:4-CID:'+cursoId:'—'}</td>
+  <td style="${tdS}">${cursoId}</td>
+  <td style="${tdS}">${cursoTitulo}</td>
+</tr></tbody></table>` : ''}
+<p>Agradezco su gentil ayuda.</p><p>Saludos cordiales,</p><br>
+<strong>${aprobado}</strong><br>Coordinador Nacional – Proyectos e Implementación<br>TELCONET LATAM<br>Quito - Ecuador`;
+
+  const preview = document.getElementById('emailPreview');
+  if (preview) preview.innerHTML = html;
 }
 
 function asignarSlotAPersona(userLogin) {
@@ -3049,193 +3179,6 @@ function _eKpi(label, value, color, bg) {
   '</div>';
 }
 
-// ── (Auditorías PM: en pausa, pendiente de implementación) ──
-function _evalAuditoriasPM_DISABLED_STUB() { // no llamada
-  if (false) return '';
-
-  // Filtro equipo
-  const equipoOpts = ['Todos', ...new Set(pmAuditorias.map(a => a.equipo).filter(Boolean))];
-  const filtroHtml = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">' +
-    '<select onchange="pmAuditFiltroEq=this.value;_renderEvalUI()" style="font-size:12px;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;background:#fff;color:#374151;font-family:inherit">' +
-    equipoOpts.map(e => '<option value="' + e + '"' + (e===pmAuditFiltroEq?' selected':'') + '>' + (e==='Todos'?'🏢 Todos los equipos':e) + '</option>').join('') +
-    '</select>' +
-    '<span style="font-size:12px;color:#94a3b8;margin-left:auto">' + pmAuditorias.length + ' auditoría(s) cargadas</span>' +
-    '</div>';
-
-  const lista = pmAuditFiltroEq === 'Todos' ? pmAuditorias : pmAuditorias.filter(a => a.equipo === pmAuditFiltroEq);
-
-  if (!lista.length) return filtroHtml + '<div style="text-align:center;padding:40px;color:#94a3b8">No hay auditorías registradas</div>';
-
-  const nivelColor = p => p >= 85 ? '#16a34a' : p >= 70 ? '#d97706' : '#dc2626';
-  const nivelLabel = p => p >= 85 ? 'Satisfactorio' : p >= 70 ? 'Aceptable' : 'Crítico';
-  const nivelBg    = p => p >= 85 ? '#dcfce7' : p >= 70 ? '#fef3c7' : '#fee2e2';
-
-  const cards = lista.map(a => {
-    const proyectos = pmAuditoriaProyectos.filter(p => p.auditoria_id === a.id && p.nivel !== 'Excluido');
-    const sat   = proyectos.filter(p => p.nivel === 'Satisfactorio').length;
-    const acep  = proyectos.filter(p => p.nivel === 'Aceptable').length;
-    const crit  = proyectos.filter(p => p.nivel === 'Crítico').length;
-    const pts   = Number(a.puntaje_prom) || 0;
-    return '<div onclick="pmAuditDetalleId=' + a.id + ';_renderEvalUI()" style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 22px;cursor:pointer;transition:box-shadow .15s;margin-bottom:12px" onmouseover="this.style.boxShadow=\'0 4px 16px rgba(0,0,0,.08)\'" onmouseout="this.style.boxShadow=\'none\'">' +
-      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">' +
-        '<div>' +
-          '<div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🗂️ Auditoría PM · ' + (a.fecha_corte||'').split('-').reverse().join('/') + '</div>' +
-          '<div style="font-size:18px;font-weight:800;color:#0f172a;margin-bottom:2px">' + a.pm_nombre + '</div>' +
-          '<div style="font-size:12px;color:#64748b">' + a.total_proyectos + ' proyectos en cartera · ' + a.proyectos_activos + ' activos · USD ' + Number(a.monto_total||0).toLocaleString('es-EC',{minimumFractionDigits:2}) + '</div>' +
-        '</div>' +
-        '<div style="text-align:center;min-width:90px">' +
-          '<div style="font-size:32px;font-weight:900;color:' + nivelColor(pts) + ';line-height:1">' + pts.toFixed(2) + '%</div>' +
-          '<div style="display:inline-block;margin-top:4px;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:' + nivelBg(pts) + ';color:' + nivelColor(pts) + '">' + nivelLabel(pts) + '</div>' +
-        '</div>' +
-      '</div>' +
-      '<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">' +
-        '<span style="font-size:12px;padding:3px 10px;border-radius:6px;background:#dcfce7;color:#16a34a;font-weight:700">✅ ' + sat + ' Satisfactorio</span>' +
-        '<span style="font-size:12px;padding:3px 10px;border-radius:6px;background:#fef3c7;color:#d97706;font-weight:700">⚠️ ' + acep + ' Aceptable</span>' +
-        '<span style="font-size:12px;padding:3px 10px;border-radius:6px;background:#fee2e2;color:#dc2626;font-weight:700">🔴 ' + crit + ' Crítico</span>' +
-        '<span style="font-size:12px;padding:3px 10px;border-radius:6px;background:#f1f5f9;color:#64748b;font-weight:600">Ver detalle →</span>' +
-      '</div>' +
-    '</div>';
-  }).join('');
-
-  return filtroHtml + cards;
-}
-
-function _evalAuditoriaDetalle(audId) {
-  const a = pmAuditorias.find(x => x.id === audId);
-  if (!a) return '<div>Auditoría no encontrada</div>';
-  const proyectos = pmAuditoriaProyectos.filter(p => p.auditoria_id === audId);
-  const evaluados = proyectos.filter(p => p.nivel !== 'Excluido');
-
-  const nivelColor = p => p >= 85 ? '#16a34a' : p >= 70 ? '#d97706' : '#dc2626';
-  const nivelBg    = p => p >= 85 ? '#dcfce7' : p >= 70 ? '#fef3c7' : '#fee2e2';
-  const nivelLabel = p => p >= 85 ? 'Satisfactorio' : p >= 70 ? 'Aceptable' : 'Crítico';
-  const celda = v => v==='ok' ? '<td style="text-align:center;background:#dcfce7;color:#16a34a;font-weight:700;font-size:13px">✓</td>'
-                   : v==='nc' ? '<td style="text-align:center;background:#fee2e2;color:#dc2626;font-weight:700;font-size:13px">✗</td>'
-                   : '<td style="text-align:center;background:#f1f5f9;color:#94a3b8;font-size:13px">–</td>';
-  const CRIT_LABELS = ['C1 Registro','C2 Equipo','C3 Administ.','C4 Financiero','C5 Cronograma','C6 Plazos','C7 Avance','C8 Bitácora','C9 Pausas','C10 C.Cambios','C11 Documental','C12 Cierre'];
-  const CRIT_KEYS   = ['c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','c11','c12'];
-  const pts = Number(a.puntaje_prom) || 0;
-
-  // KPIs
-  const kpis = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px">' +
-    [['Puntaje promedio', pts.toFixed(2) + '%', nivelColor(pts)],
-     ['Proyectos evaluados', evaluados.length + ' / ' + proyectos.length, '#1351B4'],
-     ['Monto total', 'USD ' + Number(a.monto_total||0).toLocaleString('es-EC',{minimumFractionDigits:0}), '#0f172a'],
-     ['Satisfactorios', evaluados.filter(p=>p.nivel==='Satisfactorio').length, '#16a34a'],
-     ['En riesgo/crítico', evaluados.filter(p=>p.nivel==='Crítico').length, '#dc2626'],
-    ].map(([l,v,c]) => '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px"><div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">' + l + '</div><div style="font-size:20px;font-weight:800;color:' + c + ';margin-top:4px">' + v + '</div></div>').join('') +
-  '</div>';
-
-  // Conclusión
-  const conclusion = a.resumen ? '<div style="background:#f0f9ff;border-left:4px solid #0284c7;border-radius:8px;padding:14px 16px;margin-bottom:18px;font-size:13px;line-height:1.6;color:#0f172a">' + a.resumen + '</div>' : '';
-
-  // Ranking proyectos
-  const sortedProyectos = [...proyectos].sort((x,y) => {
-    if (x.nivel==='Excluido') return 1;
-    if (y.nivel==='Excluido') return -1;
-    return (Number(x.puntaje)||0) - (Number(y.puntaje)||0);
-  });
-  const rankingRows = sortedProyectos.map((p,i) => {
-    const pts = Number(p.puntaje) || 0;
-    const excl = p.nivel === 'Excluido';
-    const badge = excl ? '<span style="font-size:11px;padding:2px 8px;border-radius:12px;background:#f1f5f9;color:#94a3b8;font-weight:700">Excluido</span>'
-                       : '<span style="font-size:11px;padding:2px 8px;border-radius:12px;background:' + nivelBg(pts) + ';color:' + nivelColor(pts) + ';font-weight:700">' + pts.toFixed(2) + '%</span>';
-    const barWidth = excl ? 0 : Math.round(pts);
-    const barCol = excl ? '#e2e8f0' : (pts>=85?'#16a34a':pts>=70?'#f59e0b':'#ef4444');
-    const estadoBadge = p.estado==='Pausado'?'<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:#fef3c7;color:#d97706;font-weight:700;margin-left:4px">PAUSADO</span>':'';
-    return '<tr>' +
-      '<td style="font-size:12px;color:#94a3b8;text-align:center;width:32px">' + (excl ? '—' : (i+1)) + '</td>' +
-      '<td><div style="font-weight:700;font-size:13px">' + p.proyecto_nombre + estadoBadge + '</div>' +
-         '<div style="font-size:10px;color:#94a3b8">' + (p.proyecto_codigo||'') + (p.cliente?' · '+p.cliente:'') + '</div></td>' +
-      '<td style="font-size:12px;white-space:nowrap">' + (p.fase||'—') + '</td>' +
-      '<td style="font-size:12px;white-space:nowrap;text-align:right">' + (p.monto_real>0?'USD '+Number(p.monto_real).toLocaleString('es-EC',{minimumFractionDigits:2}):'—') + '</td>' +
-      '<td style="font-size:12px;white-space:nowrap;text-align:center">' + (p.avance_manual!==null?p.avance_manual+'%':'—') + ' / ' + (p.avance_calc!==null?p.avance_calc+'%':'—') + '</td>' +
-      '<td><div style="height:5px;background:#f1f5f9;border-radius:3px;min-width:80px"><div style="height:100%;width:' + barWidth + '%;background:' + barCol + ';border-radius:3px"></div></div></td>' +
-      '<td>' + badge + '</td>' +
-    '</tr>';
-  }).join('');
-
-  const tablaRanking = '<div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:20px">' +
-    '<table style="width:100%;border-collapse:collapse">' +
-    '<thead><tr style="background:#0A1628;color:#fff">' +
-      '<th style="padding:9px 8px;font-size:11px;font-weight:600;text-align:center">#</th>' +
-      '<th style="padding:9px 12px;font-size:11px;font-weight:600;text-align:left">Proyecto</th>' +
-      '<th style="padding:9px 10px;font-size:11px;font-weight:600">Fase</th>' +
-      '<th style="padding:9px 10px;font-size:11px;font-weight:600;text-align:right">Monto (USD)</th>' +
-      '<th style="padding:9px 10px;font-size:11px;font-weight:600;text-align:center">Avance man./calc.</th>' +
-      '<th style="padding:9px 10px;font-size:11px;font-weight:600;min-width:90px"></th>' +
-      '<th style="padding:9px 10px;font-size:11px;font-weight:600">Puntaje</th>' +
-    '</tr></thead>' +
-    '<tbody>' + rankingRows + '</tbody>' +
-    '</table></div>';
-
-  // Matriz C1-C12
-  const matrizRows = sortedProyectos.map(p => {
-    const excl = p.nivel === 'Excluido';
-    if (excl) return '<tr><td style="font-size:12px;font-weight:600;padding:8px 10px;border-top:1px solid #e2e8f0;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" colspan="13">' +
-      p.proyecto_nombre + '<span style="margin-left:8px;font-size:10px;color:#94a3b8">Excluido del puntaje</span></td></tr>';
-    return '<tr>' +
-      '<td style="font-size:12px;font-weight:600;padding:8px 10px;border-top:1px solid #e2e8f0;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="' + p.proyecto_nombre + '">' + p.proyecto_nombre + '</td>' +
-      CRIT_KEYS.map(k => celda(p[k])).join('') +
-      '<td style="text-align:center;padding:8px 6px;border-top:1px solid #e2e8f0"><span style="font-size:11px;padding:2px 7px;border-radius:10px;background:' + nivelBg(Number(p.puntaje)||0) + ';color:' + nivelColor(Number(p.puntaje)||0) + ';font-weight:700">' + (p.puntaje||'—') + '%</span></td>' +
-    '</tr>';
-  }).join('');
-
-  const tablaMatriz = '<div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:20px">' +
-    '<table style="width:100%;border-collapse:collapse">' +
-    '<thead><tr style="background:#0A1628;color:#fff">' +
-      '<th style="padding:8px 10px;font-size:11px;font-weight:600;text-align:left;min-width:160px">Proyecto</th>' +
-      CRIT_LABELS.map(c => '<th style="padding:8px 6px;font-size:10px;font-weight:600;text-align:center;white-space:nowrap" title="' + c + '">' + c.split(' ')[0] + '</th>').join('') +
-      '<th style="padding:8px 8px;font-size:11px;font-weight:600;text-align:center">Puntaje</th>' +
-    '</tr></thead>' +
-    '<tbody>' + matrizRows + '</tbody>' +
-    '</table>' +
-    '<div style="padding:10px 12px;font-size:11px;color:#64748b;display:flex;gap:14px;flex-wrap:wrap;border-top:1px solid #e2e8f0">' +
-      '<span><b style="display:inline-block;width:10px;height:10px;background:#dcfce7;border:1px solid #16a34a;border-radius:2px;vertical-align:-1px;margin-right:4px"></b>✓ CUMPLE</span>' +
-      '<span><b style="display:inline-block;width:10px;height:10px;background:#fee2e2;border:1px solid #dc2626;border-radius:2px;vertical-align:-1px;margin-right:4px"></b>✗ NO CUMPLE</span>' +
-      '<span><b style="display:inline-block;width:10px;height:10px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:2px;vertical-align:-1px;margin-right:4px"></b>– N/A</span>' +
-    '</div>' +
-    '</div>';
-
-  // Hallazgos (observaciones por proyecto)
-  const hallazgos = proyectos.filter(p => {
-    const obs = Array.isArray(p.observaciones) ? p.observaciones : (p.observaciones ? JSON.parse(p.observaciones) : []);
-    return obs.length > 0;
-  }).map(p => {
-    const obs = Array.isArray(p.observaciones) ? p.observaciones : JSON.parse(p.observaciones||'[]');
-    const pColor = nivelColor(Number(p.puntaje)||0);
-    return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:8px">' +
-      '<div style="font-weight:700;font-size:13px;color:#0f172a;margin-bottom:6px">' +
-        p.proyecto_nombre +
-        (p.puntaje ? ' <span style="font-size:11px;padding:2px 7px;border-radius:10px;background:' + nivelBg(Number(p.puntaje)) + ';color:' + pColor + ';font-weight:700;margin-left:6px">' + p.puntaje + '%</span>' : '') +
-      '</div>' +
-      '<ul style="margin:0;padding-left:16px">' +
-        obs.map(o => '<li style="font-size:12px;color:#475569;margin-bottom:3px;text-align:justify">' + o + '</li>').join('') +
-      '</ul>' +
-    '</div>';
-  }).join('');
-
-  return '<div>' +
-    '<button onclick="pmAuditDetalleId=null;_renderEvalUI()" style="border:none;background:none;color:#1351B4;font-size:13px;font-weight:600;cursor:pointer;padding:0;margin-bottom:16px">← Volver a Auditorías PM</button>' +
-    '<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px">' +
-      '<div>' +
-        '<div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em">Auditoría PM · Corte ' + (a.fecha_corte||'').split('-').reverse().join('/') + '</div>' +
-        '<div style="font-size:22px;font-weight:900;color:#0f172a">' + a.pm_nombre + '</div>' +
-      '</div>' +
-      '<div style="text-align:center">' +
-        '<div style="font-size:36px;font-weight:900;color:' + nivelColor(pts) + ';line-height:1">' + pts.toFixed(2) + '%</div>' +
-        '<div style="font-size:12px;font-weight:700;color:' + nivelColor(pts) + '">' + nivelLabel(pts) + '</div>' +
-      '</div>' +
-    '</div>' +
-    kpis +
-    conclusion +
-    '<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:10px;border-left:4px solid #00B4D8;padding-left:10px">📊 Ranking de proyectos</div>' +
-    tablaRanking +
-    '<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:10px;border-left:4px solid #00B4D8;padding-left:10px">🔢 Matriz de cumplimiento C1–C12</div>' +
-    tablaMatriz +
-    (hallazgos ? '<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:10px;border-left:4px solid #00B4D8;padding-left:10px">🔍 Hallazgos y observaciones</div>' + hallazgos : '') +
-  '</div>';
-}
 
 // ── Modal: Nueva evaluación ───────────────────────────────────────────
 function openModalNuevaEval() {
