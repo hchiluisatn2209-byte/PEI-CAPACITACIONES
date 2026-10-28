@@ -950,80 +950,53 @@ function renderAdminDashboard() {
     '</div>'
   ).join('');
 
-  // ── SVG: Velocímetro semicircular limpio ──────────────────────────
+  // ── SVG: Velocímetro semicircular ─────────────────────────────────
   function buildVeloc(pct) {
-    // viewBox 200x120, cx=100 cy=100, R externo=84 R interno=54
-    var cx=100, cy=100, Ro=84, Ri=54, PI=Math.PI;
+    var cx=150, cy=140, Ro=120, Ri=74, PI=Math.PI;
     var pctC = Math.min(100, Math.max(0, pct));
-
-    // Zonas: cada zona es un arco de corona entre Ri y Ro
-    // 180° total: izquierda(180°) → derecha(0°), anticlockwise en math, clockwise en SVG
-    // SVG arc: sweep-flag=0 → anticlockwise (arriba)
-    // Los segmentos van de 180→135, 135→90, 90→45, 45→0
-    var zones = [
-      {from:180, to:135, color:'#fca5a5', solid:'#ef4444', label:'Crítico',  range:'0–30'},
-      {from:135, to:90,  color:'#fcd34d', solid:'#f59e0b', label:'Bajo',     range:'30–60'},
-      {from:90,  to:45,  color:'#93c5fd', solid:'#3b82f6', label:'Medio',    range:'60–80'},
-      {from:45,  to:0,   color:'#86efac', solid:'#22c55e', label:'Alto',     range:'80–100'},
-    ];
-
-    // Índice activo
     var ai = pctC>=80?3:pctC>=60?2:pctC>=30?1:0;
+    var zones = [
+      {from:180,to:135,light:'#fecaca',solid:'#ef4444',label:'Crítico', range:'0-30%'},
+      {from:135,to:90, light:'#fde68a',solid:'#f59e0b',label:'Bajo',    range:'30-60%'},
+      {from:90, to:45, light:'#bfdbfe',solid:'#3b82f6',label:'Medio',   range:'60-80%'},
+      {from:45, to:0,  light:'#bbf7d0',solid:'#16a34a',label:'Alto',    range:'80-100%'},
+    ];
     var mainColor = zones[ai].solid;
     var mainLabel = zones[ai].label;
-
-    function toXY(deg, r) {
-      var rad = deg * PI / 180;
-      return [(cx + r*Math.cos(rad)).toFixed(2), (cy - r*Math.sin(rad)).toFixed(2)];
+    function xy(deg, r) {
+      var rad = deg*PI/180;
+      return (cx + r*Math.cos(rad)).toFixed(1) + ',' + (cy - r*Math.sin(rad)).toFixed(1);
     }
-
-    // Dibujar zonas (arcos de corona)
-    var GAP = 1.5; // grados de separación entre sectores
-    var zonePaths = zones.map(function(z, i) {
-      var f = z.from - GAP, t = z.to + GAP;
-      var o1=toXY(f,Ro), o2=toXY(t,Ro), i1=toXY(t,Ri), i2=toXY(f,Ri);
-      var d = 'M'+o1[0]+','+o1[1]+' A'+Ro+','+Ro+' 0 0,0 '+o2[0]+','+o2[1]+
-              ' L'+i1[0]+','+i1[1]+' A'+Ri+','+Ri+' 0 0,1 '+i2[0]+','+i2[1]+' Z';
-      var isActive = (i===ai);
-      return '<path d="'+d+'" fill="'+(isActive?z.solid:z.color)+'" opacity="'+(isActive?1:0.55)+'"/>';
+    var GAP=2;
+    var arcs = zones.map(function(z,i){
+      var f=z.from-GAP, t=z.to+GAP;
+      var d='M'+xy(f,Ro)+' A'+Ro+','+Ro+' 0 0,0 '+xy(t,Ro)+
+            ' L'+xy(t,Ri)+' A'+Ri+','+Ri+' 0 0,1 '+xy(f,Ri)+' Z';
+      return '<path d="'+d+'" fill="'+(i===ai?z.solid:z.light)+'"/>';
     }).join('');
-
-    // Líneas separadoras blancas entre zonas
-    var dividers = [135,90,45].map(function(deg) {
-      var p1=toXY(deg,Ri-2), p2=toXY(deg,Ro+2);
-      return '<line x1="'+p1[0]+'" y1="'+p1[1]+'" x2="'+p2[0]+'" y2="'+p2[1]+'" stroke="#fff" stroke-width="2.5"/>';
+    var divs=[135,90,45].map(function(deg){
+      return '<line x1="'+xy(deg,Ri-1).split(',')[0]+'" y1="'+xy(deg,Ri-1).split(',')[1]+
+             '" x2="'+xy(deg,Ro+1).split(',')[0]+'" y2="'+xy(deg,Ro+1).split(',')[1]+
+             '" stroke="#fff" stroke-width="3"/>';
     }).join('');
-
-    // Etiquetas de porcentaje en cada zona
-    var zoneLabels = zones.map(function(z) {
-      var midDeg = (z.from + z.to) / 2;
-      var midR   = (Ro + Ri) / 2;
-      var lp = toXY(midDeg, midR);
-      return '<text x="'+lp[0]+'" y="'+lp[1]+'" text-anchor="middle" dominant-baseline="middle" '+
-             'font-size="8" font-weight="700" fill="#fff" font-family="Inter,sans-serif">'+z.range+'%</text>';
+    var lbls=zones.map(function(z){
+      var mid=(z.from+z.to)/2, r=(Ro+Ri)/2;
+      var p=xy(mid,r).split(',');
+      return '<text x="'+p[0]+'" y="'+p[1]+'" text-anchor="middle" dominant-baseline="middle" '+
+             'font-size="10" font-weight="700" fill="#fff" font-family="Inter,sans-serif">'+z.range+'</text>';
     }).join('');
-
-    // Aguja
-    var nDeg = 180 - pctC*1.8;
-    var nLen = Ri - 8;
-    var np = toXY(nDeg, nLen);
-
-    // Etiquetas 0% y 100%
-    var lp0   = toXY(180, Ro+10);
-    var lp100 = toXY(0,   Ro+10);
-
-    return '<svg width="220" height="125" viewBox="0 0 200 120" style="display:block;margin:0 auto">' +
-      zonePaths + dividers + zoneLabels +
-      // Aguja
-      '<line x1="'+cx+'" y1="'+cy+'" x2="'+np[0]+'" y2="'+np[1]+'" stroke="#1e293b" stroke-width="3" stroke-linecap="round"/>' +
-      '<circle cx="'+cx+'" cy="'+cy+'" r="6" fill="#1e293b"/>' +
-      '<circle cx="'+cx+'" cy="'+cy+'" r="3" fill="#fff"/>' +
-      // % y nivel
-      '<text x="'+cx+'" y="'+(cy+16)+'" text-anchor="middle" font-size="26" font-weight="800" fill="'+mainColor+'" font-family="Inter,sans-serif">'+pct+'%</text>' +
-      '<text x="'+cx+'" y="'+(cy+29)+'" text-anchor="middle" font-size="9" font-weight="600" fill="'+mainColor+'" font-family="Inter,sans-serif" letter-spacing=".06em">'+mainLabel.toUpperCase()+'</text>' +
-      // Etiquetas extremos
-      '<text x="'+lp0[0]+'" y="'+(parseFloat(lp0[1])+4)+'" text-anchor="middle" font-size="8" fill="#9ca3af" font-family="Inter,sans-serif">0%</text>' +
-      '<text x="'+lp100[0]+'" y="'+(parseFloat(lp100[1])+4)+'" text-anchor="middle" font-size="8" fill="#9ca3af" font-family="Inter,sans-serif">100%</text>' +
+    var nDeg=180-pctC*1.8, nRad=nDeg*PI/180;
+    var nLen=Ri-10;
+    var nx=(cx+nLen*Math.cos(nRad)).toFixed(1), ny=(cy-nLen*Math.sin(nRad)).toFixed(1);
+    return '<svg width="100%" height="160" viewBox="0 0 300 158" style="display:block;max-width:300px;margin:0 auto">'+
+      arcs+divs+lbls+
+      '<line x1="'+cx+'" y1="'+cy+'" x2="'+nx+'" y2="'+ny+'" stroke="#1e293b" stroke-width="3.5" stroke-linecap="round"/>'+
+      '<circle cx="'+cx+'" cy="'+cy+'" r="8" fill="#1e293b"/>'+
+      '<circle cx="'+cx+'" cy="'+cy+'" r="4" fill="#fff"/>'+
+      '<text x="'+cx+'" y="'+(cy+20)+'" text-anchor="middle" font-size="32" font-weight="800" fill="'+mainColor+'" font-family="Inter,sans-serif">'+pct+'%</text>'+
+      '<text x="'+cx+'" y="'+(cy+36)+'" text-anchor="middle" font-size="11" font-weight="600" fill="'+mainColor+'" font-family="Inter,sans-serif" letter-spacing=".08em">'+mainLabel.toUpperCase()+'</text>'+
+      '<text x="22" y="'+(cy+14)+'" text-anchor="middle" font-size="10" fill="#94a3b8" font-family="Inter,sans-serif">0%</text>'+
+      '<text x="278" y="'+(cy+14)+'" text-anchor="middle" font-size="10" fill="#94a3b8" font-family="Inter,sans-serif">100%</text>'+
     '</svg>';
   }
 
@@ -1089,11 +1062,12 @@ function renderAdminDashboard() {
   const velocCard =
     card(
       sectionTitle('Índice de cumplimiento') +
-      '<div style="display:flex;flex-direction:column;align-items:center;padding:4px 0">' +
+      '<div style="display:flex;flex-direction:column;align-items:center;padding:8px 0 0">' +
         buildVeloc(cumplTotal) +
-        '<div style="margin-top:8px;display:flex;gap:16px">' +
-          '<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#0d1b2e">' + culminados + '</div><div style="font-size:10px;color:#94a3b8">Culminados</div></div>' +
-          '<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#0d1b2e">' + totalCursos + '</div><div style="font-size:10px;color:#94a3b8">Total</div></div>' +
+        '<div style="margin-top:4px;display:flex;gap:24px">' +
+          '<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:#0d1b2e">' + culminados + '</div><div style="font-size:10px;color:#94a3b8;margin-top:2px">Culminados</div></div>' +
+          '<div style="width:1px;background:#e2e8f0"></div>' +
+          '<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:#0d1b2e">' + totalCursos + '</div><div style="font-size:10px;color:#94a3b8;margin-top:2px">Total cursos</div></div>' +
         '</div>' +
       '</div>'
     );
