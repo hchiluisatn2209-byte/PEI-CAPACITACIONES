@@ -1814,6 +1814,12 @@ function renderAdminAsignaciones() {
         <option>Pendiente</option><option>Autorizado</option><option>En curso</option>
         <option>Culminado</option><option>Rechazado</option>
       </select>
+      <select id="filtroLicencia" onchange="renderAdminTabla()">
+        <option value="">Todas las licencias</option>
+        <option value="Telco U">Telco U</option>
+        <option value="Interna">Interna</option>
+        <option value="Propia">Propia</option>
+      </select>
       <button class="btn primary" onclick="openAdminModal()">+ Nueva asignación</button>
     </div>
     <div class="table-wrap">
@@ -1845,9 +1851,11 @@ function renderAdminAsignaciones() {
 function renderAdminTabla() {
   const q = (document.getElementById('filtroNombre')?.value || '').toLowerCase();
   const est = document.getElementById('filtroEstado')?.value || '';
+  const lic = document.getElementById('filtroLicencia')?.value || '';
   let data = currentSubTab === 'Todos' ? asignaciones : asignaciones.filter(a => a.equipo === currentSubTab);
-  if (q) data = data.filter(a => (a.nombre||'').toLowerCase().includes(q) || (a.user_login||'').toLowerCase().includes(q));
+  if (q)   data = data.filter(a => (a.nombre||'').toLowerCase().includes(q) || (a.user_login||'').toLowerCase().includes(q));
   if (est) data = data.filter(a => a.estado === est);
+  if (lic) data = data.filter(a => (a.licencia||'') === lic);
   // Ordenamiento
   if (_asigSortCol) {
     const col = _asigSortCol;
