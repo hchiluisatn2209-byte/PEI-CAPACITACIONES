@@ -3082,7 +3082,10 @@ function _evalRegistros(evs, res) {
           '<div style="font-size:14px;font-weight:700;color:#fff">' + ev.titulo + '</div>' +
           '<div style="font-size:11px;color:#8ba3c4;margin-top:2px">' + (ev.fecha||'sin fecha') + ' · ' + (ev.tipo==='kahoot'?'Kahoot /10,000':'Nota /10') + ' · ' + (ev.equipo||'Todos los equipos') + '</div>' +
         '</div>' +
-        '<div style="display:flex;gap:6px">' +
+        '<div style="display:flex;gap:6px;align-items:center">' +
+          (ev.curso_id
+            ? '<button onclick="syncModuloMasivo(' + ev.id + ')" style="font-size:11px;padding:5px 12px;border:1px solid #22c55e;border-radius:8px;background:transparent;color:#22c55e;cursor:pointer;white-space:nowrap" title="Actualizar asignaciones a Culminado para todos los que aprobaron">⚡ Sincronizar</button>'
+            : '<span style="font-size:10px;color:#8ba3c480;padding:4px 8px;white-space:nowrap" title="Vincula este módulo a un curso para activar la sincronización">Sin curso vinculado</span>') +
           '<button onclick="openModalResultado(' + ev.id + ')" class="btn primary" style="font-size:11px;padding:5px 12px">+ Resultado</button>' +
           '<button onclick="eliminarEval(' + ev.id + ')" style="font-size:11px;padding:5px 10px;border:1px solid #ef4444;border-radius:8px;background:transparent;color:#ef4444;cursor:pointer">🗑</button>' +
         '</div>' +
@@ -3190,6 +3193,9 @@ function _eKpi(label, value, color, bg) {
 
 // ── Modal: Nueva evaluación ───────────────────────────────────────────
 function openModalNuevaEval() {
+  const cursoOpts = catalogoCursos.map(c =>
+    '<option value="'+c.id+'">'+c.titulo+'</option>'
+  ).join('');
   document.getElementById('modalTitle').textContent = '➕ Nueva evaluación';
   document.getElementById('modalSubtitle').textContent = 'Registra un módulo de capacitación interna';
   document.getElementById('modalBody').innerHTML =
@@ -3213,13 +3219,25 @@ function openModalNuevaEval() {
       '</div>' +
     '</div>' +
     '<div class="form-row">' +
-      '<div class="form-field full">' +
+      '<div class="form-field">' +
         '<label>Equipo</label>' +
         '<select id="evalEquipo" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit">' +
           '<option value="">Todos los equipos</option>' +
           '<option value="Planificación">📐 Planificación</option>' +
           '<option value="Implementación">⚙️ Implementación</option>' +
           '<option value="O&M">🖥 O&M</option>' +
+        '</select>' +
+      '</div>' +
+      '<div class="form-field">' +
+        '<label>Nota mínima de aprobación</label>' +
+        '<input type="number" id="evalNotaMin" value="7" min="0" max="10" step="0.1" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit">' +
+      '</div>' +
+    '</div>' +
+    '<div class="form-row">' +
+      '<div class="form-field full">' +
+        '<label>Vincular a curso del catálogo <span style="font-size:10px;color:#94a3b8">(opcional — para auto-sincronizar asignaciones)</span></label>' +
+        '<select id="evalCursoId" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit">' +
+          '<option value="">— Sin vincular —</option>' + cursoOpts +
         '</select>' +
       '</div>' +
     '</div>' +
@@ -3231,13 +3249,17 @@ function openModalNuevaEval() {
 }
 
 async function guardarNuevaEval() {
-  const titulo = document.getElementById('evalTitulo').value.trim();
-  const fecha  = document.getElementById('evalFecha').value;
-  const tipo   = document.getElementById('evalTipo').value;
-  const equipo = document.getElementById('evalEquipo').value;
+  const titulo    = document.getElementById('evalTitulo').value.trim();
+  const fecha     = document.getElementById('evalFecha').value;
+  const tipo      = document.getElementById('evalTipo').value;
+  const equipo    = document.getElementById('evalEquipo').value;
+  const nota_min  = parseFloat(document.getElementById('evalNotaMin')?.value || 7);
+  const curso_id  = document.getElementById('evalCursoId')?.value || null;
   if (!titulo) { showToast('Escribe el nombre del módulo'); return; }
   const { data, error } = await sb.from('evaluaciones').insert([{
     titulo, fecha: fecha || null, tipo, equipo: equipo || null,
+    nota_aprobacion: nota_min,
+    curso_id: curso_id || null,
     created_by: currentUser.user
   }]).select();
   if (error) { showToast('Error: ' + error.message); return; }
@@ -3295,8 +3317,64 @@ async function guardarResultado(evalId) {
   if (error) { showToast('Error: ' + error.message); return; }
   evalResultados.unshift(data[0]);
   closeModal();
-  showToast('Resultado guardado ✓');
+  // Auto-sync: si el módulo tiene curso vinculado y el puntaje aprueba → sincronizar asignación
+  const synced = await _syncAsignacionDesdeEval(ev, user_login, puntaje);
+  showToast('Resultado guardado ✓' + (synced ? ' · Asignación actualizada a Culminado' : ''));
   _renderEvalUI();
+}
+
+// ── Sincroniza UNA asignación desde un resultado de evaluación ────────
+async function _syncAsignacionDesdeEval(ev, user_login, puntaje) {
+  if (!ev || !ev.curso_id) return false;
+  const nota_min = ev.nota_aprobacion || 7;
+  // Para Kahoot el puntaje está en escala /10,000; normalizar a /10
+  const nota10 = ev.tipo === 'kahoot' ? (puntaje / 10000 * 10) : puntaje;
+  if (nota10 < nota_min) return false;
+  // Buscar asignación activa de ese usuario para ese curso
+  const asig = asignaciones.find(a =>
+    a.user_login === user_login &&
+    String(a.curso_id) === String(ev.curso_id) &&
+    a.estado !== 'Culminado' &&
+    a.estado !== 'Rechazado'
+  );
+  if (!asig) return false;
+  const hoy = new Date().toISOString().split('T')[0];
+  const { error } = await sb.from('asignaciones').update({
+    estado: 'Culminado',
+    avance: 100,
+    fecha_fin_real: hoy,
+    fecha_estado: new Date().toISOString()
+  }).eq('id', asig.id);
+  if (error) return false;
+  // Actualizar en memoria
+  const idx = asignaciones.findIndex(a => a.id === asig.id);
+  if (idx >= 0) {
+    asignaciones[idx] = { ...asignaciones[idx], estado: 'Culminado', avance: 100,
+      fecha_fin_real: hoy, fecha_estado: new Date().toISOString() };
+  }
+  return true;
+}
+
+// ── Sincronización masiva de un módulo completo ───────────────────────
+async function syncModuloMasivo(evalId) {
+  const ev = evaluaciones.find(e => e.id === evalId);
+  if (!ev) return;
+  if (!ev.curso_id) {
+    showToast('Este módulo no tiene curso vinculado. Edítalo para vincularlo.');
+    return;
+  }
+  const resultados = evalResultados.filter(r => r.eval_id === evalId);
+  if (!resultados.length) { showToast('No hay resultados registrados en este módulo'); return; }
+
+  let ok = 0, skip = 0;
+  for (const r of resultados) {
+    const synced = await _syncAsignacionDesdeEval(ev, r.user_login, r.puntaje);
+    if (synced) ok++; else skip++;
+  }
+  showToast(`Sincronización completa: ${ok} actualizados, ${skip} sin cambios`);
+  _renderEvalUI();
+  // Refrescar dashboard
+  if (typeof renderDashboard === 'function') renderDashboard();
 }
 
 async function eliminarEval(evalId) {
