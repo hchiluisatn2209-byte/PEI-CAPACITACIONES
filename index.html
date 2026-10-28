@@ -1117,118 +1117,180 @@ function kpiCard(icon, label, value, color) {
 }
 
 function teamCardFull(icon, equipo, email, color) {
+  const EQ_ID    = 'tc_' + equipo.replace(/\s/g,'_');
   const miembros = personal.filter(p => p.equipo === equipo && p.activo !== false);
   const asigEq   = asignaciones.filter(a => a.equipo === equipo);
 
   const EC = {
-    'Pendiente':   { c:'#f59e0b', bg:'#fffbeb' },
-    'En revisión': { c:'#3b82f6', bg:'#eff6ff' },
-    'Autorizado':  { c:'#8b5cf6', bg:'#f5f3ff' },
-    'En curso':    { c:'#0ea5e9', bg:'#f0f9ff' },
-    'Culminado':   { c:'#16a34a', bg:'#f0fdf4' },
-    'Rechazado':   { c:'#ef4444', bg:'#fef2f2' },
+    'Pendiente':   { c:'#f59e0b', dot:'🟠' },
+    'En revisión': { c:'#60a5fa', dot:'🔵' },
+    'Autorizado':  { c:'#a78bfa', dot:'🟣' },
+    'En curso':    { c:'#38bdf8', dot:'🔷' },
+    'Culminado':   { c:'#22c55e', dot:'🟢' },
+    'Rechazado':   { c:'#f87171', dot:'🔴' },
   };
   const ESTADOS = ['Pendiente','En revisión','Autorizado','En curso','Culminado','Rechazado'];
 
-  const total    = asigEq.length;
+  const total      = asigEq.length;
   const culminados = asigEq.filter(a=>a.estado==='Culminado').length;
-  const pct      = total ? Math.round(culminados/total*100) : 0;
+  const pct        = total ? Math.round(culminados/total*100) : 0;
+  const pctColor   = pct>=80?'#22c55e':pct>=50?'#f59e0b':'#f87171';
 
-  // Counts per estado for summary chips
-  const countEq  = {};
+  const countEq = {};
   ESTADOS.forEach(e => { countEq[e] = asigEq.filter(a=>a.estado===e).length; });
 
-  // Per-person sorted by total desc
-  const rows = miembros.map(p => {
-    const pa = asigEq.filter(a => a.user_login === p.user);
-    return { p, pa, totalP: pa.length };
-  }).sort((a,b) => b.totalP - a.totalP);
+  const sinCursos = miembros.filter(p => !asigEq.some(a=>a.user_login===p.user)).length;
 
-  // Max total for proportional bar width
-  const maxTotal = rows.reduce((m,r)=>Math.max(m,r.totalP),1);
-
-  const rowsHtml = rows.map(({ p, pa, totalP }) => {
-    if (!totalP) return `
-      <tr>
-        <td style="padding:7px 10px;font-size:12px;color:var(--text2);white-space:nowrap">${p.nombre}</td>
-        <td colspan="3" style="padding:7px 10px;font-size:11px;color:var(--text3)">Sin cursos asignados</td>
-      </tr>`;
-
-    const counts = {};
-    pa.forEach(a => { counts[a.estado] = (counts[a.estado]||0)+1; });
-    const culminP = counts['Culminado']||0;
-    const pctP    = Math.round(culminP/totalP*100);
-    const barW    = Math.round(totalP/maxTotal*100);
-
-    // Stacked segments proportional to maxTotal
-    const segs = ESTADOS.filter(e=>counts[e]).map(e=>
-      `<div title="${e}: ${counts[e]}" style="width:${Math.round(counts[e]/maxTotal*100)}%;background:${EC[e].c};height:100%;min-width:3px"></div>`
-    ).join('');
-
-    // State chips — only states with count > 0
-    const chips = ESTADOS.filter(e=>counts[e]).map(e=>
-      `<span title="${e}" style="display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600;background:${EC[e].bg};color:${EC[e].c}">
-        <span style="width:6px;height:6px;border-radius:50%;background:${EC[e].c};display:inline-block"></span>${counts[e]}
-      </span>`
-    ).join('');
-
-    return `<tr style="border-bottom:1px solid var(--gray-bd)">
-      <td style="padding:8px 10px;font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;min-width:160px">${p.nombre}</td>
-      <td style="padding:8px 10px;min-width:160px;max-width:220px">
-        <div style="height:8px;border-radius:4px;background:var(--gray-bg);overflow:hidden;display:flex;width:${barW}%;min-width:20px">${segs}</div>
-      </td>
-      <td style="padding:8px 10px;white-space:nowrap">${chips}</td>
-      <td style="padding:8px 10px;text-align:right;white-space:nowrap">
-        <span style="font-size:11px;color:var(--text3)">${totalP} cur · </span>
-        <span style="font-size:12px;font-weight:700;color:${pctP===100?'#16a34a':pctP>=50?color:'#6b7280'}">${pctP}%</span>
-      </td>
-    </tr>`;
-  }).join('');
-
-  // Summary chips for header
-  const summaryChips = ESTADOS.filter(e=>countEq[e]).map(e=>
-    `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(255,255,255,.18);color:#fff">
-      <span style="width:7px;height:7px;border-radius:50%;background:${EC[e].c};display:inline-block;border:1.5px solid rgba(255,255,255,.6)"></span>
-      ${e} <strong>${countEq[e]}</strong>
-    </span>`
+  // Distribución de estados compacta (leyenda inline)
+  const estadoLeyenda = ESTADOS.filter(e=>countEq[e]).map(e=>
+    '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:11px;color:#64748b">' +
+      '<span style="width:7px;height:7px;border-radius:50%;background:' + EC[e].c + ';display:inline-block;flex-shrink:0"></span>' +
+      e + ' <strong style="color:#1e293b">' + countEq[e] + '</strong>' +
+    '</span>'
   ).join('');
 
-  return `<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)">
-    <!-- Header compacto -->
-    <div style="background:${color};padding:12px 16px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">${icon}</span>
-          <div>
-            <span style="font-size:14px;font-weight:700;color:#fff">${equipo}</span>
-            <span style="font-size:11px;color:rgba(255,255,255,.65);margin-left:8px">${miembros.length} personas · ${total} cursos</span>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <div style="background:rgba(0,0,0,.2);border-radius:8px;padding:4px 12px;text-align:center">
-            <span style="font-size:18px;font-weight:700;color:#fff">${pct}%</span>
-            <span style="font-size:10px;color:rgba(255,255,255,.7);margin-left:4px">culminado</span>
-          </div>
-        </div>
-      </div>
-      <!-- Estado chips en header -->
-      <div style="display:flex;flex-wrap:wrap;gap:6px">${summaryChips}</div>
-    </div>
-    <!-- Tabla de colaboradores -->
-    <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse">
-        <thead>
-          <tr style="background:var(--gray-bg)">
-            <th style="padding:6px 10px;font-size:10px;font-weight:600;color:var(--text3);text-align:left;text-transform:uppercase;letter-spacing:.05em">Colaborador</th>
-            <th style="padding:6px 10px;font-size:10px;font-weight:600;color:var(--text3);text-align:left;text-transform:uppercase;letter-spacing:.05em">Progreso</th>
-            <th style="padding:6px 10px;font-size:10px;font-weight:600;color:var(--text3);text-align:left;text-transform:uppercase;letter-spacing:.05em">Estados</th>
-            <th style="padding:6px 10px;font-size:10px;font-weight:600;color:var(--text3);text-align:right;text-transform:uppercase;letter-spacing:.05em">Total</th>
-          </tr>
-        </thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
-    </div>
-  </div>`;
+  // Filas — separar con/sin cursos
+  const conCursos = miembros.filter(p => asigEq.some(a=>a.user_login===p.user))
+    .map(p => {
+      const pa      = asigEq.filter(a=>a.user_login===p.user);
+      const totalP  = pa.length;
+      const counts  = {};
+      pa.forEach(a => { counts[a.estado] = (counts[a.estado]||0)+1; });
+      const culminP = counts['Culminado']||0;
+      const pctP    = Math.round(culminP/totalP*100);
+      const pctC    = pctP>=80?'#22c55e':pctP>=50?'#1a73c8':'#f59e0b';
+
+      // Dots compactos: solo estados con datos
+      const dots = ESTADOS.filter(e=>counts[e]).map(e=>
+        '<span title="' + e + ': ' + counts[e] + '" style="display:inline-flex;align-items:center;gap:3px;margin-right:6px;font-size:11px;color:#475569">' +
+          '<span style="width:7px;height:7px;border-radius:50%;background:' + EC[e].c + ';display:inline-block"></span>' +
+          counts[e] +
+        '</span>'
+      ).join('');
+
+      // Barra simple de cumplimiento (color semántico, 6px alto)
+      const barColor = pctP>=80?'#22c55e':pctP>=50?'#1a73c8':'#f59e0b';
+
+      return '<tr class="team-row" style="border-bottom:1px solid #f1f5f9" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'#fff\'">' +
+        '<td style="padding:10px 14px;font-size:12.5px;font-weight:500;color:#1e293b;min-width:170px">' + p.nombre + '</td>' +
+        '<td style="padding:10px 12px;min-width:120px;max-width:180px">' +
+          '<div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden">' +
+            '<div style="height:100%;width:' + pctP + '%;background:' + barColor + ';border-radius:3px;transition:width .5s"></div>' +
+          '</div>' +
+        '</td>' +
+        '<td style="padding:10px 12px;white-space:nowrap">' + dots + '</td>' +
+        '<td style="padding:10px 12px;text-align:center;font-size:12px;color:#64748b">' + totalP + '</td>' +
+        '<td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:' + pctC + '">' + pctP + '%</td>' +
+      '</tr>';
+    }).join('');
+
+  // Sin cursos — colapsables, ocultos por defecto
+  const sinCursosRows = miembros.filter(p => !asigEq.some(a=>a.user_login===p.user)).map(p=>
+    '<tr style="border-bottom:1px solid #f1f5f9;background:#fafafa">' +
+      '<td style="padding:9px 14px;font-size:12px;color:#94a3b8;font-style:italic">' + p.nombre + '</td>' +
+      '<td colspan="4" style="padding:9px 12px;font-size:11px;color:#cbd5e1">Sin cursos asignados</td>' +
+    '</tr>'
+  ).join('');
+
+  const toggleId = EQ_ID + '_sc';
+
+  return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:0">' +
+
+    // ── Header compacto ──────────────────────────────────────────
+    '<div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #e2e8f0;background:#f8fafc">' +
+      '<span style="font-size:20px;line-height:1">' + icon + '</span>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">' +
+          '<span style="font-size:14px;font-weight:700;color:#1e293b">' + equipo + '</span>' +
+          '<span style="font-size:11px;color:#94a3b8">' + miembros.length + ' personas</span>' +
+          '<span style="font-size:11px;color:#94a3b8">·</span>' +
+          '<span style="font-size:11px;color:#94a3b8">' + total + ' cursos</span>' +
+        '</div>' +
+        '<div style="margin-top:5px;display:flex;flex-wrap:wrap;align-items:center">' + estadoLeyenda + '</div>' +
+      '</div>' +
+      // Badge cumplimiento
+      '<div style="flex-shrink:0;text-align:right">' +
+        '<div style="font-size:22px;font-weight:800;color:' + pctColor + ';line-height:1">' + pct + '%</div>' +
+        '<div style="font-size:10px;color:#94a3b8;margin-top:1px">culminado</div>' +
+      '</div>' +
+    '</div>' +
+
+    // ── Barra de herramientas compacta ───────────────────────────
+    '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid #f1f5f9;background:#fafafa">' +
+      '<input type="text" placeholder="🔍 Buscar colaborador..." oninput="tcFilter(\'' + EQ_ID + '\',this.value)" ' +
+        'style="flex:1;min-width:0;max-width:220px;padding:5px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;color:#1e293b;background:#fff;outline:none" ' +
+        'onfocus="this.style.borderColor=\'' + color + '\'" onblur="this.style.borderColor=\'#e2e8f0\'">' +
+      '<select onchange="tcSort(\'' + EQ_ID + '\',this.value)" style="padding:5px 8px;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;color:#475569;background:#fff;outline:none">' +
+        '<option value="pct_desc">% Mayor primero</option>' +
+        '<option value="pct_asc">% Menor primero</option>' +
+        '<option value="nombre">A → Z</option>' +
+        '<option value="total_desc">Más cursos</option>' +
+      '</select>' +
+      (sinCursos>0 ?
+        '<label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#64748b;cursor:pointer;margin-left:4px;white-space:nowrap">' +
+          '<input type="checkbox" id="' + toggleId + '" onchange="tcToggleSin(\'' + EQ_ID + '\')" style="accent-color:' + color + '">' +
+          'Sin cursos (' + sinCursos + ')' +
+        '</label>'
+      : '') +
+    '</div>' +
+
+    // ── Tabla ────────────────────────────────────────────────────
+    '<div style="overflow-x:auto">' +
+      '<table id="' + EQ_ID + '_tbl" style="width:100%;border-collapse:collapse">' +
+        '<thead>' +
+          '<tr style="background:#f8fafc">' +
+            '<th style="padding:7px 14px;font-size:10px;font-weight:600;color:#94a3b8;text-align:left;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap">Colaborador</th>' +
+            '<th style="padding:7px 12px;font-size:10px;font-weight:600;color:#94a3b8;text-align:left;text-transform:uppercase;letter-spacing:.07em;min-width:110px">Avance</th>' +
+            '<th style="padding:7px 12px;font-size:10px;font-weight:600;color:#94a3b8;text-align:left;text-transform:uppercase;letter-spacing:.07em">Estados</th>' +
+            '<th style="padding:7px 12px;font-size:10px;font-weight:600;color:#94a3b8;text-align:center;text-transform:uppercase;letter-spacing:.07em">Cursos</th>' +
+            '<th style="padding:7px 14px;font-size:10px;font-weight:600;color:#94a3b8;text-align:right;text-transform:uppercase;letter-spacing:.07em">Cumpl.</th>' +
+          '</tr>' +
+        '</thead>' +
+        '<tbody id="' + EQ_ID + '_body">' + conCursos + '</tbody>' +
+        '<tbody id="' + EQ_ID + '_sin" style="display:none">' + sinCursosRows + '</tbody>' +
+      '</table>' +
+    '</div>' +
+  '</div>';
+}
+
+// ── Helpers interactivos para teamCardFull ───────────────────────────
+function tcFilter(eqId, q) {
+  const tbody = document.getElementById(eqId + '_body');
+  if (!tbody) return;
+  const ql = q.toLowerCase();
+  tbody.querySelectorAll('tr').forEach(tr => {
+    const name = (tr.querySelector('td') || {}).textContent || '';
+    tr.style.display = (!ql || name.toLowerCase().includes(ql)) ? '' : 'none';
+  });
+}
+
+function tcToggleSin(eqId) {
+  const el = document.getElementById(eqId + '_sin');
+  const cb = document.getElementById(eqId + '_tc_' + eqId.split('_')[1] + '_sc');
+  // find the checkbox by its id pattern
+  const allCb = document.querySelectorAll('[id$="_sc"]');
+  allCb.forEach(c => { if (c.id === eqId + '_sc' || c.closest('[id]') === el) {
+    if (el) el.style.display = c.checked ? '' : 'none';
+  }});
+  if (el) {
+    const chk = document.getElementById(eqId + '_sc');
+    if (chk) el.style.display = chk.checked ? '' : 'none';
+  }
+}
+
+function tcSort(eqId, mode) {
+  const tbody = document.getElementById(eqId + '_body');
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  rows.sort((a,b) => {
+    const tds_a = a.querySelectorAll('td'), tds_b = b.querySelectorAll('td');
+    if (!tds_a.length || !tds_b.length) return 0;
+    if (mode === 'nombre') return (tds_a[0].textContent||'').localeCompare(tds_b[0].textContent||'');
+    if (mode === 'total_desc') return parseInt(tds_b[3].textContent||0) - parseInt(tds_a[3].textContent||0);
+    const pa = parseInt(tds_a[4].textContent||0), pb = parseInt(tds_b[4].textContent||0);
+    return mode === 'pct_asc' ? pa-pb : pb-pa;
+  });
+  rows.forEach(r => tbody.appendChild(r));
 }
 
 // ── SOLICITUDES (Admin review) ────────────────────────────────
