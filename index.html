@@ -3085,7 +3085,8 @@ function _evalRegistros(evs, res) {
         '<div style="display:flex;gap:6px;align-items:center">' +
           (ev.curso_id
             ? '<button onclick="syncModuloMasivo(' + ev.id + ')" style="font-size:11px;padding:5px 12px;border:1px solid #22c55e;border-radius:8px;background:transparent;color:#22c55e;cursor:pointer;white-space:nowrap" title="Actualizar asignaciones a Culminado para todos los que aprobaron">⚡ Sincronizar</button>'
-            : '<span style="font-size:10px;color:#8ba3c480;padding:4px 8px;white-space:nowrap" title="Vincula este módulo a un curso para activar la sincronización">Sin curso vinculado</span>') +
+            : '') +
+          '<button onclick="openModalEditarEval(' + ev.id + ')" style="font-size:11px;padding:5px 10px;border:1px solid #3b82f6;border-radius:8px;background:transparent;color:#3b82f6;cursor:pointer" title="Editar módulo / vincular curso">✏️</button>' +
           '<button onclick="openModalResultado(' + ev.id + ')" class="btn primary" style="font-size:11px;padding:5px 12px">+ Resultado</button>' +
           '<button onclick="eliminarEval(' + ev.id + ')" style="font-size:11px;padding:5px 10px;border:1px solid #ef4444;border-radius:8px;background:transparent;color:#ef4444;cursor:pointer">🗑</button>' +
         '</div>' +
@@ -3266,6 +3267,89 @@ async function guardarNuevaEval() {
   evaluaciones.unshift(data[0]);
   closeModal();
   showToast('Módulo registrado ✓');
+  _renderEvalUI();
+}
+
+// ── Modal: Editar evaluación / vincular curso ─────────────────────────
+function openModalEditarEval(evalId) {
+  const ev = evaluaciones.find(e => e.id === evalId);
+  if (!ev) return;
+  const cursoOpts = catalogoCursos.map(c =>
+    '<option value="' + c.id + '"' + (String(ev.curso_id) === String(c.id) ? ' selected' : '') + '>' + c.titulo + '</option>'
+  ).join('');
+  const equipos = ['Planificación','Implementación','O&M'];
+  const eqOpts = equipos.map(e =>
+    '<option value="' + e + '"' + (ev.equipo === e ? ' selected' : '') + '>' + e + '</option>'
+  ).join('');
+  document.getElementById('modalTitle').textContent = '✏️ Editar módulo';
+  document.getElementById('modalSubtitle').textContent = ev.titulo;
+  document.getElementById('modalBody').innerHTML =
+    '<div class="form-row">' +
+      '<div class="form-field full">' +
+        '<label>Nombre del módulo</label>' +
+        '<input type="text" id="editEvalTitulo" value="' + (ev.titulo||'').replace(/"/g,'&quot;') + '" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit">' +
+      '</div>' +
+    '</div>' +
+    '<div class="form-row">' +
+      '<div class="form-field">' +
+        '<label>Fecha</label>' +
+        '<input type="date" id="editEvalFecha" value="' + (ev.fecha||'') + '" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit">' +
+      '</div>' +
+      '<div class="form-field">' +
+        '<label>Nota mínima aprobación</label>' +
+        '<input type="number" id="editEvalNotaMin" value="' + (ev.nota_aprobacion||7) + '" min="0" max="10" step="0.1" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit">' +
+      '</div>' +
+    '</div>' +
+    '<div class="form-row">' +
+      '<div class="form-field full">' +
+        '<label>Equipo</label>' +
+        '<select id="editEvalEquipo" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit">' +
+          '<option value="">Todos los equipos</option>' + eqOpts +
+        '</select>' +
+      '</div>' +
+    '</div>' +
+    '<div class="form-row">' +
+      '<div class="form-field full">' +
+        '<label>🔗 Vincular a curso del catálogo <span style="font-size:10px;color:#94a3b8">(requerido para sincronizar asignaciones)</span></label>' +
+        '<select id="editEvalCursoId" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit">' +
+          '<option value="">— Sin vincular —</option>' + cursoOpts +
+        '</select>' +
+      '</div>' +
+    '</div>' +
+    (ev.curso_id
+      ? '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:12px;color:#166534;margin-bottom:8px">' +
+          '✅ Al guardar puedes usar <strong>⚡ Sincronizar</strong> para marcar como Culminado a todos los que aprobaron.' +
+        '</div>'
+      : '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:8px">' +
+          '⚠️ Sin curso vinculado la sincronización no está disponible.' +
+        '</div>') +
+    '<div class="form-actions">' +
+      '<button class="btn" onclick="closeModal()">Cancelar</button>' +
+      '<button class="btn primary" onclick="guardarEditarEval(' + evalId + ')">Guardar cambios</button>' +
+    '</div>';
+  document.getElementById('modal').style.display = 'flex';
+}
+
+async function guardarEditarEval(evalId) {
+  const titulo    = document.getElementById('editEvalTitulo').value.trim();
+  const fecha     = document.getElementById('editEvalFecha').value;
+  const equipo    = document.getElementById('editEvalEquipo').value;
+  const nota_min  = parseFloat(document.getElementById('editEvalNotaMin').value || 7);
+  const curso_id  = document.getElementById('editEvalCursoId').value || null;
+  if (!titulo) { showToast('El nombre no puede estar vacío'); return; }
+  const { error } = await sb.from('evaluaciones').update({
+    titulo,
+    fecha: fecha || null,
+    equipo: equipo || null,
+    nota_aprobacion: nota_min,
+    curso_id: curso_id || null
+  }).eq('id', evalId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  const idx = evaluaciones.findIndex(e => e.id === evalId);
+  if (idx >= 0) evaluaciones[idx] = { ...evaluaciones[idx], titulo, fecha: fecha||null,
+    equipo: equipo||null, nota_aprobacion: nota_min, curso_id: curso_id||null };
+  closeModal();
+  showToast('Módulo actualizado ✓' + (curso_id ? ' — ya puedes usar ⚡ Sincronizar' : ''));
   _renderEvalUI();
 }
 
