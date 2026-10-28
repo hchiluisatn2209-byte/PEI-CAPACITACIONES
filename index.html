@@ -3083,9 +3083,7 @@ function _evalRegistros(evs, res) {
           '<div style="font-size:11px;color:#8ba3c4;margin-top:2px">' + (ev.fecha||'sin fecha') + ' · ' + (ev.tipo==='kahoot'?'Kahoot /10,000':'Nota /10') + ' · ' + (ev.equipo||'Todos los equipos') + '</div>' +
         '</div>' +
         '<div style="display:flex;gap:6px;align-items:center">' +
-          (ev.curso_id
-            ? '<button onclick="syncModuloMasivo(' + ev.id + ')" style="font-size:11px;padding:5px 12px;border:1px solid #22c55e;border-radius:8px;background:transparent;color:#22c55e;cursor:pointer;white-space:nowrap" title="Actualizar asignaciones a Culminado para todos los que aprobaron">⚡ Sincronizar</button>'
-            : '') +
+          '<button onclick="syncModuloMasivo(' + ev.id + ')" style="font-size:11px;padding:5px 12px;border:1px solid #22c55e;border-radius:8px;background:transparent;color:#22c55e;cursor:pointer;white-space:nowrap" title="' + (ev.curso_id ? 'Actualizar asignaciones a Culminado' : 'Crear asignaciones Internas para quienes aprobaron') + '">⚡ Sincronizar</button>' +
           '<button onclick="openModalEditarEval(' + ev.id + ')" style="font-size:11px;padding:5px 10px;border:1px solid #3b82f6;border-radius:8px;background:transparent;color:#3b82f6;cursor:pointer" title="Editar módulo / vincular curso">✏️</button>' +
           '<button onclick="openModalResultado(' + ev.id + ')" class="btn primary" style="font-size:11px;padding:5px 12px">+ Resultado</button>' +
           '<button onclick="eliminarEval(' + ev.id + ')" style="font-size:11px;padding:5px 10px;border:1px solid #ef4444;border-radius:8px;background:transparent;color:#ef4444;cursor:pointer">🗑</button>' +
@@ -3421,56 +3419,97 @@ async function guardarResultado(evalId) {
 
 // ── Sincroniza UNA asignación desde un resultado de evaluación ────────
 async function _syncAsignacionDesdeEval(ev, user_login, puntaje) {
-  if (!ev || !ev.curso_id) return false;
+  if (!ev) return false;
   const nota_min = ev.nota_aprobacion || 7;
-  // Para Kahoot el puntaje está en escala /10,000; normalizar a /10
-  const nota10 = ev.tipo === 'kahoot' ? (puntaje / 10000 * 10) : puntaje;
-  if (nota10 < nota_min) return false;
-  // Buscar asignación activa de ese usuario para ese curso
-  const asig = asignaciones.find(a =>
-    a.user_login === user_login &&
-    String(a.curso_id) === String(ev.curso_id) &&
-    a.estado !== 'Culminado' &&
-    a.estado !== 'Rechazado'
-  );
-  if (!asig) return false;
+  const nota10   = ev.tipo === 'kahoot' ? (puntaje / 10000 * 10) : puntaje;
+  if (nota10 < nota_min) return false; // no aprobó
   const hoy = new Date().toISOString().split('T')[0];
-  const { error } = await sb.from('asignaciones').update({
-    estado: 'Culminado',
-    avance: 100,
-    fecha_fin_real: hoy,
-    fecha_estado: new Date().toISOString()
-  }).eq('id', asig.id);
-  if (error) return false;
-  // Actualizar en memoria
-  const idx = asignaciones.findIndex(a => a.id === asig.id);
-  if (idx >= 0) {
-    asignaciones[idx] = { ...asignaciones[idx], estado: 'Culminado', avance: 100,
-      fecha_fin_real: hoy, fecha_estado: new Date().toISOString() };
+  const pers = personal.find(p => p.user === user_login) || {};
+
+  if (ev.curso_id) {
+    // ── Caso A: módulo vinculado a curso Udemy → actualizar asignación existente
+    const asig = asignaciones.find(a =>
+      a.user_login === user_login &&
+      String(a.curso_id) === String(ev.curso_id) &&
+      a.estado !== 'Culminado' && a.estado !== 'Rechazado'
+    );
+    if (!asig) return false;
+    const { error } = await sb.from('asignaciones').update({
+      estado: 'Culminado', avance: 100,
+      fecha_fin_real: hoy, fecha_estado: new Date().toISOString()
+    }).eq('id', asig.id);
+    if (error) return false;
+    const idx = asignaciones.findIndex(a => a.id === asig.id);
+    if (idx >= 0) asignaciones[idx] = { ...asignaciones[idx],
+      estado: 'Culminado', avance: 100, fecha_fin_real: hoy };
+    return 'actualizado';
+  } else {
+    // ── Caso B: capacitación interna → crear asignación si no existe ya
+    const yaExiste = asignaciones.find(a =>
+      a.user_login === user_login &&
+      a.curso_titulo === ev.titulo &&
+      a.licencia === 'Interna'
+    );
+    if (yaExiste) {
+      // Si existe pero no está Culminada, actualizarla
+      if (yaExiste.estado !== 'Culminado') {
+        await sb.from('asignaciones').update({
+          estado: 'Culminado', avance: 100,
+          fecha_fin_real: hoy, fecha_estado: new Date().toISOString()
+        }).eq('id', yaExiste.id);
+        const idx = asignaciones.findIndex(a => a.id === yaExiste.id);
+        if (idx >= 0) asignaciones[idx] = { ...asignaciones[idx],
+          estado: 'Culminado', avance: 100, fecha_fin_real: hoy };
+        return 'actualizado';
+      }
+      return false; // ya estaba culminada
+    }
+    // Crear nueva asignación interna
+    const nuevaAsig = {
+      user_login,
+      nombre: pers.nombre || user_login,
+      equipo: pers.equipo || ev.equipo || null,
+      curso_titulo: ev.titulo,
+      curso_id: null,
+      licencia: 'Interna',
+      estado: 'Culminado',
+      avance: 100,
+      fecha_inicio: ev.fecha || hoy,
+      fecha_fin: hoy,
+      fecha_fin_real: hoy,
+      fecha_estado: new Date().toISOString(),
+      prioridad: 'Media',
+      certificado_enviado: false,
+      observaciones: 'Generado automáticamente desde Evaluaciones Internas'
+    };
+    const { data, error } = await sb.from('asignaciones').insert([nuevaAsig]).select();
+    if (error) return false;
+    if (data && data[0]) asignaciones.unshift(data[0]);
+    return 'creado';
   }
-  return true;
 }
 
 // ── Sincronización masiva de un módulo completo ───────────────────────
 async function syncModuloMasivo(evalId) {
   const ev = evaluaciones.find(e => e.id === evalId);
   if (!ev) return;
-  if (!ev.curso_id) {
-    showToast('Este módulo no tiene curso vinculado. Edítalo para vincularlo.');
-    return;
-  }
   const resultados = evalResultados.filter(r => r.eval_id === evalId);
   if (!resultados.length) { showToast('No hay resultados registrados en este módulo'); return; }
 
-  let ok = 0, skip = 0;
+  let creados = 0, actualizados = 0, skip = 0;
   for (const r of resultados) {
-    const synced = await _syncAsignacionDesdeEval(ev, r.user_login, r.puntaje);
-    if (synced) ok++; else skip++;
+    const res = await _syncAsignacionDesdeEval(ev, r.user_login, r.puntaje);
+    if (res === 'creado') creados++;
+    else if (res === 'actualizado') actualizados++;
+    else skip++;
   }
-  showToast(`Sincronización completa: ${ok} actualizados, ${skip} sin cambios`);
+  const msg = [
+    creados     ? creados + ' asignaciones creadas'    : '',
+    actualizados ? actualizados + ' actualizadas'       : '',
+    skip        ? skip + ' sin cambios (ya culminadas o no aprobaron)' : ''
+  ].filter(Boolean).join(' · ');
+  showToast('⚡ ' + msg);
   _renderEvalUI();
-  // Refrescar dashboard
-  if (typeof renderDashboard === 'function') renderDashboard();
 }
 
 async function eliminarEval(evalId) {
