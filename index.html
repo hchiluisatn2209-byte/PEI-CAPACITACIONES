@@ -1075,37 +1075,20 @@ function renderAdminDashboard() {
   // ── Construcción HTML ─────────────────────────────────────────────
   // A. KPI Row — cumplimiento expandido ocupa 2 columnas
   const cumplKpi =
-    '<div style="background:' + pctBg2 + ';border:1px solid #e2e8f0;border-radius:14px;padding:16px 18px;border-left:3px solid ' + pctColor2 + ';box-shadow:0 1px 3px rgba(0,0,0,.04);grid-column:span 2">' +
-      '<div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Índice de cumplimiento</div>' +
-      // % grande + nivel
-      '<div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:10px">' +
-        '<div style="font-size:42px;font-weight:900;color:' + pctColor2 + ';line-height:1">' + cumplTotal + '%</div>' +
-        '<div style="padding-bottom:4px">' +
-          '<span style="display:inline-block;padding:2px 10px;border-radius:20px;background:' + pctColor2 + ';color:#fff;font-size:11px;font-weight:700;letter-spacing:.06em">' + pctLabel2.toUpperCase() + '</span>' +
-        '</div>' +
+    '<div style="background:' + pctBg2 + ';border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;border-left:3px solid ' + pctColor2 + ';box-shadow:0 1px 3px rgba(0,0,0,.04)">' +
+      '<div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Índice de cumplimiento</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+        '<div style="font-size:32px;font-weight:900;color:' + pctColor2 + ';line-height:1">' + cumplTotal + '%</div>' +
+        '<span style="padding:2px 8px;border-radius:20px;background:' + pctColor2 + ';color:#fff;font-size:10px;font-weight:700;letter-spacing:.05em">' + pctLabel2.toUpperCase() + '</span>' +
       '</div>' +
-      // Barra de progreso
-      '<div style="margin-bottom:4px">' +
-        '<div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-bottom:4px">' +
-          '<span>Progreso general</span><span>' + cumplTotal + ' de 100%</span>' +
-        '</div>' +
-        '<div style="height:9px;background:#e2e8f0;border-radius:5px;overflow:hidden">' +
-          '<div style="height:100%;width:' + cumplTotal + '%;background:' + pctColor2 + ';border-radius:5px"></div>' +
-        '</div>' +
-        '<div style="display:flex;justify-content:space-between;font-size:9px;color:#cbd5e1;margin-top:3px"><span>0%</span><span>30%</span><span>60%</span><span>80%</span><span>100%</span></div>' +
+      '<div style="height:7px;background:#e2e8f0;border-radius:4px;overflow:hidden;margin-bottom:3px">' +
+        '<div style="height:100%;width:' + cumplTotal + '%;background:' + pctColor2 + ';border-radius:4px"></div>' +
       '</div>' +
-      // Mini métricas inline
-      '<div style="display:flex;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid ' + pctColor2 + '20">' +
-        '<div><span style="font-size:16px;font-weight:800;color:#16a34a">' + culminados + '</span> <span style="font-size:10px;color:#94a3b8">culminados</span></div>' +
-        '<div style="width:1px;background:#e2e8f0"></div>' +
-        '<div><span style="font-size:16px;font-weight:800;color:#94a3b8">' + pctRest + '%</span> <span style="font-size:10px;color:#94a3b8">pendiente</span></div>' +
-        '<div style="width:1px;background:#e2e8f0"></div>' +
-        '<div><span style="font-size:16px;font-weight:800;color:#1a73c8">' + totalCursos + '</span> <span style="font-size:10px;color:#94a3b8">total cursos</span></div>' +
-      '</div>' +
+      '<div style="font-size:10px;color:#94a3b8">' + culminados + ' culminados · ' + pctRest + '% pendiente</div>' +
     '</div>';
 
   const kpiRow =
-    '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:12px;margin-bottom:16px;align-items:stretch">' +
+    '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;align-items:stretch">' +
       cumplKpi +
       dbKpi('Total cursos', totalCursos, 'Registrados en el sistema', '#1a73c8', '#eff6ff') +
       dbKpi('Culminados', culminados, 'Completados satisfactoriamente', '#22c55e', '#f0fdf4') +
