@@ -886,158 +886,213 @@ function renderAdminDashboard() {
   const conCursos   = personal.filter(p => p.activo !== false && asignaciones.some(a => a.user_login === p.user)).length;
   const cobertura   = totalPersonal ? Math.round(conCursos/totalPersonal*100) : 0;
   const cumplTotal  = totalCursos   ? Math.round(culminados/totalCursos*100)  : 0;
-
-  // Personas sin ningún curso
-  const sinAsig = personal.filter(p => p.activo !== false && !asignaciones.some(a => a.user_login === p.user)).length;
-
-  // Personas bajo 30% avance (con al menos 1 curso)
-  const bajo30 = personal.filter(p => {
+  const sinAsig     = personal.filter(p => p.activo !== false && !asignaciones.some(a => a.user_login === p.user)).length;
+  const bajo30      = personal.filter(p => {
     if (p.activo === false) return false;
     const pa = asignaciones.filter(a => a.user_login === p.user);
     if (!pa.length) return false;
-    const pct = Math.round(pa.filter(a=>a.estado==='Culminado').length/pa.length*100);
-    return pct < 30;
+    return Math.round(pa.filter(a=>a.estado==='Culminado').length/pa.length*100) < 30;
   }).length;
 
-  // TOP 5 cumplimiento (personas con al menos 1 curso)
+  // Ranking personas
   const rankData = personal
     .filter(p => p.activo !== false && asignaciones.some(a => a.user_login === p.user))
     .map(p => {
       const pa = asignaciones.filter(a => a.user_login === p.user);
       const pct = pa.length ? Math.round(pa.filter(a=>a.estado==='Culminado').length/pa.length*100) : 0;
-      return { nombre: p.nombre.split(' ')[0], pct };
+      const nom = p.nombre.split(' ');
+      return { nombre: nom[nom.length-2] || nom[0], total: pa.length, pct };
     })
     .sort((a,b) => b.pct - a.pct);
 
   const top5    = rankData.slice(0,5);
-  const bottom5 = rankData.slice(-5).reverse();
+  const bottom5 = [...rankData].sort((a,b)=>a.pct-b.pct).slice(0,5);
 
-  const topRows    = top5.map(r =>
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--gray-bd)">' +
-      '<span style="font-size:12px;color:var(--text)">' + r.nombre + '</span>' +
-      '<div style="display:flex;align-items:center;gap:8px">' +
-        '<div style="width:80px;height:6px;border-radius:3px;background:var(--gray-bd);overflow:hidden">' +
-          '<div style="width:' + r.pct + '%;height:100%;background:#16a34a;border-radius:3px"></div>' +
-        '</div>' +
-        '<span style="font-size:12px;font-weight:700;color:#16a34a;min-width:32px;text-align:right">' + r.pct + '%</span>' +
-      '</div>' +
-    '</div>'
-  ).join('');
-
-  const bottomRows = bottom5.map(r =>
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--gray-bd)">' +
-      '<span style="font-size:12px;color:var(--text)">' + r.nombre + '</span>' +
-      '<div style="display:flex;align-items:center;gap:8px">' +
-        '<div style="width:80px;height:6px;border-radius:3px;background:var(--gray-bd);overflow:hidden">' +
-          '<div style="width:' + r.pct + '%;height:100%;background:' + (r.pct===0?'#e5e7eb':'#f59e0b') + ';border-radius:3px"></div>' +
-        '</div>' +
-        '<span style="font-size:12px;font-weight:700;color:' + (r.pct===0?'#9ca3af':'#e07b00') + ';min-width:32px;text-align:right">' + r.pct + '%</span>' +
-      '</div>' +
-    '</div>'
-  ).join('');
-
-  // Tendencia mensual: agrupar culminados por mes según fecha_estado
+  // Tendencia mensual
   const mesMap = {};
   asignaciones.filter(a => a.estado === 'Culminado' && a.fecha_estado).forEach(a => {
     const d = new Date(a.fecha_estado);
     const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
     mesMap[key] = (mesMap[key]||0)+1;
   });
-  const meses = Object.keys(mesMap).sort().slice(-6);
-  const mesLabels = { '01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun','07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic' };
-  const maxMes = meses.reduce((m,k) => Math.max(m, mesMap[k]), 1);
-  const tendRows = meses.map(k => {
-    const [,mm] = k.split('-');
-    const v = mesMap[k];
-    const w = Math.round(v/maxMes*100);
-    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
-      '<span style="font-size:11px;color:var(--text3);width:28px;text-align:right">' + mesLabels[mm] + '</span>' +
-      '<div style="flex:1;height:18px;background:var(--gray-bd);border-radius:4px;overflow:hidden">' +
-        '<div style="width:' + w + '%;height:100%;background:var(--blue);border-radius:4px;display:flex;align-items:center;padding-left:6px">' +
-          '<span style="font-size:10px;font-weight:700;color:#fff">' + (w>15?v:'') + '</span>' +
-        '</div>' +
-      '</div>' +
-      (w<=15?'<span style="font-size:11px;font-weight:700;color:var(--text2)">' + v + '</span>':'') +
-    '</div>';
-  }).join('');
+  const mesLbl = {'01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun','07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic'};
+  const meses  = Object.keys(mesMap).sort().slice(-6);
+  const maxMes = meses.reduce((m,k)=>Math.max(m,mesMap[k]),1);
 
-  // Distribución estados para barras
-  const estadosBar = [
-    { label:'Pendiente',   val:pendientes,  color:'#f59e0b' },
-    { label:'En revisión', val:enRevision,  color:'#3b82f6' },
-    { label:'Autorizado',  val:autorizados, color:'#8b5cf6' },
-    { label:'En curso',    val:encurso,     color:'#0ea5e9' },
-    { label:'Culminado',   val:culminados,  color:'#16a34a' },
-  ].filter(e => e.val > 0);
-  const maxBar = estadosBar.reduce((m,e)=>Math.max(m,e.val),1);
-  const estadosRows = estadosBar.map(e =>
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">' +
-      '<span style="font-size:11px;color:var(--text2);width:72px;text-align:right">' + e.label + '</span>' +
-      '<div style="flex:1;height:16px;background:var(--gray-bd);border-radius:3px;overflow:hidden">' +
-        '<div style="width:' + Math.round(e.val/maxBar*100) + '%;height:100%;background:' + e.color + ';border-radius:3px"></div>' +
+  // ── SVG Dona ─────────────────────────────────────────────────────
+  function svgDona(vals, colors, cx, cy, r, stroke) {
+    if (!vals.reduce((s,v)=>s+v,0)) return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="#e5e7eb" stroke-width="' + stroke + '"/>';
+    const total = vals.reduce((s,v)=>s+v,0);
+    const circ  = 2*Math.PI*r;
+    let offset  = circ * 0.25; // start at top
+    return vals.map((v,i) => {
+      if (!v) return '';
+      const dash = (v/total)*circ;
+      const seg  = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + colors[i] + '" stroke-width="' + stroke + '" stroke-dasharray="' + dash.toFixed(2) + ' ' + (circ-dash).toFixed(2) + '" stroke-dashoffset="-' + offset.toFixed(2) + '" style="transition:stroke-dasharray .6s"/>';
+      offset += dash;
+      return seg;
+    }).join('');
+  }
+
+  const EC_COLOR = ['#f59e0b','#3b82f6','#8b5cf6','#0ea5e9','#16a34a','#ef4444'];
+  const EC_VALS  = [pendientes, enRevision, autorizados, encurso, culminados, rechazados];
+  const EC_LBL   = ['Pendiente','En revisión','Autorizado','En curso','Culminado','Rechazado'];
+  const donaSvg  = '<svg width="140" height="140" viewBox="0 0 140 140">' +
+    svgDona(EC_VALS, EC_COLOR, 70, 70, 52, 22) +
+    '<text x="70" y="65" text-anchor="middle" font-size="20" font-weight="700" fill="#0d1b2e">' + totalCursos + '</text>' +
+    '<text x="70" y="82" text-anchor="middle" font-size="10" fill="#7a8599">cursos</text>' +
+  '</svg>';
+
+  const legendDona = EC_LBL.map((l,i) => EC_VALS[i] ? (
+    '<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">' +
+      '<div style="width:10px;height:10px;border-radius:50%;background:' + EC_COLOR[i] + ';flex-shrink:0"></div>' +
+      '<span style="font-size:11px;color:var(--text2);flex:1">' + l + '</span>' +
+      '<span style="font-size:11px;font-weight:700;color:var(--text)">' + EC_VALS[i] + '</span>' +
+    '</div>'
+  ) : '').join('');
+
+  // ── SVG Velocímetro ──────────────────────────────────────────────
+  function svgVelocimetro(pct) {
+    const R=60, cx=80, cy=85, stk=18;
+    const arc = (angle) => {
+      const rad = (angle-180)*Math.PI/180;
+      return [cx + R*Math.cos(rad), cy + R*Math.sin(rad)];
+    };
+    const [sx,sy] = arc(0);
+    const [ex,ey] = arc(180);
+    const bgArc   = 'M ' + sx + ' ' + sy + ' A ' + R + ' ' + R + ' 0 1 0 ' + ex + ' ' + ey;
+    const fillDeg = Math.min(pct,100)*1.8;
+    const [fx,fy] = arc(fillDeg);
+    const lg      = fillDeg > 180 ? 1 : 0;
+    const fillArc = 'M ' + sx + ' ' + sy + ' A ' + R + ' ' + R + ' 0 ' + lg + ' 0 ' + fx.toFixed(2) + ' ' + fy.toFixed(2);
+    const color   = pct>=80?'#16a34a':pct>=50?'#f59e0b':'#ef4444';
+    const needleRad = (fillDeg-180)*Math.PI/180;
+    const nx = cx + (R-2)*Math.cos(needleRad), ny = cy + (R-2)*Math.sin(needleRad);
+    return '<svg width="160" height="100" viewBox="0 0 160 100">' +
+      '<path d="' + bgArc + '" fill="none" stroke="#e5e7eb" stroke-width="' + stk + '" stroke-linecap="round"/>' +
+      (pct>0 ? '<path d="' + fillArc + '" fill="none" stroke="' + color + '" stroke-width="' + stk + '" stroke-linecap="round" style="transition:all .8s"/>' : '') +
+      '<line x1="' + cx + '" y1="' + cy + '" x2="' + nx.toFixed(1) + '" y2="' + ny.toFixed(1) + '" stroke="#0d1b2e" stroke-width="2.5" stroke-linecap="round"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="#0d1b2e"/>' +
+      '<text x="' + cx + '" y="' + (cy-6) + '" text-anchor="middle" font-size="22" font-weight="700" fill="' + color + '">' + pct + '%</text>' +
+      '<text x="' + cx + '" y="' + (cy+10) + '" text-anchor="middle" font-size="9" fill="#7a8599">CUMPLIMIENTO</text>' +
+      '<text x="28" y="' + (cy+18) + '" text-anchor="middle" font-size="9" fill="#9ca3af">0%</text>' +
+      '<text x="132" y="' + (cy+18) + '" text-anchor="middle" font-size="9" fill="#9ca3af">100%</text>' +
+    '</svg>';
+  }
+
+  // ── SVG Barras tendencia ──────────────────────────────────────────
+  function svgBars(meses, mesMap, mesLbl, maxMes) {
+    if (!meses.length) return '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Sin datos históricos</div>';
+    const W=56, GAP=8, PH=80, PW=meses.length*(W+GAP)-GAP, PY=10, svgW=PW+20, svgH=PH+44;
+    const bars = meses.map((k,i) => {
+      const [,mm] = k.split('-');
+      const v = mesMap[k];
+      const bh = Math.round(v/maxMes*PH);
+      const bx = 10 + i*(W+GAP);
+      const by = PY + PH - bh;
+      return '<rect x="' + bx + '" y="' + by + '" width="' + W + '" height="' + bh + '" rx="4" fill="#1a73c8" opacity=".85" style="transition:height .5s"/>' +
+        '<text x="' + (bx+W/2) + '" y="' + (by-4) + '" text-anchor="middle" font-size="11" font-weight="700" fill="#1a73c8">' + v + '</text>' +
+        '<text x="' + (bx+W/2) + '" y="' + (PY+PH+16) + '" text-anchor="middle" font-size="10" fill="#7a8599">' + mesLbl[mm] + '</text>';
+    }).join('');
+    return '<svg width="' + svgW + '" height="' + svgH + '" style="width:100%;max-width:' + svgW + 'px">' + bars + '</svg>';
+  }
+
+  // ── Ranking barras ────────────────────────────────────────────────
+  const mkRankRows = (arr, color) => arr.map(r =>
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+      '<div style="width:80px;font-size:12px;color:var(--text);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + r.nombre + '</div>' +
+      '<div style="flex:1;height:20px;background:#f3f4f6;border-radius:6px;overflow:hidden;position:relative">' +
+        '<div style="height:100%;width:' + r.pct + '%;background:' + color + ';border-radius:6px;transition:width .6s;display:flex;align-items:center;padding-left:6px">' +
+          (r.pct>15 ? '<span style="font-size:10px;font-weight:700;color:#fff">' + r.pct + '%</span>' : '') +
+        '</div>' +
+        (r.pct<=15 ? '<span style="position:absolute;left:' + Math.max(r.pct+1,4) + '%;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:' + color + '">' + r.pct + '%</span>' : '') +
       '</div>' +
-      '<span style="font-size:11px;font-weight:700;color:var(--text2);width:20px">' + e.val + '</span>' +
+      '<span style="font-size:10px;color:var(--text3);white-space:nowrap">' + r.total + ' cur</span>' +
     '</div>'
   ).join('');
 
+  // ── Alertas ───────────────────────────────────────────────────────
+  const alertas = [
+    pendientes>0 ? { icon:'⏰', bg:'#fffbeb', border:'#fde68a', tc:'#92400e', msg:'<strong>' + pendientes + '</strong> solicitudes pendientes', action:"adminTab(document.querySelector('.nav-tab[onclick*=solicitudes]'),'solicitudes')" } : null,
+    sinAsig>0    ? { icon:'📭', bg:'#eff6ff', border:'#bfdbfe', tc:'#1e40af', msg:'<strong>' + sinAsig + '</strong> colaboradores sin cursos' } : null,
+    bajo30>0     ? { icon:'📉', bg:'#fef2f2', border:'#fecaca', tc:'#991b1b', msg:'<strong>' + bajo30 + '</strong> con avance menor al 30%' } : null,
+  ].filter(Boolean);
+
+  const alertaHtml = alertas.length ? alertas.map(al =>
+    '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:' + al.bg + ';border:1px solid ' + al.border + ';border-radius:8px;margin-bottom:6px' + (al.action?';cursor:pointer':'') + '"' +
+    (al.action ? ' onclick="' + al.action + '"' : '') + '>' +
+      '<span style="font-size:16px">' + al.icon + '</span>' +
+      '<span style="font-size:12px;color:' + al.tc + '">' + al.msg + '</span>' +
+      (al.action ? '<span style="margin-left:auto;font-size:11px;color:' + al.tc + ';opacity:.7">Ver →</span>' : '') +
+    '</div>'
+  ).join('') : '<div style="text-align:center;padding:16px;color:#16a34a;font-size:13px">✅ Sin alertas activas</div>';
+
+  // ── HTML final ────────────────────────────────────────────────────
   document.getElementById('mainContent').innerHTML =
-    // ── KPI CARDS ──
-    '<div class="stats-grid" style="margin-bottom:16px">' +
-      '<div class="stat-card"><div class="stat-label">📈 Cumplimiento</div><div class="stat-value success">' + cumplTotal + '%</div></div>' +
-      '<div class="stat-card"><div class="stat-label">📚 Total cursos</div><div class="stat-value accent">' + totalCursos + '</div></div>' +
-      '<div class="stat-card"><div class="stat-label">✅ Culminados</div><div class="stat-value success">' + culminados + '</div></div>' +
-      '<div class="stat-card"><div class="stat-label">⏳ En curso</div><div class="stat-value accent">' + encurso + '</div></div>' +
-      '<div class="stat-card"><div class="stat-label">👥 Cobertura</div><div class="stat-value ' + (cobertura>=80?'success':'warn') + '">' + cobertura + '%</div></div>' +
+    // Fila 1: KPI cards
+    '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px">' +
+      kpiCard('📈','Cumplimiento', cumplTotal + '%', cumplTotal>=70?'#16a34a':'#e07b00') +
+      kpiCard('📚','Total cursos',  totalCursos, '#1a73c8') +
+      kpiCard('✅','Culminados',    culminados,  '#16a34a') +
+      kpiCard('⏳','En curso',      encurso,     '#0ea5e9') +
+      kpiCard('👥','Cobertura',     cobertura + '%', cobertura>=80?'#16a34a':'#e07b00') +
     '</div>' +
 
-    // ── ALERTAS + DISTRIBUCIÓN ──
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">' +
+    // Fila 2: Velocímetro + Dona + Alertas
+    '<div style="display:grid;grid-template-columns:200px 1fr 1fr;gap:14px;margin-bottom:14px;align-items:start">' +
+      // Velocímetro
+      '<div style="background:#fff;border:1px solid var(--gray-bd);border-radius:12px;padding:16px 12px;text-align:center">' +
+        '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Cumplimiento General</div>' +
+        svgVelocimetro(cumplTotal) +
+      '</div>' +
+      // Dona estados
+      '<div style="background:#fff;border:1px solid var(--gray-bd);border-radius:12px;padding:16px">' +
+        '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">📊 Distribución de estados</div>' +
+        '<div style="display:flex;align-items:center;gap:16px">' +
+          donaSvg +
+          '<div style="flex:1">' + legendDona + '</div>' +
+        '</div>' +
+      '</div>' +
       // Alertas
-      '<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;padding:16px">' +
-        '<div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">🚨 Alertas</div>' +
-        (pendientes>0 ? '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;margin-bottom:7px;cursor:pointer" onclick="adminTab(document.querySelector(\'.nav-tab[onclick*=solicitudes]\'),\'solicitudes\')">' +
-          '<span style="font-size:16px">⏰</span><span style="font-size:12px;color:#92400e"><strong>' + pendientes + '</strong> solicitudes pendientes de aprobación</span></div>' : '') +
-        (sinAsig>0 ? '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;margin-bottom:7px">' +
-          '<span style="font-size:16px">📭</span><span style="font-size:12px;color:#1e40af"><strong>' + sinAsig + '</strong> colaboradores sin cursos asignados</span></div>' : '') +
-        (bajo30>0 ? '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;margin-bottom:7px">' +
-          '<span style="font-size:16px">📉</span><span style="font-size:12px;color:#991b1b"><strong>' + bajo30 + '</strong> colaboradores con avance bajo 30%</span></div>' : '') +
-        (pendientes===0 && sinAsig===0 && bajo30===0 ? '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">✅ Sin alertas activas</div>' : '') +
-      '</div>' +
-
-      // Distribución estados
-      '<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;padding:16px">' +
-        '<div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">📊 Estado de capacitaciones</div>' +
-        estadosRows +
+      '<div style="background:#fff;border:1px solid var(--gray-bd);border-radius:12px;padding:16px">' +
+        '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">🚨 Alertas</div>' +
+        alertaHtml +
       '</div>' +
     '</div>' +
 
-    // ── TOP + ATENCIÓN ──
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">' +
-      '<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;padding:16px">' +
-        '<div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">🏆 Top cumplimiento</div>' +
-        topRows +
+    // Fila 3: Tendencia + Ranking
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">' +
+      // Tendencia mensual
+      '<div style="background:#fff;border:1px solid var(--gray-bd);border-radius:12px;padding:16px">' +
+        '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">📅 Tendencia mensual</div>' +
+        svgBars(meses, mesMap, mesLbl, maxMes) +
       '</div>' +
-      '<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;padding:16px">' +
-        '<div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">⚠️ Requieren atención</div>' +
-        bottomRows +
+      // Top cumplimiento
+      '<div style="background:#fff;border:1px solid var(--gray-bd);border-radius:12px;padding:16px">' +
+        '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">🏆 Top cumplimiento</div>' +
+        mkRankRows(top5, '#16a34a') +
+      '</div>' +
+      // Requieren atención
+      '<div style="background:#fff;border:1px solid var(--gray-bd);border-radius:12px;padding:16px">' +
+        '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">⚠️ Requieren atención</div>' +
+        mkRankRows(bottom5, '#f59e0b') +
       '</div>' +
     '</div>' +
 
-    // ── TENDENCIA MENSUAL ──
-    (meses.length > 0 ?
-      '<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;padding:16px;margin-bottom:16px">' +
-        '<div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">📅 Tendencia mensual — cursos culminados</div>' +
-        tendRows +
-      '</div>'
-    : '') +
-
-    // ── EQUIPOS ──
-    '<div class="section-title" style="margin-top:4px;margin-bottom:12px">Equipos</div>' +
+    // Fila 4: Equipos
+    '<div class="section-title" style="margin-bottom:12px">Equipos</div>' +
     '<div style="display:flex;flex-direction:column;gap:20px">' +
       teamCardFull('📐','Planificación','hchiluisatn2209@gmail.com','#1a73c8') +
       teamCardFull('⚙️','Implementación','geovanna.naranjo23@gmail.com','#1b7a3e') +
       teamCardFull('🖥','O&M','cralarcontn1607@gmail.com','#d97706') +
     '</div>';
+}
+
+function kpiCard(icon, label, value, color) {
+  return '<div style="background:#fff;border:1px solid var(--gray-bd);border-radius:12px;padding:14px 16px;border-left:4px solid ' + color + '">' +
+    '<div style="font-size:11px;color:var(--text3);margin-bottom:4px">' + icon + ' ' + label + '</div>' +
+    '<div style="font-size:26px;font-weight:800;color:' + color + ';line-height:1">' + value + '</div>' +
+  '</div>';
 }
 
 function teamCardFull(icon, equipo, email, color) {
