@@ -1163,7 +1163,10 @@ function renderAdminDashboard() {
   const culminados  = asigF.filter(a => a.estado === 'Culminado').length;
   const autorizados = asigF.filter(a => a.estado === 'Autorizado').length;
   const rechazados  = asigF.filter(a => a.estado === 'Rechazado').length;
-  const totalCursos = asigF.length;
+  const totalCursos   = asigF.length;
+  const cTelcoU       = asigF.filter(a => a.licencia === 'Telco U').length;
+  const cInterna      = asigF.filter(a => a.licencia === 'Interna').length;
+  const cPropia       = asigF.filter(a => a.licencia === 'Propia').length;
   // Cursos autorizados = Autorizado + En curso + Culminado (base real de cumplimiento)
   const ESTADOS_AUTORIZADOS = ['Autorizado','En curso','Culminado'];
   const asigAutorizadas = asigF.filter(a => ESTADOS_AUTORIZADOS.includes(a.estado));
@@ -1357,7 +1360,7 @@ function renderAdminDashboard() {
     '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px;align-items:stretch">' +
       cumplKpi +
       dbKpi('Personas', totalPersonal, conCursos + ' con cursos asignados', '#7c3aed', '#f5f3ff') +
-      dbKpi('Total cursos', totalCursos, 'Registrados en el sistema', '#1a73c8', '#eff6ff') +
+      dbKpiLicencias('Total cursos', totalCursos, cTelcoU, cInterna, cPropia) +
       dbKpi('Culminados', culminados, 'Completados satisfactoriamente', '#22c55e', '#f0fdf4') +
       dbKpi('Pendientes', pendientes, 'Esperan aprobación', '#f59e0b', '#fffbeb') +
       dbKpi('Requieren atención', requierenAtencion, 'Avance menor al 30%', '#f87171', '#fef2f2') +
@@ -1463,6 +1466,21 @@ function renderAdminDashboard() {
   }
 
   document.getElementById('mainContent').innerHTML = dbFilterBar + kpiRow + row2 + row3 + equipoSection;
+}
+
+function dbKpiLicencias(label, total, telcoU, interna, propia) {
+  const dot = (color, txt, n) => n > 0
+    ? '<span style="display:inline-flex;align-items:center;gap:3px;background:' + color + ';border-radius:20px;padding:2px 7px;font-size:10px;font-weight:700;white-space:nowrap">' + txt + ' <b>' + n + '</b></span>'
+    : '';
+  return '<div style="background:#eff6ff;border:1px solid #e2e8f0;border-radius:14px;padding:16px 18px;border-left:3px solid #1a73c8;box-shadow:0 1px 3px rgba(0,0,0,.04)">' +
+    '<div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">' + label + '</div>' +
+    '<div style="font-size:28px;font-weight:800;color:#1a73c8;line-height:1;margin-bottom:8px">' + total + '</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:4px">' +
+      dot('#dbeafe;color:#1d4ed8', '🎓', telcoU) +
+      dot('#ede9fe;color:#6d28d9', '🏢', interna) +
+      dot('#dcfce7;color:#16a34a', '⭐', propia) +
+    '</div>' +
+  '</div>';
 }
 
 function dbKpi(label, value, sub, color, bg) {
