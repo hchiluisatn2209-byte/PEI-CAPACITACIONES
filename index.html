@@ -1142,6 +1142,178 @@ function dbFilterTab(eq) {
   renderAdminDashboard();
 }
 
+function exportDashboardPDF() {
+  const equipo = currentDashFilter || 'Todos';
+  const fecha  = new Date().toLocaleDateString('es-EC', {day:'2-digit',month:'long',year:'numeric'});
+
+  // Recolectar datos actuales
+  const personalF = equipo === 'Todos' ? personal.filter(p=>p.activo!==false) : personal.filter(p=>p.equipo===equipo&&p.activo!==false);
+  const asigF     = equipo === 'Todos' ? asignaciones : asignaciones.filter(a=>a.equipo===equipo);
+  const ESTADOS_AUT = ['Autorizado','En curso','Culminado'];
+  const culminados  = asigF.filter(a=>a.estado==='Culminado').length;
+  const totalAut    = asigF.filter(a=>ESTADOS_AUT.includes(a.estado)).length;
+  const cumpl       = totalAut ? Math.round(culminados/totalAut*100) : 0;
+  const totalCursos = asigF.length;
+  const cTelcoU     = asigF.filter(a=>a.licencia==='Telco U').length;
+  const cInterna    = asigF.filter(a=>a.licencia==='Interna').length;
+  const cPropia     = asigF.filter(a=>a.licencia==='Propia').length;
+  const pendientes  = asigF.filter(a=>a.estado==='Pendiente').length;
+  const enCurso     = asigF.filter(a=>a.estado==='En curso').length;
+  const totalPersonal = personalF.length;
+  const conCursos   = personalF.filter(p=>asigF.some(a=>a.user_login===p.user)).length;
+
+  // Top cumplimiento
+  const topData = personalF.map(p=>{
+    const pa = asigF.filter(a=>a.user_login===p.user&&ESTADOS_AUT.includes(a.estado));
+    const done = pa.filter(a=>a.estado==='Culminado').length;
+    const pct  = pa.length ? Math.round(done/pa.length*100) : 0;
+    return {nombre: p.nombre.split(' ').slice(2).join(' ') || p.nombre, pct, total: pa.length};
+  }).filter(x=>x.total>0).sort((a,b)=>b.pct-a.pct||b.total-a.total).slice(0,8);
+
+  // Requieren seguimiento
+  const bajoData = personalF.map(p=>{
+    const pa = asigF.filter(a=>a.user_login===p.user&&ESTADOS_AUT.includes(a.estado));
+    const done = pa.filter(a=>a.estado==='Culminado').length;
+    const pct  = pa.length ? Math.round(done/pa.length*100) : 0;
+    return {nombre: p.nombre.split(' ').slice(2).join(' ') || p.nombre, pct, total: pa.length};
+  }).filter(x=>x.total>0&&x.pct<100).sort((a,b)=>a.pct-b.pct).slice(0,8);
+
+  // Evolución mensual
+  const mesMap = {};
+  asigF.filter(a=>a.estado==='Culminado').forEach(a=>{
+    const raw = a.fecha_fin_real||a.fecha_fin||a.fecha_estado;
+    if (!raw) return;
+    const d = new Date(raw); if (isNaN(d)) return;
+    const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    mesMap[key] = (mesMap[key]||0)+1;
+  });
+  const meses = Object.keys(mesMap).sort();
+  const MESES_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  const barMaxVal = Math.max(...Object.values(mesMap), 1);
+  const barsHtml = meses.map(k=>{
+    const [y,m] = k.split('-');
+    const v = mesMap[k];
+    const h = Math.round((v/barMaxVal)*60);
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+      <span style="font-size:9px;font-weight:700;color:#1a73c8">${v}</span>
+      <div style="width:28px;height:${h}px;background:#1a73c8;border-radius:4px 4px 0 0;min-height:4px"></div>
+      <span style="font-size:8px;color:#64748b">${MESES_ES[parseInt(m)-1]}</span>
+    </div>`;
+  }).join('');
+
+  const topRows = topData.map((x,i)=>`<tr style="border-bottom:1px solid #f1f5f9">
+    <td style="padding:5px 8px;font-size:11px;color:#94a3b8">${i+1}</td>
+    <td style="padding:5px 8px;font-size:12px;font-weight:600">${x.nombre}</td>
+    <td style="padding:5px 8px">
+      <div style="background:#e2e8f0;border-radius:4px;height:8px;width:100px">
+        <div style="background:#22c55e;height:8px;border-radius:4px;width:${x.pct}px"></div>
+      </div>
+    </td>
+    <td style="padding:5px 8px;font-size:12px;font-weight:700;color:#16a34a">${x.pct}%</td>
+    <td style="padding:5px 8px;font-size:11px;color:#64748b">${x.total} cur.</td>
+  </tr>`).join('');
+
+  const bajoRows = bajoData.map((x,i)=>`<tr style="border-bottom:1px solid #f1f5f9">
+    <td style="padding:5px 8px;font-size:11px;color:#94a3b8">${i+1}</td>
+    <td style="padding:5px 8px;font-size:12px;font-weight:600">${x.nombre}</td>
+    <td style="padding:5px 8px">
+      <div style="background:#e2e8f0;border-radius:4px;height:8px;width:100px">
+        <div style="background:${x.pct<30?'#f87171':x.pct<70?'#f59e0b':'#22c55e'};height:8px;border-radius:4px;width:${x.pct}px"></div>
+      </div>
+    </td>
+    <td style="padding:5px 8px;font-size:12px;font-weight:700;color:${x.pct<30?'#ef4444':x.pct<70?'#d97706':'#16a34a'}">${x.pct}%</td>
+    <td style="padding:5px 8px;font-size:11px;color:#64748b">${x.total} cur.</td>
+  </tr>`).join('');
+
+  const pctColor = cumpl>=80?'#16a34a':cumpl>=50?'#d97706':'#ef4444';
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Dashboard Capacitaciones - ${equipo}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#0d1b2e;background:#fff;padding:32px}
+    @media print{body{padding:16px}@page{size:A4 landscape;margin:12mm}}
+  </style>
+  </head><body>
+  <!-- Encabezado -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #0d1b2e">
+    <div>
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#64748b;margin-bottom:4px">Proyectos Corporativos · Capacitaciones</div>
+      <div style="font-size:22px;font-weight:900;color:#0d1b2e">Dashboard de Formación</div>
+      <div style="font-size:13px;color:#64748b;margin-top:2px">Equipo: <strong>${equipo}</strong> · Generado el ${fecha}</div>
+    </div>
+    <div style="text-align:center;background:#0d1b2e;color:#fff;border-radius:12px;padding:12px 20px">
+      <div style="font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.08em">Índice cumplimiento</div>
+      <div style="font-size:36px;font-weight:900;color:${pctColor};line-height:1">${cumpl}%</div>
+      <div style="font-size:10px;opacity:.7">${culminados} de ${totalAut} autorizados</div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px">
+    <div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;border-top:3px solid #7c3aed">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:6px">Personas</div>
+      <div style="font-size:26px;font-weight:900;color:#7c3aed">${totalPersonal}</div>
+      <div style="font-size:10px;color:#94a3b8">${conCursos} con cursos asignados</div>
+    </div>
+    <div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;border-top:3px solid #1a73c8">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:6px">Total cursos</div>
+      <div style="font-size:26px;font-weight:900;color:#1a73c8">${totalCursos}</div>
+      <div style="display:flex;flex-direction:column;gap:3px;margin-top:4px">
+        ${cTelcoU?`<span style="font-size:10px;color:#1d4ed8">🎓 Telco U · <b>${cTelcoU}</b></span>`:''}
+        ${cInterna?`<span style="font-size:10px;color:#6d28d9">🏢 Interna · <b>${cInterna}</b></span>`:''}
+        ${cPropia?`<span style="font-size:10px;color:#16a34a">⭐ Propia · <b>${cPropia}</b></span>`:''}
+      </div>
+    </div>
+    <div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;border-top:3px solid #22c55e">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:6px">Culminados</div>
+      <div style="font-size:26px;font-weight:900;color:#16a34a">${culminados}</div>
+      <div style="font-size:10px;color:#94a3b8">Completados satisfactoriamente</div>
+    </div>
+    <div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;border-top:3px solid #f59e0b">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:6px">Pendientes</div>
+      <div style="font-size:26px;font-weight:900;color:#d97706">${pendientes}</div>
+      <div style="font-size:10px;color:#94a3b8">Esperan aprobación</div>
+    </div>
+    <div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;border-top:3px solid #1a73c8">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:6px">En curso</div>
+      <div style="font-size:26px;font-weight:900;color:#1a73c8">${enCurso}</div>
+      <div style="font-size:10px;color:#94a3b8">En progreso actualmente</div>
+    </div>
+  </div>
+
+  <!-- Evolución + Rankings -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+    <!-- Evolución mensual -->
+    <div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:14px">📈 Evolución mensual · Culminados</div>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:80px;padding-bottom:4px">
+        ${barsHtml || '<span style="font-size:11px;color:#94a3b8">Sin datos</span>'}
+      </div>
+    </div>
+    <!-- Top cumplimiento -->
+    <div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:10px">🏆 Top cumplimiento</div>
+      <table style="width:100%;border-collapse:collapse">${topRows||'<tr><td style="padding:8px;font-size:11px;color:#94a3b8">Sin datos</td></tr>'}</table>
+    </div>
+    <!-- Requieren seguimiento -->
+    <div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:10px">⚠️ Requieren seguimiento</div>
+      <table style="width:100%;border-collapse:collapse">${bajoRows||'<tr><td style="padding:8px;font-size:11px;color:#94a3b8">Sin datos</td></tr>'}</table>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;font-size:9px;color:#94a3b8;text-align:right">Reporte generado automáticamente desde el Portal de Gestión de Formación · ${fecha}</div>
+
+  <script>window.onload=()=>window.print();</script>
+  </body></html>`;
+
+  const win = window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+}
+
 function renderAdminDashboard() {
   const DB_EQUIPOS = [
     {label:'Todos',        icon:'📊', eq:null,             color:'#1a73c8'},
@@ -1417,7 +1589,8 @@ function renderAdminDashboard() {
 
   // ── Barra de filtro de equipos (estilo Personal tab) ─────────────
   const dbFilterBar =
-    '<div style="display:flex;gap:4px;margin-bottom:18px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:5px;box-shadow:0 1px 3px rgba(0,0,0,.04)">' +
+    '<div style="display:flex;gap:4px;margin-bottom:18px;align-items:center">' +
+    '<div style="display:flex;gap:4px;flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:5px;box-shadow:0 1px 3px rgba(0,0,0,.04)">' +
     DB_EQUIPOS.map(t => {
       const isActive = t.label === currentDashFilter;
       const col = isActive ? t.color : 'transparent';
@@ -1426,6 +1599,8 @@ function renderAdminDashboard() {
       return '<button onclick="dbFilterTab(\'' + t.label + '\')" style="flex:1;padding:7px 10px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:' + col + ';color:' + tc + sh + ';transition:all .18s;font-family:inherit">' +
         t.icon + ' ' + t.label + '</button>';
     }).join('') +
+    '</div>' +
+    '<button onclick="exportDashboardPDF()" style="padding:8px 16px;border:none;border-radius:10px;background:#0d1b2e;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.18);font-family:inherit" title="Exportar PDF">📄 Exportar PDF</button>' +
     '</div>';
 
   // En modo Todos, mostrar los 3 equipos con tabs; en modo equipo, solo ese equipo
