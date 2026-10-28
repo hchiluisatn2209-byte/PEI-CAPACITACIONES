@@ -952,25 +952,57 @@ function renderAdminDashboard() {
 
   // ── SVG: Velocímetro ──────────────────────────────────────────────
   function buildVeloc(pct) {
-    const R=52, cx=70, cy=72, stk=14;
-    const toXY = deg => { const r=(deg-180)*Math.PI/180; return [cx+R*Math.cos(r), cy+R*Math.sin(r)]; };
-    const [sx,sy] = toXY(0), [ex,ey] = toXY(180);
-    const bgPath  = 'M '+sx+' '+sy+' A '+R+' '+R+' 0 1 0 '+ex+' '+ey;
-    const color   = pct>=80?'#22c55e':pct>=50?'#f59e0b':'#f87171';
-    const fillDeg = Math.min(pct,100)*1.8;
-    const [fx,fy] = toXY(fillDeg);
-    const lg      = fillDeg>180?1:0;
-    const fillPath= 'M '+sx+' '+sy+' A '+R+' '+R+' 0 '+lg+' 0 '+fx.toFixed(1)+' '+fy.toFixed(1);
-    const nRad    = (fillDeg-180)*Math.PI/180;
-    const [nx,ny] = [cx+(R-8)*Math.cos(nRad), cy+(R-8)*Math.sin(nRad)];
-    return '<svg width="140" height="95" viewBox="0 0 140 95" style="overflow:visible">' +
-      '<path d="'+bgPath+'" fill="none" stroke="#e5e7eb" stroke-width="'+stk+'" stroke-linecap="round"/>' +
-      (pct>0?'<path d="'+fillPath+'" fill="none" stroke="'+color+'" stroke-width="'+stk+'" stroke-linecap="round"/>':'') +
-      '<line x1="'+cx+'" y1="'+cy+'" x2="'+nx.toFixed(1)+'" y2="'+ny.toFixed(1)+'" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>' +
-      '<circle cx="'+cx+'" cy="'+cy+'" r="3.5" fill="#1e293b"/>' +
-      '<text x="'+cx+'" y="'+(cy-12)+'" text-anchor="middle" font-size="24" font-weight="800" fill="'+color+'" font-family="Inter,sans-serif">'+pct+'%</text>' +
-      '<text x="16" y="'+(cy+16)+'" font-size="8" fill="#9ca3af" font-family="Inter,sans-serif">0%</text>' +
-      '<text x="106" y="'+(cy+16)+'" font-size="8" fill="#9ca3af" font-family="Inter,sans-serif">100%</text>' +
+    // Semicírculo: de 180° (izq) a 0° (der), sentido antihorario en coords SVG
+    // cx=100, cy=90, R=68 → viewBox 200x110
+    const R=68, cx=100, cy=92, stk=13;
+    const color = pct>=80?'#22c55e':pct>=50?'#f59e0b':'#f87171';
+    // Convertir % → ángulo: 0%=180°, 100%=0° (pasar por parte superior)
+    // En SVG: ángulo=180 - (pct/100)*180
+    const pctClamped = Math.min(100, Math.max(0, pct));
+    // Arco fondo: de 180° a 0° (semicírculo completo)
+    const x0 = cx - R, y0 = cy;  // punto izquierdo (180°)
+    const x1 = cx + R, y1 = cy;  // punto derecho (0°)
+    const bgArc = 'M ' + x0 + ' ' + y0 + ' A ' + R + ' ' + R + ' 0 1 1 ' + x1 + ' ' + y1;
+    // Arco relleno proporcional
+    var fillArc = '';
+    if (pctClamped > 0) {
+      const ang = (180 - pctClamped * 1.8) * Math.PI / 180;
+      const fx = (cx + R * Math.cos(ang)).toFixed(2);
+      const fy = (cy - R * Math.sin(ang)).toFixed(2);
+      const lg = pctClamped > 50 ? 1 : 0;
+      fillArc = '<path d="M ' + x0 + ' ' + y0 + ' A ' + R + ' ' + R + ' 0 ' + lg + ' 1 ' + fx + ' ' + fy + '" fill="none" stroke="' + color + '" stroke-width="' + stk + '" stroke-linecap="round"/>';
+    }
+    // Aguja desde centro hacia el ángulo actual
+    const nAng = (180 - pctClamped * 1.8) * Math.PI / 180;
+    const nLen = R - 10;
+    const nx = (cx + nLen * Math.cos(nAng)).toFixed(2);
+    const ny = (cy - nLen * Math.sin(nAng)).toFixed(2);
+    // Marcas de escala (0,25,50,75,100)
+    var ticks = '';
+    [0,25,50,75,100].forEach(function(t) {
+      const ta = (180 - t * 1.8) * Math.PI / 180;
+      const tx1 = (cx + (R+2) * Math.cos(ta)).toFixed(1);
+      const ty1 = (cy - (R+2) * Math.sin(ta)).toFixed(1);
+      const tx2 = (cx + (R+10) * Math.cos(ta)).toFixed(1);
+      const ty2 = (cy - (R+10) * Math.sin(ta)).toFixed(1);
+      ticks += '<line x1="' + tx1 + '" y1="' + ty1 + '" x2="' + tx2 + '" y2="' + ty2 + '" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round"/>';
+    });
+    return '<svg width="200" height="110" viewBox="0 0 200 110" style="display:block;margin:0 auto">' +
+      // Arco fondo
+      '<path d="' + bgArc + '" fill="none" stroke="#e5e7eb" stroke-width="' + stk + '" stroke-linecap="round"/>' +
+      // Marcas
+      ticks +
+      // Arco relleno
+      fillArc +
+      // Aguja
+      '<line x1="' + cx + '" y1="' + cy + '" x2="' + nx + '" y2="' + ny + '" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="#1e293b"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="2.5" fill="#fff"/>' +
+      // Valor % centrado debajo del arco
+      '<text x="' + cx + '" y="' + (cy + 20) + '" text-anchor="middle" font-size="26" font-weight="800" fill="' + color + '" font-family="Inter,sans-serif">' + pct + '%</text>' +
+      // Etiquetas extremos
+      '<text x="' + (x0 - 2) + '" y="' + (cy + 14) + '" text-anchor="end" font-size="9" fill="#9ca3af" font-family="Inter,sans-serif">0%</text>' +
+      '<text x="' + (x1 + 2) + '" y="' + (cy + 14) + '" text-anchor="start" font-size="9" fill="#9ca3af" font-family="Inter,sans-serif">100%</text>' +
     '</svg>';
   }
 
@@ -1092,14 +1124,29 @@ function renderAdminDashboard() {
       tendCard + topCard + atencionCard +
     '</div>';
 
-  // D. Equipos
+  // D. Equipos — 3 columnas en una fila
+  const EQUIPOS_DEF = [
+    {icon:'📐', eq:'Planificación',   email:'hchiluisatn2209@gmail.com',  color:'#1a73c8'},
+    {icon:'⚙️', eq:'Implementación',  email:'geovanna.naranjo23@gmail.com', color:'#1b7a3e'},
+    {icon:'🖥',  eq:'O&M',            email:'cralarcontn1607@gmail.com',   color:'#d97706'},
+  ];
+  const eqTabs = EQUIPOS_DEF.map((e,i) =>
+    '<button onclick="tcShowEq(' + i + ')" id="eqTab' + i + '" style="padding:6px 16px;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;' +
+      (i===0 ? 'background:#1a73c8;color:#fff;box-shadow:0 2px 6px rgba(26,115,200,.3)' : 'background:#f1f5f9;color:#64748b') + '">' +
+      e.icon + ' ' + e.eq +
+    '</button>'
+  ).join('');
+  const eqPanels = EQUIPOS_DEF.map((e,i) =>
+    '<div id="eqPanel' + i + '" style="display:' + (i===0?'block':'none') + '">' +
+      teamCardFull(e.icon, e.eq, e.email, e.color) +
+    '</div>'
+  ).join('');
   const equipos =
-    '<div style="font-size:15px;font-weight:600;color:#0d1b2e;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e2e8f0">Seguimiento por equipo</div>' +
-    '<div style="display:flex;flex-direction:column;gap:16px">' +
-      teamCardFull('📐','Planificación','hchiluisatn2209@gmail.com','#1a73c8') +
-      teamCardFull('⚙️','Implementación','geovanna.naranjo23@gmail.com','#1b7a3e') +
-      teamCardFull('🖥','O&M','cralarcontn1607@gmail.com','#d97706') +
-    '</div>';
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e2e8f0">' +
+      '<span style="font-size:15px;font-weight:600;color:#0d1b2e">Seguimiento por equipo</span>' +
+      '<div style="display:flex;gap:6px">' + eqTabs + '</div>' +
+    '</div>' +
+    eqPanels;
 
   document.getElementById('mainContent').innerHTML = kpiRow + row2 + row3 + equipos;
 }
@@ -1291,6 +1338,26 @@ function tcSort(eqId, mode) {
     return mode === 'pct_asc' ? pa-pb : pb-pa;
   });
   rows.forEach(r => tbody.appendChild(r));
+}
+
+function tcShowEq(idx) {
+  var colors = ['#1a73c8','#1b7a3e','#d97706'];
+  for (var i = 0; i < 3; i++) {
+    var panel = document.getElementById('eqPanel' + i);
+    var tab   = document.getElementById('eqTab' + i);
+    if (!panel || !tab) continue;
+    if (i === idx) {
+      panel.style.display = 'block';
+      tab.style.background = colors[i];
+      tab.style.color = '#fff';
+      tab.style.boxShadow = '0 2px 6px rgba(0,0,0,.2)';
+    } else {
+      panel.style.display = 'none';
+      tab.style.background = '#f1f5f9';
+      tab.style.color = '#64748b';
+      tab.style.boxShadow = 'none';
+    }
+  }
 }
 
 // ── SOLICITUDES (Admin review) ────────────────────────────────
