@@ -3543,7 +3543,7 @@ function _evalRefuerzo(evs, res) {
       const p      = personal.find(x=>x.user===ul)||{nombre:ul, equipo:'—'};
       return { ul, nombre: p.nombre, equipo: p.equipo||'—', prom, debil, modulos: datos.length };
     })
-    .filter(u => u.prom < 7)
+    .filter(u => u.prom < 7 && (evalFiltroEq === 'Todos' || u.equipo === evalFiltroEq))
     .sort((a,b) => a.prom - b.prom);
 
   if (!refuerzo.length) return '<div style="padding:40px;text-align:center;color:#22c55e;font-size:14px;font-weight:600">✅ Todos los participantes tienen promedio ≥ 7.0 — sin necesidad de refuerzo.</div>';
