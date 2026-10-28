@@ -610,6 +610,7 @@ function renderAdminApp() {
     <div class="nav-tab" onclick="adminTab(this,'licencias')">🪪 Licencias</div>
     <div class="nav-tab" onclick="adminTab(this,'catalogo')">🎓 Catálogo</div>
     <div class="nav-tab" onclick="adminTab(this,'personal')">👥 Personal</div>
+    <div class="nav-tab" onclick="adminTab(this,'evaluaciones')">🏆 Evaluaciones</div>
   `;
   loadAll().then(() => renderAdminDashboard());
 }
@@ -623,11 +624,25 @@ function adminTab(el, tab) {
   else if (tab === 'licencias') renderLicencias();
   else if (tab === 'catalogo') renderCatalogo();
   else if (tab === 'personal') renderPersonal();
+  else if (tab === 'evaluaciones') renderEvaluaciones();
 }
+
+let evaluaciones = [];   // [{id, titulo, fecha, tipo, equipo, created_by}]
+let evalResultados = []; // [{id, eval_id, user_login, puntaje, aciertos, errores, created_at}]
+let evalSubTab = 'dashboard'; // 'dashboard' | 'registros' | 'refuerzo'
+let evalFiltroEq = 'Todos';
+let evalFiltroMod = '';
 
 async function loadAll() {
   const { data } = await sb.from('asignaciones').select('*').order('id', { ascending: false });
   asignaciones = data || [];
+}
+
+async function loadEvaluaciones() {
+  const { data: ev }  = await sb.from('evaluaciones').select('*').order('fecha', { ascending: false });
+  const { data: res } = await sb.from('eval_resultados').select('*').order('id', { ascending: false });
+  evaluaciones   = ev  || [];
+  evalResultados = res || [];
 }
 
 // ── POOL DE LICENCIAS ────────────────────────────────────────────────────────
@@ -2614,6 +2629,485 @@ function asignarCursoDirecto(id) {
 // estado de orden para tabla Personal
 window._personalSort = { col: 'nombre', dir: 1 };
 
+// ═══════════════════════════════════════════════════════════════
+//  EVALUACIONES INTERNAS
+// ═══════════════════════════════════════════════════════════════
+async function renderEvaluaciones() {
+  const cont = document.getElementById('mainContent');
+  cont.innerHTML = '<div style="padding:40px;text-align:center;color:#94a3b8"><div class="spinner" style="margin:0 auto 12px"></div>Cargando evaluaciones...</div>';
+  await loadEvaluaciones();
+  _renderEvalUI();
+}
+
+function _evalSubTabBar() {
+  const tabs = [
+    {id:'dashboard', icon:'📊', label:'Dashboard'},
+    {id:'registros', icon:'📋', label:'Módulos y resultados'},
+    {id:'refuerzo',  icon:'📉', label:'Refuerzo'},
+  ];
+  return '<div style="display:flex;gap:4px;margin-bottom:18px;border-bottom:2px solid #e2e8f0;padding-bottom:0">' +
+    tabs.map(t => {
+      const a = t.id === evalSubTab;
+      return '<div onclick="evalGoTab(\'' + t.id + '\')" style="padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:2px solid ' + (a?'#f5a623':'transparent') + ';margin-bottom:-2px;color:' + (a?'#f5a623':'#64748b') + ';background:' + (a?'#fffbeb':'transparent') + ';border-radius:6px 6px 0 0;transition:all .12s">' +
+        t.icon + ' ' + t.label + '</div>';
+    }).join('') +
+  '</div>';
+}
+
+function evalGoTab(id) {
+  evalSubTab = id;
+  _renderEvalUI();
+}
+
+function _evalFiltros() {
+  const equipos = ['Todos','Planificación','Implementación','O&M'];
+  const modulos = [''].concat([...new Set(evaluaciones.map(e => e.titulo))]);
+  return '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">' +
+    '<select onchange="evalFiltroEq=this.value;_renderEvalUI()" style="font-size:12px;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;background:#fff;color:#374151;font-family:inherit">' +
+      equipos.map(e => '<option value="' + e + '"' + (e===evalFiltroEq?' selected':'') + '>' + (e==='Todos'?'🏢 Todos los equipos':'📐⚙️🖥 '.split('').find((_,i)=>i===['Planificación','Implementación','O&M'].indexOf(e)*2)||'') + e + '</option>').join('') +
+    '</select>' +
+    '<select onchange="evalFiltroMod=this.value;_renderEvalUI()" style="font-size:12px;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;background:#fff;color:#374151;font-family:inherit">' +
+      modulos.map(m => '<option value="' + m + '"' + (m===evalFiltroMod?' selected':'') + '>' + (m||'📚 Todos los módulos') + '</option>').join('') +
+    '</select>' +
+    '<button onclick="openModalNuevaEval()" class="btn primary" style="font-size:12px;padding:6px 14px;margin-left:auto">+ Nueva evaluación</button>' +
+  '</div>';
+}
+
+function _getEvalFiltradas() {
+  let evs = evaluaciones;
+  if (evalFiltroEq !== 'Todos') evs = evs.filter(e => e.equipo === evalFiltroEq);
+  if (evalFiltroMod) evs = evs.filter(e => e.titulo === evalFiltroMod);
+  return evs;
+}
+
+function _renderEvalUI() {
+  const cont = document.getElementById('mainContent');
+  const evsFilt = _getEvalFiltradas();
+  const evalIds = evsFilt.map(e => e.id);
+  const resFilt = evalResultados.filter(r => evalIds.includes(r.eval_id));
+
+  let body = '';
+  if (evalSubTab === 'dashboard')  body = _evalDashboard(evsFilt, resFilt);
+  if (evalSubTab === 'registros')  body = _evalRegistros(evsFilt, resFilt);
+  if (evalSubTab === 'refuerzo')   body = _evalRefuerzo(evsFilt, resFilt);
+
+  const header =
+    '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">' +
+      '<div>' +
+        '<h2 style="font-size:18px;font-weight:700;color:#0d1b2e">🏆 Evaluaciones Internas</h2>' +
+        '<p style="font-size:12px;color:#94a3b8;margin-top:2px">Kahoot y evaluaciones sobre 10 · seguimiento por módulo</p>' +
+      '</div>' +
+    '</div>';
+
+  cont.innerHTML = header + _evalSubTabBar() + _evalFiltros() + body;
+}
+
+// ── Dashboard de evaluaciones ─────────────────────────────────────────
+function _evalDashboard(evs, res) {
+  if (!evs.length) return '<div style="padding:40px;text-align:center;color:#94a3b8;font-size:13px">Sin evaluaciones registradas. Crea la primera con <strong>+ Nueva evaluación</strong>.</div>';
+
+  // KPIs
+  const totalMods    = evs.length;
+  const participUniq = new Set(res.map(r => r.user_login)).size;
+  const promsAll     = res.map(r => _normNota(r, evs));
+  const promGen      = promsAll.length ? (promsAll.reduce((s,v)=>s+v,0)/promsAll.length).toFixed(1) : '—';
+  const aciertosAll  = res.filter(r => { const ev = evs.find(e=>e.id===r.eval_id); return ev && ev.tipo==='kahoot'; });
+  const tasaAciertos = aciertosAll.length
+    ? Math.round(aciertosAll.reduce((s,r)=>s+(r.aciertos||0),0) / aciertosAll.reduce((s,r)=>s+((r.aciertos||0)+(r.errores||0)||1),0) * 100) + '%'
+    : '—';
+  const maxPunt = res.length ? Math.max(...res.map(r => r.puntaje || 0)) : 0;
+
+  const kpis =
+    '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px">' +
+      _eKpi('Módulos evaluados', totalMods, '#1a73c8', '#eff6ff') +
+      _eKpi('Participantes únicos', participUniq, '#8b5cf6', '#f5f3ff') +
+      _eKpi('Promedio general', promGen + '/10', '#f59e0b', '#fffbeb') +
+      _eKpi('Tasa de aciertos', tasaAciertos, '#22c55e', '#f0fdf4') +
+      _eKpi('Puntaje máximo', maxPunt ? maxPunt.toLocaleString() : '—', '#ef4444', '#fef2f2') +
+    '</div>';
+
+  // Ranking global por persona (promedio entre módulos)
+  const byUser = {};
+  res.forEach(r => {
+    if (!byUser[r.user_login]) byUser[r.user_login] = [];
+    byUser[r.user_login].push(_normNota(r, evs));
+  });
+  const rankUsers = Object.entries(byUser)
+    .map(([ul, notas]) => {
+      const p = personal.find(x => x.user === ul) || { nombre: ul };
+      const prom = (notas.reduce((s,v)=>s+v,0)/notas.length);
+      return { ul, nombre: p.nombre, prom, modulos: notas.length };
+    })
+    .sort((a,b) => b.prom - a.prom);
+
+  const NIVEL_COLOR = (n) => n>=9?'#16a34a':n>=7?'#22c55e':n>=6?'#f59e0b':n>=4?'#ef4444':'#b91c1c';
+  const NIVEL_LBL   = (n) => n>=9?'Excelente':n>=7?'Bueno':n>=6?'Regular':n>=4?'Crítico':'Refuerzo';
+
+  const podio = rankUsers.slice(0,3);
+  const podioHtml = podio.length
+    ? '<div style="display:flex;justify-content:center;align-items:flex-end;gap:8px;margin-bottom:20px;margin-top:8px">' +
+        [podio[1], podio[0], podio[2]].map((r, pi) => {
+          if (!r) return '<div style="width:90px"></div>';
+          const pos   = pi===1?1:pi===0?2:3;
+          const medal = pos===1?'🥇':pos===2?'🥈':'🥉';
+          const h     = pos===1?'110px':pos===2?'88px':'72px';
+          const parts = r.nombre.split(' ');
+          const short = parts.length>=2 ? parts[parts.length-2]+' '+parts[parts.length-1] : parts[0];
+          return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:100px">' +
+            '<div style="font-size:22px">' + medal + '</div>' +
+            '<div style="font-size:11px;font-weight:700;color:#0d1b2e;text-align:center;line-height:1.3">' + short + '</div>' +
+            '<div style="font-size:16px;font-weight:900;color:' + NIVEL_COLOR(r.prom) + '">' + r.prom.toFixed(1) + '</div>' +
+            '<div style="width:80px;height:' + h + ';background:' + (pos===1?'#fbbf24':pos===2?'#94a3b8':'#cd7c3f') + ';border-radius:6px 6px 0 0;opacity:.85"></div>' +
+          '</div>';
+        }).join('') +
+      '</div>'
+    : '';
+
+  const rankRows = rankUsers.slice(0,10).map((r, i) => {
+    const col   = NIVEL_COLOR(r.prom);
+    const parts = r.nombre.split(' ');
+    const short = parts.length>=2 ? parts[parts.length-2]+' '+parts[parts.length-1] : parts[0];
+    return '<tr>' +
+      '<td style="font-size:12px;font-weight:700;color:#94a3b8;width:28px">' + (i+1) + '</td>' +
+      '<td style="font-size:13px;font-weight:600;color:#0d1b2e">' + short + '</td>' +
+      '<td><div style="display:flex;align-items:center;gap:8px">' +
+        '<div style="width:80px;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden"><div style="height:100%;width:' + Math.round(r.prom*10) + '%;background:' + col + ';border-radius:3px"></div></div>' +
+        '<span style="font-size:13px;font-weight:800;color:' + col + '">' + r.prom.toFixed(1) + '</span>' +
+      '</div></td>' +
+      '<td><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:' + col + '20;color:' + col + '">' + NIVEL_LBL(r.prom) + '</span></td>' +
+      '<td style="font-size:11px;color:#94a3b8">' + r.modulos + ' mód.</td>' +
+    '</tr>';
+  }).join('');
+
+  const rankCard =
+    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.05)">' +
+      '<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">🏆 Ranking general · Promedio de módulos</div>' +
+      podioHtml +
+      (rankRows ? '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>' +
+        '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:6px 8px;font-weight:600;text-transform:uppercase">#</th>' +
+        '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:6px 8px;font-weight:600;text-transform:uppercase">Colaborador</th>' +
+        '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:6px 8px;font-weight:600;text-transform:uppercase">Promedio</th>' +
+        '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:6px 8px;font-weight:600;text-transform:uppercase">Nivel</th>' +
+        '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:6px 8px;font-weight:600;text-transform:uppercase">Módulos</th>' +
+      '</tr></thead><tbody>' + rankRows + '</tbody></table>'
+      : '<div style="padding:20px;text-align:center;color:#94a3b8">Sin resultados registrados</div>') +
+    '</div>';
+
+  // Ranking por módulo
+  const modCards = evs.map(ev => {
+    const resEv = evalResultados.filter(r => r.eval_id === ev.id)
+      .map(r => ({ ...r, nota: _normNota(r, evs) }))
+      .sort((a,b) => b.nota - a.nota);
+    if (!resEv.length) return '';
+    const promMod = (resEv.reduce((s,r)=>s+r.nota,0)/resEv.length).toFixed(1);
+    const top3 = resEv.slice(0,3).map((r,i)=>{
+      const p = personal.find(x=>x.user===r.user_login)||{nombre:r.user_login};
+      const parts = p.nombre.split(' ');
+      const short = parts.length>=2?parts[parts.length-2]+' '+parts[parts.length-1]:parts[0];
+      const medal = ['🥇','🥈','🥉'][i];
+      return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #f3f4f6">' +
+        '<span style="font-size:14px">' + medal + '</span>' +
+        '<span style="flex:1;font-size:12px;font-weight:600;color:#0d1b2e">' + short + '</span>' +
+        '<span style="font-size:13px;font-weight:800;color:' + NIVEL_COLOR(r.nota) + '">' + r.nota.toFixed(1) + '</span>' +
+      '</div>';
+    }).join('');
+    return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.04)">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">' +
+        '<div>' +
+          '<div style="font-size:13px;font-weight:700;color:#0d1b2e">' + ev.titulo + '</div>' +
+          '<div style="font-size:11px;color:#94a3b8;margin-top:2px">' + (ev.fecha||'') + ' · ' + (ev.tipo==='kahoot'?'Kahoot':'Nota /10') + ' · ' + (ev.equipo||'Todos') + '</div>' +
+        '</div>' +
+        '<div style="text-align:right">' +
+          '<div style="font-size:20px;font-weight:900;color:' + NIVEL_COLOR(parseFloat(promMod)) + '">' + promMod + '</div>' +
+          '<div style="font-size:9px;color:#94a3b8">PROMEDIO</div>' +
+        '</div>' +
+      '</div>' +
+      top3 +
+      '<div style="margin-top:8px;font-size:11px;color:#94a3b8">' + resEv.length + ' participantes</div>' +
+    '</div>';
+  }).filter(Boolean);
+
+  const modGrid = modCards.length
+    ? '<div style="margin-top:20px"><div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">📚 Resultados por módulo</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">' + modCards.join('') + '</div></div>'
+    : '';
+
+  return kpis +
+    '<div style="display:grid;grid-template-columns:1fr;gap:16px">' + rankCard + '</div>' +
+    modGrid;
+}
+
+// ── Módulos y resultados ──────────────────────────────────────────────
+function _evalRegistros(evs, res) {
+  if (!evs.length) return '<div style="padding:40px;text-align:center;color:#94a3b8;font-size:13px">Sin evaluaciones. Crea la primera con <strong>+ Nueva evaluación</strong>.</div>';
+
+  const NIVEL_COLOR = (n) => n>=9?'#16a34a':n>=7?'#22c55e':n>=6?'#f59e0b':n>=4?'#ef4444':'#b91c1c';
+  const NIVEL_LBL   = (n) => n>=9?'Excelente':n>=7?'Bueno':n>=6?'Regular':n>=4?'Crítico':'Refuerzo';
+
+  return evs.map(ev => {
+    const resEv = evalResultados.filter(r => r.eval_id === ev.id)
+      .map(r => ({ ...r, nota: _normNota(r, evs) }))
+      .sort((a,b) => b.nota - a.nota);
+    const rows = resEv.map((r, i) => {
+      const p = personal.find(x=>x.user===r.user_login)||{nombre:r.user_login};
+      const col = NIVEL_COLOR(r.nota);
+      return '<tr>' +
+        '<td style="font-size:12px;font-weight:700;color:#94a3b8;padding:8px 10px">' + (i+1) + '</td>' +
+        '<td style="font-size:13px;font-weight:600;color:#0d1b2e;padding:8px 10px">' + p.nombre + '</td>' +
+        '<td style="padding:8px 10px">' +
+          (ev.tipo==='kahoot'
+            ? '<span style="font-size:12px;color:#64748b">' + (r.puntaje||0).toLocaleString() + ' pts</span>'
+            : '<span style="font-size:12px;color:#64748b">' + (r.puntaje||0) + '/10</span>') +
+        '</td>' +
+        (ev.tipo==='kahoot'
+          ? '<td style="padding:8px 10px;font-size:12px;color:#64748b">' + (r.aciertos||0) + ' ✓ / ' + (r.errores||0) + ' ✗</td>'
+          : '<td style="padding:8px 10px"></td>') +
+        '<td style="padding:8px 10px">' +
+          '<div style="display:flex;align-items:center;gap:6px">' +
+            '<div style="width:60px;height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden"><div style="height:100%;width:' + Math.round(r.nota*10) + '%;background:' + col + ';border-radius:3px"></div></div>' +
+            '<span style="font-size:13px;font-weight:800;color:' + col + '">' + r.nota.toFixed(1) + '</span>' +
+          '</div>' +
+        '</td>' +
+        '<td style="padding:8px 10px"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:' + col + '20;color:' + col + '">' + NIVEL_LBL(r.nota) + '</span></td>' +
+        '<td style="padding:8px 10px">' +
+          '<button onclick="openModalResultado(' + ev.id + ')" style="font-size:11px;padding:4px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;color:#64748b">+ Resultado</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+
+    return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)">' +
+      '<div style="background:#0d1b2e;padding:12px 16px;display:flex;align-items:center;justify-content:space-between">' +
+        '<div>' +
+          '<div style="font-size:14px;font-weight:700;color:#fff">' + ev.titulo + '</div>' +
+          '<div style="font-size:11px;color:#8ba3c4;margin-top:2px">' + (ev.fecha||'sin fecha') + ' · ' + (ev.tipo==='kahoot'?'Kahoot /10,000':'Nota /10') + ' · ' + (ev.equipo||'Todos los equipos') + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px">' +
+          '<button onclick="openModalResultado(' + ev.id + ')" class="btn primary" style="font-size:11px;padding:5px 12px">+ Resultado</button>' +
+          '<button onclick="eliminarEval(' + ev.id + ')" style="font-size:11px;padding:5px 10px;border:1px solid #ef4444;border-radius:8px;background:transparent;color:#ef4444;cursor:pointer">🗑</button>' +
+        '</div>' +
+      '</div>' +
+      (rows
+        ? '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">' +
+            '<thead style="background:#f8f9fc"><tr>' +
+              '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:8px 10px;font-weight:700;text-transform:uppercase">#</th>' +
+              '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:8px 10px;font-weight:700;text-transform:uppercase">Colaborador</th>' +
+              '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:8px 10px;font-weight:700;text-transform:uppercase">Puntaje</th>' +
+              (ev.tipo==='kahoot' ? '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:8px 10px;font-weight:700;text-transform:uppercase">Aciertos / Errores</th>' : '<th></th>') +
+              '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:8px 10px;font-weight:700;text-transform:uppercase">Nota /10</th>' +
+              '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:8px 10px;font-weight:700;text-transform:uppercase">Nivel</th>' +
+              '<th></th>' +
+            '</tr></thead>' +
+            '<tbody>' + rows + '</tbody>' +
+          '</table></div>'
+        : '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px">Sin resultados. Agrega el primero con <strong>+ Resultado</strong>.</div>') +
+    '</div>';
+  }).join('');
+}
+
+// ── Lista de refuerzo ─────────────────────────────────────────────────
+function _evalRefuerzo(evs, res) {
+  const NIVEL_COLOR = (n) => n>=9?'#16a34a':n>=7?'#22c55e':n>=6?'#f59e0b':n>=4?'#ef4444':'#b91c1c';
+  const NIVEL_LBL   = (n) => n>=9?'Excelente':n>=7?'Bueno':n>=6?'Regular':n>=4?'Crítico':'Refuerzo';
+
+  // Agrupar por usuario, calcular promedio y módulo más débil
+  const byUser = {};
+  res.forEach(r => {
+    if (!byUser[r.user_login]) byUser[r.user_login] = [];
+    const nota = _normNota(r, evs);
+    const ev   = evs.find(e => e.id === r.eval_id);
+    byUser[r.user_login].push({ nota, modulo: ev ? ev.titulo : '?' });
+  });
+
+  const refuerzo = Object.entries(byUser)
+    .map(([ul, datos]) => {
+      const prom   = datos.reduce((s,d)=>s+d.nota,0)/datos.length;
+      const debil  = datos.slice().sort((a,b)=>a.nota-b.nota)[0];
+      const p      = personal.find(x=>x.user===ul)||{nombre:ul, equipo:'—'};
+      return { ul, nombre: p.nombre, equipo: p.equipo||'—', prom, debil, modulos: datos.length };
+    })
+    .filter(u => u.prom < 7)
+    .sort((a,b) => a.prom - b.prom);
+
+  if (!refuerzo.length) return '<div style="padding:40px;text-align:center;color:#22c55e;font-size:14px;font-weight:600">✅ Todos los participantes tienen promedio ≥ 7.0 — sin necesidad de refuerzo.</div>';
+
+  const criticos   = refuerzo.filter(u => u.prom < 4);
+  const necesitan  = refuerzo.filter(u => u.prom >= 4 && u.prom < 7);
+
+  const makeTable = (lista, title, color, bg) => {
+    if (!lista.length) return '';
+    return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.05)">' +
+      '<div style="background:' + bg + ';padding:10px 16px;border-bottom:1px solid #e2e8f0">' +
+        '<span style="font-size:13px;font-weight:700;color:' + color + '">' + title + ' · ' + lista.length + ' persona(s)</span>' +
+      '</div>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
+        '<thead><tr style="background:#f8f9fc">' +
+          '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:8px 12px;font-weight:700;text-transform:uppercase">Colaborador</th>' +
+          '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:8px 12px;font-weight:700;text-transform:uppercase">Equipo</th>' +
+          '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:8px 12px;font-weight:700;text-transform:uppercase">Promedio</th>' +
+          '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:8px 12px;font-weight:700;text-transform:uppercase">Módulo más débil</th>' +
+          '<th style="text-align:left;font-size:10px;color:#94a3b8;padding:8px 12px;font-weight:700;text-transform:uppercase">Módulos tomados</th>' +
+        '</tr></thead><tbody>' +
+        lista.map(u => {
+          const col = NIVEL_COLOR(u.prom);
+          return '<tr style="border-top:1px solid #f1f5f9">' +
+            '<td style="padding:9px 12px;font-weight:600;color:#0d1b2e">' + u.nombre + '</td>' +
+            '<td style="padding:9px 12px;font-size:12px;color:#64748b">' + u.equipo + '</td>' +
+            '<td style="padding:9px 12px">' +
+              '<div style="display:flex;align-items:center;gap:6px">' +
+                '<div style="width:50px;height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden"><div style="height:100%;width:' + Math.round(u.prom*10) + '%;background:' + col + ';border-radius:3px"></div></div>' +
+                '<span style="font-size:13px;font-weight:800;color:' + col + '">' + u.prom.toFixed(1) + '</span>' +
+                '<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:8px;background:' + col + '20;color:' + col + '">' + NIVEL_LBL(u.prom) + '</span>' +
+              '</div>' +
+            '</td>' +
+            '<td style="padding:9px 12px;font-size:12px;color:#ef4444;font-weight:600">' + u.debil.modulo + ' <span style="color:#94a3b8;font-weight:400">(' + u.debil.nota.toFixed(1) + ')</span></td>' +
+            '<td style="padding:9px 12px;font-size:12px;color:#64748b">' + u.modulos + '</td>' +
+          '</tr>';
+        }).join('') +
+      '</tbody></table></div>';
+  };
+
+  return makeTable(criticos,  '🔴 Crítico — promedio menor a 4.0',           '#b91c1c', '#fef2f2') +
+         makeTable(necesitan, '🟡 Necesitan refuerzo — promedio 4.0 a 6.9',  '#92400e', '#fffbeb');
+}
+
+// ── Helper: normalizar nota a /10 ─────────────────────────────────────
+function _normNota(r, evs) {
+  const ev = evs.find(e => e.id === r.eval_id);
+  if (!ev) return 0;
+  if (ev.tipo === 'kahoot') return parseFloat(((r.puntaje||0)/10000*10).toFixed(2));
+  return parseFloat((r.puntaje||0));
+}
+
+// ── KPI card mini para evaluaciones ──────────────────────────────────
+function _eKpi(label, value, color, bg) {
+  return '<div style="background:' + bg + ';border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;border-left:3px solid ' + color + ';box-shadow:0 1px 3px rgba(0,0,0,.04)">' +
+    '<div style="font-size:10px;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">' + label + '</div>' +
+    '<div style="font-size:26px;font-weight:800;color:' + color + ';line-height:1">' + value + '</div>' +
+  '</div>';
+}
+
+// ── Modal: Nueva evaluación ───────────────────────────────────────────
+function openModalNuevaEval() {
+  document.getElementById('modalTitle').textContent = '➕ Nueva evaluación';
+  document.getElementById('modalSubtitle').textContent = 'Registra un módulo de capacitación interna';
+  document.getElementById('modalBody').innerHTML =
+    '<div class="form-row">' +
+      '<div class="form-field full">' +
+        '<label>Nombre del módulo</label>' +
+        '<input type="text" id="evalTitulo" placeholder="Ej: Módulo 1 — Redes LAN" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit">' +
+      '</div>' +
+    '</div>' +
+    '<div class="form-row">' +
+      '<div class="form-field">' +
+        '<label>Fecha</label>' +
+        '<input type="date" id="evalFecha" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit">' +
+      '</div>' +
+      '<div class="form-field">' +
+        '<label>Tipo de evaluación</label>' +
+        '<select id="evalTipo" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit">' +
+          '<option value="kahoot">Kahoot (puntaje /10,000)</option>' +
+          '<option value="nota10">Nota directa (/10)</option>' +
+        '</select>' +
+      '</div>' +
+    '</div>' +
+    '<div class="form-row">' +
+      '<div class="form-field full">' +
+        '<label>Equipo</label>' +
+        '<select id="evalEquipo" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit">' +
+          '<option value="">Todos los equipos</option>' +
+          '<option value="Planificación">📐 Planificación</option>' +
+          '<option value="Implementación">⚙️ Implementación</option>' +
+          '<option value="O&M">🖥 O&M</option>' +
+        '</select>' +
+      '</div>' +
+    '</div>' +
+    '<div class="form-actions">' +
+      '<button class="btn" onclick="closeModal()">Cancelar</button>' +
+      '<button class="btn primary" onclick="guardarNuevaEval()">Guardar módulo</button>' +
+    '</div>';
+  document.getElementById('modal').style.display = 'flex';
+}
+
+async function guardarNuevaEval() {
+  const titulo = document.getElementById('evalTitulo').value.trim();
+  const fecha  = document.getElementById('evalFecha').value;
+  const tipo   = document.getElementById('evalTipo').value;
+  const equipo = document.getElementById('evalEquipo').value;
+  if (!titulo) { showToast('Escribe el nombre del módulo'); return; }
+  const { data, error } = await sb.from('evaluaciones').insert([{
+    titulo, fecha: fecha || null, tipo, equipo: equipo || null,
+    created_by: currentUser.user
+  }]).select();
+  if (error) { showToast('Error: ' + error.message); return; }
+  evaluaciones.unshift(data[0]);
+  closeModal();
+  showToast('Módulo registrado ✓');
+  _renderEvalUI();
+}
+
+// ── Modal: Registrar resultado ────────────────────────────────────────
+function openModalResultado(evalId) {
+  const ev = evaluaciones.find(e => e.id === evalId);
+  if (!ev) return;
+  const eqPersonal = ev.equipo
+    ? personal.filter(p => p.activo !== false && p.equipo === ev.equipo)
+    : personal.filter(p => p.activo !== false);
+  const opts = eqPersonal.map(p => '<option value="' + p.user + '">' + p.nombre + '</option>').join('');
+  document.getElementById('modalTitle').textContent = '📝 Registrar resultado';
+  document.getElementById('modalSubtitle').textContent = ev.titulo;
+  document.getElementById('modalBody').innerHTML =
+    '<div class="form-row">' +
+      '<div class="form-field full">' +
+        '<label>Colaborador</label>' +
+        '<select id="resUser" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit"><option value="">— Selecciona —</option>' + opts + '</select>' +
+      '</div>' +
+    '</div>' +
+    '<div class="form-row">' +
+      (ev.tipo === 'kahoot'
+        ? '<div class="form-field"><label>Puntaje Kahoot (0–10,000)</label><input type="number" id="resPuntaje" min="0" max="10000" placeholder="Ej: 7850" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit"></div>' +
+          '<div class="form-field"><label>Aciertos</label><input type="number" id="resAciertos" min="0" placeholder="Ej: 8" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit"></div>'
+        : '<div class="form-field full"><label>Nota (/10)</label><input type="number" id="resPuntaje" min="0" max="10" step="0.1" placeholder="Ej: 8.5" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit"></div>') +
+    '</div>' +
+    (ev.tipo === 'kahoot'
+      ? '<div class="form-row"><div class="form-field full"><label>Errores</label><input type="number" id="resErrores" min="0" placeholder="Ej: 2" style="width:100%;font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit"></div></div>'
+      : '') +
+    '<div class="form-actions">' +
+      '<button class="btn" onclick="closeModal()">Cancelar</button>' +
+      '<button class="btn primary" onclick="guardarResultado(' + evalId + ')">Guardar resultado</button>' +
+    '</div>';
+  document.getElementById('modal').style.display = 'flex';
+}
+
+async function guardarResultado(evalId) {
+  const user_login = document.getElementById('resUser').value;
+  const puntaje    = parseFloat(document.getElementById('resPuntaje')?.value || 0);
+  const aciertos   = parseInt(document.getElementById('resAciertos')?.value || 0);
+  const errores    = parseInt(document.getElementById('resErrores')?.value  || 0);
+  if (!user_login) { showToast('Selecciona un colaborador'); return; }
+  if (isNaN(puntaje)) { showToast('Ingresa un puntaje válido'); return; }
+  const ev = evaluaciones.find(e => e.id === evalId);
+  const payload = { eval_id: evalId, user_login, puntaje,
+    aciertos: ev && ev.tipo==='kahoot' ? aciertos : null,
+    errores:  ev && ev.tipo==='kahoot' ? errores  : null };
+  const { data, error } = await sb.from('eval_resultados').insert([payload]).select();
+  if (error) { showToast('Error: ' + error.message); return; }
+  evalResultados.unshift(data[0]);
+  closeModal();
+  showToast('Resultado guardado ✓');
+  _renderEvalUI();
+}
+
+async function eliminarEval(evalId) {
+  if (!confirm('¿Eliminar esta evaluación y todos sus resultados?')) return;
+  await sb.from('eval_resultados').delete().eq('eval_id', evalId);
+  await sb.from('evaluaciones').delete().eq('id', evalId);
+  evaluaciones   = evaluaciones.filter(e => e.id !== evalId);
+  evalResultados = evalResultados.filter(r => r.eval_id !== evalId);
+  showToast('Evaluación eliminada');
+  _renderEvalUI();
+}
+
+// ═══════════════════════════════════════════════════════════════
 function renderPersonal() {
   const thS = 'cursor:pointer;user-select:none;white-space:nowrap;padding-right:18px;position:relative';
   const html = `
