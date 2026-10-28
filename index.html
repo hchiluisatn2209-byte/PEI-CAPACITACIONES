@@ -1455,7 +1455,7 @@ function renderSolicitudes() {
   <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px">
     <input id="kanbanSearch" type="text" value="${q.replace(/"/g,'&quot;')}"
       placeholder="🔍 Buscar por curso o colaborador..."
-      oninput="window._kanbanQ=this.value;renderSolicitudes()"
+      oninput="window._kanbanQ=this.value;window._kanbanSearchPos=this.selectionStart;renderSolicitudes()"
       style="flex:1;min-width:200px;max-width:340px;padding:8px 12px;border:1.5px solid var(--gray-bd);border-radius:8px;font-size:13px;outline:none"
       onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--gray-bd)'">
     <select onchange="window._kanbanEq=this.value;renderSolicitudes()"
@@ -1489,6 +1489,13 @@ function renderSolicitudes() {
 
   html += `</div>`;
   document.getElementById('mainContent').innerHTML = html;
+  // Restaurar foco en el buscador si venía de él
+  const srch = document.getElementById('kanbanSearch');
+  if (srch && window._kanbanSearchPos !== undefined) {
+    srch.focus();
+    try { srch.setSelectionRange(window._kanbanSearchPos, window._kanbanSearchPos); } catch(e){}
+    delete window._kanbanSearchPos;
+  }
 }
 
 function adminKanbanCard(a, col) {
@@ -2664,7 +2671,7 @@ function _evalFiltros() {
   const modulos = [''].concat([...new Set(evaluaciones.map(e => e.titulo))]);
   return '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">' +
     '<select onchange="evalFiltroEq=this.value;_renderEvalUI()" style="font-size:12px;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;background:#fff;color:#374151;font-family:inherit">' +
-      equipos.map(e => '<option value="' + e + '"' + (e===evalFiltroEq?' selected':'') + '>' + (e==='Todos'?'🏢 Todos los equipos':'📐⚙️🖥 '.split('').find((_,i)=>i===['Planificación','Implementación','O&M'].indexOf(e)*2)||'') + e + '</option>').join('') +
+      equipos.map(e => '<option value="' + e + '"' + (e===evalFiltroEq?' selected':'') + '>' + (e==='Todos'?'🏢 Todos los equipos': e==='Planificación'?'📐 Planificación': e==='Implementación'?'⚙️ Implementación':'🖥 O&M') + '</option>').join('') +
     '</select>' +
     '<select onchange="evalFiltroMod=this.value;_renderEvalUI()" style="font-size:12px;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;background:#fff;color:#374151;font-family:inherit">' +
       modulos.map(m => '<option value="' + m + '"' + (m===evalFiltroMod?' selected':'') + '>' + (m||'📚 Todos los módulos') + '</option>').join('') +
