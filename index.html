@@ -1075,8 +1075,11 @@ function renderAdminDashboard() {
 
   // ── Tendencia mensual ─────────────────────────────────────────────
   const mesMap = {};
-  asigF.filter(a => a.estado==='Culminado' && a.fecha_estado).forEach(a => {
-    const d = new Date(a.fecha_estado);
+  asigF.filter(a => a.estado==='Culminado').forEach(a => {
+    const raw = a.fecha_fin_real || a.fecha_fin || a.fecha_estado;
+    if (!raw) return;
+    const d = new Date(raw);
+    if (isNaN(d)) return;
     const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
     mesMap[key] = (mesMap[key]||0)+1;
   });
