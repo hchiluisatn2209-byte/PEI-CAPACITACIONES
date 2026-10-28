@@ -386,7 +386,7 @@ const USER_MAP = {
   'aldelgadotn1002@gmail.com':   {user:'aldelgado', nombre:'Delgado Simbaña Ana Laura',            equipo:'O&M',           ciudad:'UIO',codigo:'7303', cedula:'1719041442',celular:'987613410',mail:'aldelgado@telconet.ec'},
   'bsangolquitn3103@gmail.com':  {user:'bsangolqui',nombre:'Sangolqui Campoverde Byron Raul',      equipo:'O&M',           ciudad:'UIO',codigo:'184859',cedula:'1718905076',celular:'962890647',mail:'bsangolqui@telconet.ec'},
   // Usuario sin cuenta Google — acceso solo por admin
-  'sagarcia@telconet.ec':        {user:'sagarcia',  nombre:'Garcia Toscano Stalin Alfonso',         equipo:'Planificación', ciudad:'UIO',codigo:'',     cedula:'',          celular:'',          mail:'sagarcia@telconet.ec'},
+  'sagarcia@telconet.ec':        {user:'sagarcia',  nombre:'Garcia Toscano Stalin Alfonso',         equipo:'Planificación',ciudad:'UIO',codigo:'',     cedula:'',          celular:'',          mail:'sagarcia@telconet.ec'},
 };
 
 const ADMIN_MAP = {
@@ -475,9 +475,10 @@ function closeModalEditPersonal() {
   document.getElementById('modalEditPersonal')?.remove();
 }
 
-function guardarEditPersonal(userLogin) {
+async function guardarEditPersonal(userLogin) {
   const p = personal.find(x => x.user === userLogin);
   if (!p) return;
+  const equipoAnterior = p.equipo;
   p.nombre  = document.getElementById('epNombre')?.value.trim() || p.nombre;
   p.equipo  = document.getElementById('epEquipo')?.value || p.equipo;
   p.ciudad  = document.getElementById('epCiudad')?.value || p.ciudad;
@@ -492,14 +493,25 @@ function guardarEditPersonal(userLogin) {
     localStorage.setItem('pei_personal_overrides', JSON.stringify(overrides));
   } catch(e) {}
 
+  // Si cambió el equipo → sincronizar asignaciones en memoria y en Supabase
+  if (equipoAnterior !== p.equipo) {
+    asignaciones.forEach(a => {
+      if (a.user_login === userLogin) a.equipo = p.equipo;
+    });
+    if (sb) {
+      await sb.from('asignaciones').update({ equipo: p.equipo }).eq('user_login', userLogin);
+    }
+  }
+
   closeModalEditPersonal();
   renderPersonalTabla();
+
   // Mostrar confirmación breve
   const toast = document.createElement('div');
-  toast.textContent = '✔ Cambios guardados para ' + p.nombre;
+  toast.textContent = '✔ Cambios guardados para ' + p.nombre + (equipoAnterior !== p.equipo ? ' · Equipo actualizado en asignaciones' : '');
   toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1b7a3e;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25)';
   document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  setTimeout(() => toast.remove(), 3500);
 }
 
 const CATEGORIAS_UDEMY = ['Business Operations','Cloud Computing','Communication','Cybersecurity','Data Science','Design Tools','Development','Finance & Accounting','Generative AI','IT Operations','Language Learning','Leadership & Management','Marketing','Personal Development','Productivity','Project & Product Management','Sales & Customer Service','UX','Workplace & Human Resources'];
