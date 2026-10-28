@@ -1333,8 +1333,9 @@ function renderAdminDashboard() {
     '</div>';
 
   const kpiRow =
-    '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;align-items:stretch">' +
+    '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px;align-items:stretch">' +
       cumplKpi +
+      dbKpi('Personas', totalPersonal, conCursos + ' con cursos asignados', '#7c3aed', '#f5f3ff') +
       dbKpi('Total cursos', totalCursos, 'Registrados en el sistema', '#1a73c8', '#eff6ff') +
       dbKpi('Culminados', culminados, 'Completados satisfactoriamente', '#22c55e', '#f0fdf4') +
       dbKpi('Pendientes', pendientes, 'Esperan aprobación', '#f59e0b', '#fffbeb') +
