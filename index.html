@@ -875,26 +875,169 @@ function asignarSlotAPersona(userLogin) {
 // ── FIN POOL DE LICENCIAS ────────────────────────────────────────────────────
 
 function renderAdminDashboard() {
-  const pendientes = asignaciones.filter(a => a.estado === 'Pendiente').length;
-  const encurso    = asignaciones.filter(a => a.estado === 'En curso').length;
-  const culminados = asignaciones.filter(a => a.estado === 'Culminado').length;
-  const autorizados= asignaciones.filter(a => a.estado === 'Autorizado').length;
+  const pendientes  = asignaciones.filter(a => a.estado === 'Pendiente').length;
+  const enRevision  = asignaciones.filter(a => a.estado === 'En revisión').length;
+  const encurso     = asignaciones.filter(a => a.estado === 'En curso').length;
+  const culminados  = asignaciones.filter(a => a.estado === 'Culminado').length;
+  const autorizados = asignaciones.filter(a => a.estado === 'Autorizado').length;
+  const rechazados  = asignaciones.filter(a => a.estado === 'Rechazado').length;
+  const totalCursos = asignaciones.length;
+  const totalPersonal = personal.filter(p => p.activo !== false).length;
+  const conCursos   = personal.filter(p => p.activo !== false && asignaciones.some(a => a.user_login === p.user)).length;
+  const cobertura   = totalPersonal ? Math.round(conCursos/totalPersonal*100) : 0;
+  const cumplTotal  = totalCursos   ? Math.round(culminados/totalCursos*100)  : 0;
 
-  document.getElementById('mainContent').innerHTML = `
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-label">Solicitudes pendientes</div><div class="stat-value warn">${pendientes}</div></div>
-      <div class="stat-card"><div class="stat-label">Autorizados</div><div class="stat-value accent">${autorizados}</div></div>
-      <div class="stat-card"><div class="stat-label">En curso</div><div class="stat-value accent">${encurso}</div></div>
-      <div class="stat-card"><div class="stat-label">Culminados</div><div class="stat-value success">${culminados}</div></div>
-    </div>
-    ${pendientes > 0 ? `<div class="alert-banner">⚠️ <span><strong>${pendientes} solicitud(es) pendiente(s)</strong> de aprobación — ve a la pestaña Solicitudes</span></div>` : ''}
-    <div class="section-title" style="margin-top:8px">Equipos</div>
-    <div style="display:flex;flex-direction:column;gap:20px">
-      ${teamCardFull('📐','Planificación','hchiluisatn2209@gmail.com','#1a73c8')}
-      ${teamCardFull('⚙️','Implementación','geovanna.naranjo23@gmail.com','#1b7a3e')}
-      ${teamCardFull('🖥','O&M','cralarcontn1607@gmail.com','#d97706')}
-    </div>
-  `;
+  // Personas sin ningún curso
+  const sinAsig = personal.filter(p => p.activo !== false && !asignaciones.some(a => a.user_login === p.user)).length;
+
+  // Personas bajo 30% avance (con al menos 1 curso)
+  const bajo30 = personal.filter(p => {
+    if (p.activo === false) return false;
+    const pa = asignaciones.filter(a => a.user_login === p.user);
+    if (!pa.length) return false;
+    const pct = Math.round(pa.filter(a=>a.estado==='Culminado').length/pa.length*100);
+    return pct < 30;
+  }).length;
+
+  // TOP 5 cumplimiento (personas con al menos 1 curso)
+  const rankData = personal
+    .filter(p => p.activo !== false && asignaciones.some(a => a.user_login === p.user))
+    .map(p => {
+      const pa = asignaciones.filter(a => a.user_login === p.user);
+      const pct = pa.length ? Math.round(pa.filter(a=>a.estado==='Culminado').length/pa.length*100) : 0;
+      return { nombre: p.nombre.split(' ')[0], pct };
+    })
+    .sort((a,b) => b.pct - a.pct);
+
+  const top5    = rankData.slice(0,5);
+  const bottom5 = rankData.slice(-5).reverse();
+
+  const topRows    = top5.map(r =>
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--gray-bd)">' +
+      '<span style="font-size:12px;color:var(--text)">' + r.nombre + '</span>' +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+        '<div style="width:80px;height:6px;border-radius:3px;background:var(--gray-bd);overflow:hidden">' +
+          '<div style="width:' + r.pct + '%;height:100%;background:#16a34a;border-radius:3px"></div>' +
+        '</div>' +
+        '<span style="font-size:12px;font-weight:700;color:#16a34a;min-width:32px;text-align:right">' + r.pct + '%</span>' +
+      '</div>' +
+    '</div>'
+  ).join('');
+
+  const bottomRows = bottom5.map(r =>
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--gray-bd)">' +
+      '<span style="font-size:12px;color:var(--text)">' + r.nombre + '</span>' +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+        '<div style="width:80px;height:6px;border-radius:3px;background:var(--gray-bd);overflow:hidden">' +
+          '<div style="width:' + r.pct + '%;height:100%;background:' + (r.pct===0?'#e5e7eb':'#f59e0b') + ';border-radius:3px"></div>' +
+        '</div>' +
+        '<span style="font-size:12px;font-weight:700;color:' + (r.pct===0?'#9ca3af':'#e07b00') + ';min-width:32px;text-align:right">' + r.pct + '%</span>' +
+      '</div>' +
+    '</div>'
+  ).join('');
+
+  // Tendencia mensual: agrupar culminados por mes según fecha_estado
+  const mesMap = {};
+  asignaciones.filter(a => a.estado === 'Culminado' && a.fecha_estado).forEach(a => {
+    const d = new Date(a.fecha_estado);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    mesMap[key] = (mesMap[key]||0)+1;
+  });
+  const meses = Object.keys(mesMap).sort().slice(-6);
+  const mesLabels = { '01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun','07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic' };
+  const maxMes = meses.reduce((m,k) => Math.max(m, mesMap[k]), 1);
+  const tendRows = meses.map(k => {
+    const [,mm] = k.split('-');
+    const v = mesMap[k];
+    const w = Math.round(v/maxMes*100);
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+      '<span style="font-size:11px;color:var(--text3);width:28px;text-align:right">' + mesLabels[mm] + '</span>' +
+      '<div style="flex:1;height:18px;background:var(--gray-bd);border-radius:4px;overflow:hidden">' +
+        '<div style="width:' + w + '%;height:100%;background:var(--blue);border-radius:4px;display:flex;align-items:center;padding-left:6px">' +
+          '<span style="font-size:10px;font-weight:700;color:#fff">' + (w>15?v:'') + '</span>' +
+        '</div>' +
+      '</div>' +
+      (w<=15?'<span style="font-size:11px;font-weight:700;color:var(--text2)">' + v + '</span>':'') +
+    '</div>';
+  }).join('');
+
+  // Distribución estados para barras
+  const estadosBar = [
+    { label:'Pendiente',   val:pendientes,  color:'#f59e0b' },
+    { label:'En revisión', val:enRevision,  color:'#3b82f6' },
+    { label:'Autorizado',  val:autorizados, color:'#8b5cf6' },
+    { label:'En curso',    val:encurso,     color:'#0ea5e9' },
+    { label:'Culminado',   val:culminados,  color:'#16a34a' },
+  ].filter(e => e.val > 0);
+  const maxBar = estadosBar.reduce((m,e)=>Math.max(m,e.val),1);
+  const estadosRows = estadosBar.map(e =>
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">' +
+      '<span style="font-size:11px;color:var(--text2);width:72px;text-align:right">' + e.label + '</span>' +
+      '<div style="flex:1;height:16px;background:var(--gray-bd);border-radius:3px;overflow:hidden">' +
+        '<div style="width:' + Math.round(e.val/maxBar*100) + '%;height:100%;background:' + e.color + ';border-radius:3px"></div>' +
+      '</div>' +
+      '<span style="font-size:11px;font-weight:700;color:var(--text2);width:20px">' + e.val + '</span>' +
+    '</div>'
+  ).join('');
+
+  document.getElementById('mainContent').innerHTML =
+    // ── KPI CARDS ──
+    '<div class="stats-grid" style="margin-bottom:16px">' +
+      '<div class="stat-card"><div class="stat-label">📈 Cumplimiento</div><div class="stat-value success">' + cumplTotal + '%</div></div>' +
+      '<div class="stat-card"><div class="stat-label">📚 Total cursos</div><div class="stat-value accent">' + totalCursos + '</div></div>' +
+      '<div class="stat-card"><div class="stat-label">✅ Culminados</div><div class="stat-value success">' + culminados + '</div></div>' +
+      '<div class="stat-card"><div class="stat-label">⏳ En curso</div><div class="stat-value accent">' + encurso + '</div></div>' +
+      '<div class="stat-card"><div class="stat-label">👥 Cobertura</div><div class="stat-value ' + (cobertura>=80?'success':'warn') + '">' + cobertura + '%</div></div>' +
+    '</div>' +
+
+    // ── ALERTAS + DISTRIBUCIÓN ──
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">' +
+      // Alertas
+      '<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;padding:16px">' +
+        '<div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">🚨 Alertas</div>' +
+        (pendientes>0 ? '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;margin-bottom:7px;cursor:pointer" onclick="adminTab(document.querySelector(\'.nav-tab[onclick*=solicitudes]\'),\'solicitudes\')">' +
+          '<span style="font-size:16px">⏰</span><span style="font-size:12px;color:#92400e"><strong>' + pendientes + '</strong> solicitudes pendientes de aprobación</span></div>' : '') +
+        (sinAsig>0 ? '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;margin-bottom:7px">' +
+          '<span style="font-size:16px">📭</span><span style="font-size:12px;color:#1e40af"><strong>' + sinAsig + '</strong> colaboradores sin cursos asignados</span></div>' : '') +
+        (bajo30>0 ? '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;margin-bottom:7px">' +
+          '<span style="font-size:16px">📉</span><span style="font-size:12px;color:#991b1b"><strong>' + bajo30 + '</strong> colaboradores con avance bajo 30%</span></div>' : '') +
+        (pendientes===0 && sinAsig===0 && bajo30===0 ? '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">✅ Sin alertas activas</div>' : '') +
+      '</div>' +
+
+      // Distribución estados
+      '<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;padding:16px">' +
+        '<div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">📊 Estado de capacitaciones</div>' +
+        estadosRows +
+      '</div>' +
+    '</div>' +
+
+    // ── TOP + ATENCIÓN ──
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">' +
+      '<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;padding:16px">' +
+        '<div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">🏆 Top cumplimiento</div>' +
+        topRows +
+      '</div>' +
+      '<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;padding:16px">' +
+        '<div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">⚠️ Requieren atención</div>' +
+        bottomRows +
+      '</div>' +
+    '</div>' +
+
+    // ── TENDENCIA MENSUAL ──
+    (meses.length > 0 ?
+      '<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;padding:16px;margin-bottom:16px">' +
+        '<div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">📅 Tendencia mensual — cursos culminados</div>' +
+        tendRows +
+      '</div>'
+    : '') +
+
+    // ── EQUIPOS ──
+    '<div class="section-title" style="margin-top:4px;margin-bottom:12px">Equipos</div>' +
+    '<div style="display:flex;flex-direction:column;gap:20px">' +
+      teamCardFull('📐','Planificación','hchiluisatn2209@gmail.com','#1a73c8') +
+      teamCardFull('⚙️','Implementación','geovanna.naranjo23@gmail.com','#1b7a3e') +
+      teamCardFull('🖥','O&M','cralarcontn1607@gmail.com','#d97706') +
+    '</div>';
 }
 
 function teamCardFull(icon, equipo, email, color) {
