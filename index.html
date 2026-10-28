@@ -1744,7 +1744,7 @@ function adminKanbanCard(a, col) {
     ${a.fecha_telcou_inicio||a.fecha_telcou_fin?`<div style="font-size:10px;color:var(--blue);background:var(--blue-lt);padding:3px 7px;border-radius:4px;margin-bottom:6px">📅 ${a.fecha_telcou_inicio||'—'} → ${a.fecha_telcou_fin||'—'}</div>`:''}
     ${a.avance?`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px"><span style="color:var(--text3)">Avance</span><span style="color:${col.color};font-weight:700">${a.avance}%</span></div><div style="height:4px;background:var(--gray-bg);border-radius:3px;overflow:hidden"><div style="height:100%;width:${a.avance}%;background:${col.bd};border-radius:3px"></div></div></div>`:''}
     ${a.certificado_enviado===true?'<div style="font-size:10px;color:var(--green);margin-bottom:6px">✅ Certificado enviado</div>':''}
-    ${a.estado==='Culminado'&&!a.certificado_enviado?'<div style="font-size:10px;color:var(--red);margin-bottom:6px">⚠️ Certificado pendiente</div>':''}
+    ${a.estado==='Culminado'&&!a.certificado_enviado&&a.licencia==='Telco U'?'<div style="font-size:10px;color:var(--red);margin-bottom:6px">⚠️ Certificado pendiente</div>':''}
     ${a.observaciones_admin?`<div style="font-size:10px;color:var(--green);background:var(--green-lt);padding:4px 7px;border-radius:4px;margin-bottom:6px">📢 ${a.observaciones_admin}</div>`:''}
     ${btns?`<div style="display:flex;flex-direction:column;gap:5px;margin-top:4px">${btns}</div>`:''}
   </div>`;
@@ -2358,7 +2358,7 @@ function kanbanCard(a, col) {
     ${a.estado==='Pendiente'?`<div style="font-size:10px;color:var(--amber);background:rgba(245,166,35,.15);padding:4px 8px;border-radius:5px;margin-bottom:6px">🔒 Esperando aprobación de la Coordinación / Jefatura</div>`:''}
     ${a.estado==='En revisión'?`<div style="font-size:10px;color:var(--blue);margin-bottom:6px">🔎 En validación con Telco U</div>`:''}
     ${isCulminado&&a.certificado_enviado?`<div style="font-size:10px;color:var(--green);margin-bottom:6px">✅ Certificado enviado</div>`:''}
-    ${isCulminado&&!a.certificado_enviado?`<div style="font-size:10px;color:var(--red);margin-bottom:6px">⚠️ Certificado pendiente</div>`:''}
+    ${isCulminado&&!a.certificado_enviado&&a.licencia==='Telco U'?`<div style="font-size:10px;color:var(--red);margin-bottom:6px">⚠️ Certificado pendiente</div>`:''}
     ${a.estado==='Rechazado'&&a.observaciones_admin?`<div style="font-size:10px;color:var(--red);background:var(--red-lt);padding:4px 7px;border-radius:5px;margin-bottom:6px">❌ ${a.observaciones_admin}</div>`:''}
     ${a.observaciones_admin&&a.estado==='Autorizado'?`<div style="font-size:10px;color:var(--green);background:var(--green-lt);padding:4px 7px;border-radius:5px;margin-bottom:6px;line-height:1.4">📢 ${a.observaciones_admin}</div>`:''}
 
@@ -4004,7 +4004,7 @@ function checkAlerts() {
       const diff = (new Date(a.fecha_telcou_fin)-today)/(1000*60*60*24);
       return diff>=0&&diff<=5&&['Autorizado','En curso'].includes(a.estado);
     }).length;
-    const certPend = data.filter(a => a.estado==='Culminado'&&!a.certificado_enviado).length;
+    const certPend = data.filter(a => a.estado==='Culminado' && !a.certificado_enviado && a.licencia==='Telco U').length;
     const msgs = [];
     if (vencidos) msgs.push(vencidos+' vencido(s)');
     if (proximos) msgs.push(proximos+' vence(n) en 5 días');
