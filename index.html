@@ -1050,21 +1050,25 @@ function renderAdminDashboard() {
   const autorizados = asigF.filter(a => a.estado === 'Autorizado').length;
   const rechazados  = asigF.filter(a => a.estado === 'Rechazado').length;
   const totalCursos = asigF.length;
+  // Cursos autorizados = Autorizado + En curso + Culminado (base real de cumplimiento)
+  const ESTADOS_AUTORIZADOS = ['Autorizado','En curso','Culminado'];
+  const asigAutorizadas = asigF.filter(a => ESTADOS_AUTORIZADOS.includes(a.estado));
+  const totalAutorizados = asigAutorizadas.length;
   const totalPersonal = personalF.length;
   const conCursos   = personalF.filter(p => asigF.some(a => a.user_login === p.user)).length;
-  const cumplTotal  = totalCursos ? Math.round(culminados/totalCursos*100) : 0;
+  const cumplTotal  = totalAutorizados ? Math.round(culminados/totalAutorizados*100) : 0;
   const sinAsig     = personalF.filter(p => !asigF.some(a => a.user_login === p.user)).length;
   const requierenAtencion = personalF.filter(p => {
-    const pa = asigF.filter(a => a.user_login === p.user);
-    if (!pa.length) return true;
+    const pa = asigF.filter(a => ESTADOS_AUTORIZADOS.includes(a.estado) && a.user_login === p.user);
+    if (!pa.length) return false;
     return Math.round(pa.filter(a=>a.estado==='Culminado').length/pa.length*100) < 30;
   }).length;
 
   // ── Ranking personas ──────────────────────────────────────────────
   const rankData = personalF
-    .filter(p => asigF.some(a => a.user_login === p.user))
+    .filter(p => asigAutorizadas.some(a => a.user_login === p.user))
     .map(p => {
-      const pa  = asigF.filter(a => a.user_login === p.user);
+      const pa  = asigAutorizadas.filter(a => a.user_login === p.user);
       const pct = pa.length ? Math.round(pa.filter(a=>a.estado==='Culminado').length/pa.length*100) : 0;
       const parts = p.nombre.split(' ');
       const label = parts.length >= 2 ? parts[parts.length-2] + ' ' + parts[parts.length-1] : parts[0];
@@ -1232,7 +1236,7 @@ function renderAdminDashboard() {
       '<div style="height:7px;background:#e2e8f0;border-radius:4px;overflow:hidden;margin-bottom:3px">' +
         '<div style="height:100%;width:' + cumplTotal + '%;background:' + pctColor2 + ';border-radius:4px"></div>' +
       '</div>' +
-      '<div style="font-size:10px;color:#94a3b8">' + culminados + ' culminados · ' + pctRest + '% pendiente</div>' +
+      '<div style="font-size:10px;color:#94a3b8">' + culminados + ' culminados de ' + totalAutorizados + ' autorizados</div>' +
     '</div>';
 
   const kpiRow =
@@ -1375,7 +1379,8 @@ function teamCardFull(icon, equipo, email, color) {
 
   const total      = asigEq.length;
   const culminados = asigEq.filter(a=>a.estado==='Culminado').length;
-  const pct        = total ? Math.round(culminados/total*100) : 0;
+  const totalAutEq = asigEq.filter(a=>['Autorizado','En curso','Culminado'].includes(a.estado)).length;
+  const pct        = totalAutEq ? Math.round(culminados/totalAutEq*100) : 0;
   const pctColor   = pct>=80?'#22c55e':pct>=50?'#f59e0b':'#f87171';
 
   const countEq = {};
