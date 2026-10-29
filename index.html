@@ -940,21 +940,20 @@ function liberarSlot(slotIdx, userLogin) {
   // Modal para liberar un slot: quien sale y quién entra
   const p = personal.find(x => x.user === userLogin) || { nombre: userLogin };
 
-  // Candidatos en cola (UIO, Telco U, Pendiente/En revisión, no están en pool)
-  const candidatos = [];
-  const visto = new Set();
+  // Todos los colaboradores activos que NO están ya en el pool
+  const todosDisponibles = personal.filter(per => per.activo !== false && !POOL_UIO.includes(per.user))
+    .sort((a,b) => a.nombre.localeCompare(b.nombre));
+
+  // Candidatos en cola (UIO, Telco U, Pendiente/En revisión) — para resaltarlos
+  const enCola = new Set();
   asignaciones.filter(a => {
     const per = personal.find(x => x.user === a.user_login);
-    return per && per.ciudad === 'UIO' && a.licencia === 'Telco U'
-      && ['Pendiente','En revisión'].includes(a.estado)
-      && !POOL_UIO.includes(a.user_login);
-  }).sort((a,b) => new Date(a.created_at)-new Date(b.created_at))
-  .forEach(a => { if (!visto.has(a.user_login)) { visto.add(a.user_login); candidatos.push(a); } });
+    return per && a.licencia === 'Telco U' && ['Pendiente','En revisión'].includes(a.estado) && !POOL_UIO.includes(a.user_login);
+  }).forEach(a => enCola.add(a.user_login));
 
-  const opts = candidatos.map(a => {
-    const per = personal.find(x => x.user === a.user_login) || { nombre: a.user_login };
-    const dias = Math.floor((Date.now()-new Date(a.created_at))/(24*3600*1000));
-    return '<option value="' + a.user_login + '">' + per.nombre + ' (' + dias + 'd en espera)</option>';
+  const opts = todosDisponibles.map(per => {
+    const enQ = enCola.has(per.user) ? ' ⏳ en cola' : '';
+    return '<option value="' + per.user + '">' + per.nombre + ' — ' + (per.equipo||'—') + enQ + '</option>';
   }).join('');
 
   window._slotLiberar = { slotIdx, userLogin };
@@ -962,19 +961,28 @@ function liberarSlot(slotIdx, userLogin) {
   document.getElementById('modalSubtitle').textContent = p.nombre + ' libera su licencia';
   document.getElementById('modalBody').innerHTML =
     '<div style="background:var(--blue-lt);border:1px solid var(--blue);border-radius:var(--radius);padding:12px;margin-bottom:14px;font-size:13px;color:var(--blue)">'
-    + 'Al liberar el slot, <strong>' + p.nombre + '</strong> sale del pool. Opcionalmente asigna la licencia al siguiente en cola.'
+    + 'Al liberar el slot, <strong>' + p.nombre + '</strong> sale del pool. Opcionalmente asigna la licencia a otro colaborador.'
     + '</div>'
-    + '<div class="form-field full" style="margin-bottom:14px">'
-    + '<label>Asignar licencia a (opcional)</label>'
-    + (candidatos.length === 0
-      ? '<p style="font-size:13px;color:var(--text3)">No hay personas en cola para UIO</p>'
-      : '<select id="entranteSlot" style="width:100%;border:1px solid var(--border-strong);border-radius:var(--radius);padding:8px;font-size:13px"><option value="">— Solo liberar el slot —</option>' + opts + '</select>')
+    + '<div class="form-field full" style="margin-bottom:6px">'
+    + '<label>Buscar colaborador</label>'
+    + '<input type="text" id="buscarEntrante" placeholder="Escriba nombre o equipo..." style="width:100%;border:1px solid var(--border-strong);border-radius:var(--radius);padding:8px;font-size:13px;margin-bottom:6px" oninput="filtrarOpcionesSlot()">'
+    + '<select id="entranteSlot" size="5" style="width:100%;border:1px solid var(--border-strong);border-radius:var(--radius);padding:4px;font-size:13px"><option value="">— Solo liberar el slot —</option>' + opts + '</select>'
+    + '<div style="font-size:10px;color:var(--text3);margin-top:4px">⏳ = tiene cursos en cola de espera</div>'
     + '</div>'
     + '<div class="form-actions">'
     + '<button class="btn" onclick="closeModal()">Cancelar</button>'
     + '<button class="btn primary" onclick="ejecutarLiberacion()">🔄 Confirmar</button>'
     + '</div>';
   document.getElementById('modal').style.display = 'flex';
+}
+
+function filtrarOpcionesSlot() {
+  const q = (document.getElementById('buscarEntrante')?.value || '').toLowerCase();
+  const sel = document.getElementById('entranteSlot');
+  if (!sel) return;
+  Array.from(sel.options).forEach(opt => {
+    opt.style.display = (!q || opt.text.toLowerCase().includes(q)) ? '' : 'none';
+  });
 }
 
 function ejecutarLiberacion() {
