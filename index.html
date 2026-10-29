@@ -1236,9 +1236,9 @@ function exportDashboardPDF() {
 
   const pctColor = cumpl>=80?'#16a34a':cumpl>=50?'#d97706':'#ef4444';
 
-  // Personas sin cursos asignados (próximas a asignar licencia)
-  const sinCursos = personalF.filter(p => !asigF.some(a => a.user_login === p.user));
-  const sinLicenciaRows = sinCursos.length
+  // Personas sin licencia Telco U (UDEMY) asignada
+  const sinTelcoU = personalF.filter(p => !asigF.some(a => a.user_login === p.user && a.licencia === 'Telco U'));
+  const sinLicenciaRows = sinTelcoU.length
     ? `<table style="width:100%;border-collapse:collapse">
         <tr style="background:#fef3c7">
           <th style="padding:5px 8px;font-size:10px;color:#92400e;text-align:left;font-weight:700">#</th>
@@ -1247,15 +1247,15 @@ function exportDashboardPDF() {
           <th style="padding:5px 8px;font-size:10px;color:#92400e;text-align:left;font-weight:700">Ciudad</th>
           <th style="padding:5px 8px;font-size:10px;color:#92400e;text-align:left;font-weight:700">Estado</th>
         </tr>
-        ${sinCursos.map((p,i)=>`<tr style="border-bottom:1px solid #fde68a">
+        ${sinTelcoU.map((p,i)=>`<tr style="border-bottom:1px solid #fde68a">
           <td style="padding:5px 8px;font-size:11px;color:#94a3b8">${i+1}</td>
           <td style="padding:5px 8px;font-size:12px;font-weight:600">${p.nombre}</td>
           <td style="padding:5px 8px;font-size:11px;color:#64748b">${p.equipo||'—'}</td>
           <td style="padding:5px 8px;font-size:11px;color:#64748b">${p.ciudad||'—'}</td>
-          <td style="padding:5px 8px"><span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid #fbbf24">Sin asignación</span></td>
+          <td style="padding:5px 8px"><span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid #fbbf24">Sin licencia Telco U</span></td>
         </tr>`).join('')}
       </table>`
-    : '<div style="font-size:12px;color:#16a34a;font-weight:600">✅ Todo el personal tiene cursos asignados</div>';
+    : '<div style="font-size:12px;color:#16a34a;font-weight:600">✅ Todo el personal tiene licencia Telco U asignada</div>';
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
   <title>Dashboard Capacitaciones - ${equipo}</title>
@@ -1357,9 +1357,9 @@ function exportDashboardPDF() {
     <!-- Alertas activas -->
     <div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px">
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#94a3b8;margin-bottom:12px;letter-spacing:.08em">Alertas activas</div>
-      ${sinCursos.length>0?`<div style="background:#eff6ff;border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:11px;color:#1d4ed8">📭 ${sinCursos.length} colaboradores sin cursos asignados</div>`:''}
+      ${sinTelcoU.length>0?`<div style="background:#eff6ff;border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:11px;color:#1d4ed8">📭 ${sinTelcoU.length} colaboradores sin licencia Telco U</div>`:''}
       ${bajoData.filter(x=>x.pct<30).length>0?`<div style="background:#fef2f2;border-radius:8px;padding:8px 10px;font-size:11px;color:#b91c1c">📉 ${bajoData.filter(x=>x.pct<30).length} con avance menor al 30%</div>`:''}
-      ${sinCursos.length===0&&bajoData.filter(x=>x.pct<30).length===0?'<div style="text-align:center;padding:16px 0;color:#22c55e;font-size:12px;font-weight:500">✓ Sin alertas activas</div>':''}
+      ${sinTelcoU.length===0&&bajoData.filter(x=>x.pct<30).length===0?'<div style="text-align:center;padding:16px 0;color:#22c55e;font-size:12px;font-weight:500">✓ Sin alertas activas</div>':''}
     </div>
     <!-- Evolución mensual -->
     <div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px">
@@ -1384,7 +1384,7 @@ function exportDashboardPDF() {
     </div>
     <!-- Próximas personas a asignar licencia -->
     <div style="border:1px solid #fbbf24;border-radius:10px;padding:16px;background:#fffbeb">
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#92400e;margin-bottom:10px;letter-spacing:.08em">📋 Próximas personas a asignar licencia</div>
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#92400e;margin-bottom:10px;letter-spacing:.08em">📋 Próximas personas a asignar licencia UDEMY · Telco U</div>
       ${sinLicenciaRows}
     </div>
   </div>
@@ -1430,7 +1430,7 @@ function renderAdminDashboard() {
   const totalPersonal = personalF.length;
   const conCursos   = personalF.filter(p => asigF.some(a => a.user_login === p.user)).length;
   const cumplTotal  = totalAutorizados ? Math.round(culminados/totalAutorizados*100) : 0;
-  const sinAsig     = personalF.filter(p => !asigF.some(a => a.user_login === p.user)).length;
+  const sinAsig     = personalF.filter(p => !asigF.some(a => a.user_login === p.user && a.licencia === 'Telco U')).length;
   const requierenAtencion = personalF.filter(p => {
     const pa = asigF.filter(a => ESTADOS_AUTORIZADOS.includes(a.estado) && a.user_login === p.user);
     if (!pa.length) return false;
@@ -1633,7 +1633,7 @@ function renderAdminDashboard() {
 
   const alertasArr = [
     pendientes>0 ? alertRow('⏰','#fffbeb','#92400e',pendientes+' solicitudes pendientes de aprobación',"adminTab(document.querySelector('.nav-tab[onclick*=solicitudes]'),'solicitudes')") : '',
-    sinAsig>0    ? alertRow('📭','#eff6ff','#1d4ed8',sinAsig+' colaboradores sin cursos asignados','') : '',
+    sinAsig>0    ? alertRow('📭','#eff6ff','#1d4ed8',sinAsig+' colaboradores sin licencia Telco U','') : '',
     requierenAtencion>0 ? alertRow('📉','#fef2f2','#b91c1c',requierenAtencion+' con avance menor al 30%','') : '',
   ].join('');
 
@@ -1664,24 +1664,24 @@ function renderAdminDashboard() {
       bottom5.map((r,i) => rankRow(r, r.pct===0?'#cbd5e1':'#f59e0b', i+1)).join('')
     );
 
-  // Próximas personas a asignar licencia
-  const sinCursosPersonal = personalF.filter(p => !asigF.some(a => a.user_login === p.user));
-  const proximasRows = sinCursosPersonal.length
-    ? sinCursosPersonal.map((p,i) =>
+  // Próximas personas sin licencia Telco U (UDEMY)
+  const sinTelcoUPersonal = personalF.filter(p => !asigF.some(a => a.user_login === p.user && a.licencia === 'Telco U'));
+  const proximasRows = sinTelcoUPersonal.length
+    ? sinTelcoUPersonal.map((p,i) =>
         '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #fde68a">' +
           '<span style="font-size:11px;color:#94a3b8;width:16px">'+(i+1)+'</span>' +
           '<div style="flex:1">' +
             '<div style="font-size:12px;font-weight:600;color:#0d1b2e">'+p.nombre+'</div>' +
             '<div style="font-size:10px;color:#64748b">'+(p.ciudad||'—')+'</div>' +
           '</div>' +
-          '<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid #fbbf24">Sin asignación</span>' +
+          '<span style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid #fbbf24">Sin Telco U</span>' +
         '</div>'
       ).join('')
-    : '<div style="text-align:center;padding:12px 0;color:#16a34a;font-size:12px;font-weight:500">✅ Todo el personal tiene cursos asignados</div>';
+    : '<div style="text-align:center;padding:12px 0;color:#16a34a;font-size:12px;font-weight:500">✅ Todo el personal tiene licencia Telco U</div>';
 
   const proximasCard =
     '<div style="background:#fffbeb;border:1px solid #fbbf24;border-radius:14px;padding:20px">' +
-      sectionTitle('📋 Próximas personas a asignar licencia') +
+      sectionTitle('📋 Próximas personas a asignar licencia UDEMY · Telco U') +
       proximasRows +
     '</div>';
 
