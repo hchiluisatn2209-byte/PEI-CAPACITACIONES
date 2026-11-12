@@ -771,6 +771,34 @@ async function loadAll() {
     }
     return a;
   });
+  await loadPool();
+}
+
+async function loadPool() {
+  try {
+    const { data, error } = await sb.from('pool_licencias').select('user_login, slot_order').order('slot_order', { ascending: true });
+    if (error) {
+      // Si la tabla no existe aún, usar fallback hardcodeado
+      if (POOL_UIO.length === 0) POOL_UIO = ['cdalmeida','vcruz','ealopezt','aonate','morozco'];
+      return;
+    }
+    POOL_UIO = (data || []).map(r => r.user_login);
+  } catch(e) {
+    if (POOL_UIO.length === 0) POOL_UIO = ['cdalmeida','vcruz','ealopezt','aonate','morozco'];
+  }
+}
+
+async function savePool() {
+  try {
+    // Borrar todos y reinserta en orden
+    await sb.from('pool_licencias').delete().neq('user_login', '___never___');
+    if (POOL_UIO.length > 0) {
+      const rows = POOL_UIO.map((u, i) => ({ user_login: u, slot_order: i }));
+      await sb.from('pool_licencias').insert(rows);
+    }
+  } catch(e) {
+    console.warn('savePool error:', e);
+  }
 }
 
 async function loadEvaluaciones() {
@@ -781,9 +809,8 @@ async function loadEvaluaciones() {
 }
 
 // ── POOL DE LICENCIAS ────────────────────────────────────────────────────────
-// Los usuarios con licencia Telco U activa en UIO se definen aquí.
-// Al transferir, se edita este array y se mueve al nuevo usuario.
-let POOL_UIO = ['cdalmeida','dagallardo','ealopezt','aonate','morozco'];
+// Se carga desde Supabase tabla pool_licencias. No editar manualmente.
+let POOL_UIO = [];
 const POOL_UIO_MAX = 5;
 
 const EC_COLOR = {
@@ -1016,7 +1043,7 @@ function ejecutarLiberacion() {
     POOL_UIO.splice(slotIdx, 1);
   }
   closeModal();
-  showToast('Slot actualizado ✓ — recuerda actualizar el código con los nuevos usuarios del pool');
+  savePool().then(() => showToast('Slot actualizado y guardado en Supabase ✓'));
   renderLicencias();
   // Si hay entrante, abrir correo de traspaso
   if (entrante) {
@@ -1158,7 +1185,7 @@ function asignarSlotAPersona(userLogin) {
   }
   const p = personal.find(x => x.user === userLogin) || { nombre: userLogin };
   POOL_UIO.push(userLogin);
-  showToast(p.nombre + ' agregado al pool ✓ — recuerda actualizar el código');
+  savePool().then(() => showToast(p.nombre + ' agregado al pool y guardado en Supabase ✓'));
   renderLicencias();
 }
 
