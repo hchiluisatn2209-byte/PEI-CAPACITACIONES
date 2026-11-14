@@ -359,51 +359,54 @@ function adminEquipo() {
 }
 
 const USER_MAP = {
-  'aavellantn2105@gmail.com':    {user:'aavellan',  nombre:'Avellan Arreaga Ana Paula',           equipo:'Implementación',ciudad:'GYE',codigo:'11660',cedula:'0952806594',celular:'992534683',mail:'aavellan@telconet.ec'},
-  'raacostatn0603@gmail.com':    {user:'raacosta',  nombre:'Acosta Mato Romina Alexandra',         equipo:'Planificación', ciudad:'GYE',codigo:'8476',  cedula:'0955257902',celular:'983511029',mail:'raacosta@telconet.ec'},
-  'calmeidatn3011@gmail.com':    {user:'cdalmeida', nombre:'Almeida Chicaiza Christian David',      equipo:'Planificación', ciudad:'UIO',codigo:'1914',  cedula:'1716632235',celular:'958879516',mail:'cdalmeida@telconet.ec'},
-  'vcarrillotn0807@gmail.com':   {user:'vcarrillo', nombre:'Carrillo Quezada Veronica Melina',     equipo:'Planificación', ciudad:'GYE',codigo:'3624',  cedula:'0922147699',celular:'995987255',mail:'vcarrillo@telconet.ec'},
-  'vcruztn2204@gmail.com':       {user:'vcruz',     nombre:'Cruz Cargua Verónica Lucia',           equipo:'Planificación', ciudad:'UIO',codigo:'2801',  cedula:'1720215811',celular:'984363462',mail:'vcruz@telconet.ec'},
-  'dagallardotn1903@gmail.com':  {user:'dagallardo',nombre:'Gallardo Reasco Diana Alejandra',      equipo:'Planificación', ciudad:'UIO',codigo:'5878',  cedula:'1721145736',celular:'958850812',mail:'dagallardo@telconet.ec'},
-  'ealopezttn0503@gmail.com':    {user:'ealopezt',  nombre:'Lopez Topanta Erika Alexandra',        equipo:'Planificación', ciudad:'UIO',codigo:'12120', cedula:'1726654880',celular:'995887362',mail:'ealopezt@telconet.ec'},
-  'aonatetn2112@gmail.com':      {user:'aonate',    nombre:'Oñate Campana Alexis David',           equipo:'Planificación', ciudad:'UIO',codigo:'9688',  cedula:'1726860552',celular:'962532969',mail:'aonate@telconet.ec'},
-  'morozcotn2401@gmail.com':     {user:'morozco',   nombre:'Orozco Vega Melany Aracely',           equipo:'Planificación', ciudad:'UIO',codigo:'10208', cedula:'1721895884',celular:'987504176',mail:'morozco@telconet.ec'},
-  'sortiztn0922@gmail.com':      {user:'sortiz',    nombre:'Ortiz Granda Silvia Valeria',          equipo:'Planificación', ciudad:'UIO',codigo:'5707',  cedula:'1724441322',celular:'962907108',mail:'sortiz@telconet.ec'},
-  'durbanotn2401@gmail.com':     {user:'durbano',   nombre:'Urbano Valverde Daisy Tatiana',        equipo:'Planificación', ciudad:'UIO',codigo:'8463',  cedula:'0202007472',celular:'983397518',mail:'durbano@telconet.ec'},
-  'ggavilaneztn0603@gmail.com':  {user:'ggavilanez',nombre:'Gavilanez Perrazo Gabriela Fernanda',  equipo:'Planificación', ciudad:'UIO',codigo:'3957',  cedula:'1714515481',celular:'984482822',mail:'ggavilanez@telconet.ec'},
-  'sbaquetn1307@gmail.com':      {user:'sbaque',    nombre:'Baque Allauca Sulay Katherine',        equipo:'Planificación', ciudad:'GYE',codigo:'8964',  cedula:'0951873652',celular:'999747054',mail:'sbaque@telconet.ec'},
-  'mydelgadotn0822@gmail.com':   {user:'mydelgado', nombre:'Delgado Veliz Melany Yuleisy',         equipo:'Planificación', ciudad:'GYE',codigo:'9104',  cedula:'0926486929',celular:'',          mail:'mydelgado@telconet.ec'},
-  'wsalazartn91323@gmail.com':   {user:'wsalazar',  nombre:'Salazar Salazar Wendy Priscilla',      equipo:'Planificación', ciudad:'GYE',codigo:'4021',  cedula:'0915434989',celular:'999299226',mail:'wsalazar@telconet.ec'},
-  'mspalmatn2023@gmail.com':     {user:'mspalma',   nombre:'Palma Vargas Mery Stephanie',          equipo:'Planificación', ciudad:'GYE',codigo:'9212',  cedula:'0930501523',celular:'983376100',mail:'mspalma@telconet.ec'},
-  'jcamalletn0605@gmail.com':    {user:'jcamalle',  nombre:'Camalle Vásquez Jerson Rodrigo',       equipo:'Implementación',ciudad:'UIO',codigo:'7924',  cedula:'1723203012',celular:'958731771',mail:'jcamalle@telconet.ec'},
-  'kcorreatn2002@gmail.com':     {user:'kcorrea',   nombre:'Correa Ullon Karen Gabriela',          equipo:'Implementación',ciudad:'UIO',codigo:'2425',  cedula:'1721980199',celular:'984532931',mail:'kcorrea@telconet.ec'},
-  'plunatn2404@gmail.com':       {user:'pluna',     nombre:'Luna Valencia Pablo Mauricio',         equipo:'Implementación',ciudad:'UIO',codigo:'11522', cedula:'1716394935',celular:'962684408',mail:'pluna@telconet.ec'},
-  'femorantn1005@gmail.com':     {user:'femoran',   nombre:'Moran Muñoz Flor Esther',              equipo:'Implementación',ciudad:'GYE',codigo:'189990',cedula:'0954660734',celular:'998653492',mail:'femoran@telconet.ec'},
-  'pjsanchezctn2812@gmail.com':  {user:'pjsanchezc',nombre:'Sanchez Cajamarca Pedro Jonathan',     equipo:'Implementación',ciudad:'UIO',codigo:'',     cedula:'',          celular:'',          mail:'pjsanchezc@telconet.ec'},
-  'sntorrestn1803@gmail.com':    {user:'sntorres',  nombre:'Torres Noboa Stephano Nicolas',        equipo:'Implementación',ciudad:'UIO',codigo:'',     cedula:'',          celular:'',          mail:'sntorres@telconet.ec'},
-  'dveratn2608@gmail.com':       {user:'dvera',     nombre:'Vera Cardenas Daylin Joyce',           equipo:'Implementación',ciudad:'GYE',codigo:'7918', cedula:'0925796484',celular:'987933319',mail:'dvera@telconet.ec'},
-  'lgaibortn0101@gmail.com':     {user:'lgaibor',   nombre:'Gaibor Noboa Luis Alberto',            equipo:'Implementación',ciudad:'UIO',codigo:'3562', cedula:'1721782702',celular:'998509427',mail:'lgaibor@telconet.ec'},
-  'abguallpatn2907@gmail.com':   {user:'abguallpa', nombre:'Guallpa Parra Ana Beatriz',            equipo:'Implementación',ciudad:'UIO',codigo:'2942', cedula:'1718006883',celular:'963090245',mail:'abguallpa@telconet.ec'},
-  'mvaldeztn0107@gmail.com':     {user:'mvaldez',   nombre:'Valdez Mora Mirian Cecilia',           equipo:'Implementación',ciudad:'GYE',codigo:'5985', cedula:'0918418328',celular:'995907827',mail:'mvaldez@telconet.ec'},
-  'jkleontn2006@gmail.com':      {user:'jkleon',    nombre:'Leon Gaona Jhordy Kristofer',          equipo:'Implementación',ciudad:'UIO',codigo:'11850',cedula:'1900477082',celular:'963002369',mail:'jkleon@telconet.ec'},
-  'echiluizatn1911@gmail.com':   {user:'echiluiza', nombre:'Chiluiza Chavez Estefania Paola',      equipo:'Implementación',ciudad:'UIO',codigo:'9020', cedula:'1724471543',celular:'983973024',mail:'echiluiza@telconet.ec'},
-  'mamartinezvtn0718@gmail.com': {user:'mamartinezv',nombre:'Martinez Vergara Milton Alfredo',     equipo:'Implementación',ciudad:'GYE',codigo:'8692', cedula:'0931525224',celular:'983387268',mail:'mamartinezv@telconet.ec'},
-  'vtacuritn2711@gmail.com':     {user:'vtacuri',   nombre:'Tacuri Ordonez Victor Manuel',         equipo:'Implementación',ciudad:'GYE',codigo:'7903', cedula:'0951248699',celular:'979026388',mail:'vtacuri@telconet.ec'},
-  'amguzmantn1605@gmail.com':    {user:'amguzman',  nombre:'Guzman Araujo Adriana Mayli',          equipo:'Implementación',ciudad:'GYE',codigo:'11647',cedula:'0929199826',celular:'987885281',mail:'amguzman@telconet.ec'},
-  'dcoroneltn1006@gmail.com':    {user:'dcoronel',  nombre:'Coronel Bonifaz Diana Elizabeth',      equipo:'Implementación',ciudad:'UIO',codigo:'188482',cedula:'1722931845',celular:'992870053',mail:'dcoronel@telconet.ec'},
-  'klmartineztn2404@gmail.com':  {user:'klmartinez',nombre:'Martinez Toapanta Katherine Lizeth',   equipo:'Implementación',ciudad:'UIO',codigo:'4840', cedula:'1720849072',celular:'979957207',mail:'klmartinez@telconet.ec'},
-  'kremachetn0211@gmail.com':    {user:'kremache',  nombre:'Remache Santa Maria Katherine Ivanova',equipo:'Implementación',ciudad:'UIO',codigo:'11521',cedula:'1104117336',celular:'987054035',mail:'kremache@telconet.ec'},
-  'erchoeztn1005@gmail.com':     {user:'erchoez',   nombre:'Choez Quimis Erick Roberto',           equipo:'O&M',           ciudad:'GYE',codigo:'189989',cedula:'0951667229',celular:'998452128',mail:'erchoez@telconet.ec'},
-  'jkguamantn1002@gmail.com':    {user:'jkguaman',  nombre:'Guaman Ruiz Jennyfer Katherine',       equipo:'O&M',           ciudad:'GYE',codigo:'1824', cedula:'0930946280',celular:'983497098',mail:'jkguaman@telconet.ec'},
-  'clhidalgotn1304@gmail.com':   {user:'clhidalgo', nombre:'Hidalgo Jimenez Cristina Lisbeth',     equipo:'O&M',           ciudad:'GYE',codigo:'2730', cedula:'0952523835',celular:'958879284',mail:'clhidalgo@telconet.ec'},
-  'esriveratn0702@gmail.com':    {user:'esrivera',  nombre:'Rivera Castaneda Elizabeth Stephania', equipo:'O&M',           ciudad:'GYE',codigo:'187566',cedula:'0930538962',celular:'983439748',mail:'esrivera@telconet.ec'},
-  'asancheztn0308@gmail.com':    {user:'ansanchez', nombre:'Sanchez Zambrano Angela Rosa',         equipo:'O&M',           ciudad:'GYE',codigo:'1797', cedula:'0915847271',celular:'998020255',mail:'ansanchez@telconet.ec'},
-  'aarroyotn2206@gmail.com':     {user:'aarroyo',   nombre:'Arroyo Burgos Aura Erlinda',           equipo:'O&M',           ciudad:'UIO',codigo:'8987', cedula:'1002900767',celular:'983874047',mail:'aarroyo@telconet.ec'},
-  'jlcastillottn0107@gmail.com': {user:'jlcastillot',nombre:'Castillo Tipantasi José Luis',        equipo:'O&M',           ciudad:'UIO',codigo:'4815', cedula:'1722228796',celular:'987023927',mail:'jlcastillot@telconet.ec'},
-  'aldelgadotn1002@gmail.com':   {user:'aldelgado', nombre:'Delgado Simbaña Ana Laura',            equipo:'O&M',           ciudad:'UIO',codigo:'7303', cedula:'1719041442',celular:'987613410',mail:'aldelgado@telconet.ec'},
-  'bsangolquitn3103@gmail.com':  {user:'bsangolqui',nombre:'Sangolqui Campoverde Byron Raul',      equipo:'O&M',           ciudad:'UIO',codigo:'184859',cedula:'1718905076',celular:'962890647',mail:'bsangolqui@telconet.ec'},
+  // — Planificación ————————————————————————————————————————————
+  'aavellantn2105@gmail.com':    {user:'aavellan',  nombre:'Avellan Arreaga Ana Paula',           equipo:'Implementación',ciudad:'GYE',codigo:'11660', cedula:'0952806594',celular:'992534683', mail:'aavellan@telconet.ec',   cargo:'PM JR'},
+  'raacostatn0603@gmail.com':    {user:'raacosta',  nombre:'Acosta Mato Romina Alexandra',         equipo:'Planificación', ciudad:'GYE',codigo:'8476',   cedula:'0955257902',celular:'983511029', mail:'raacosta@telconet.ec',   cargo:'Planificador Proyectos'},
+  'calmeidatn3011@gmail.com':    {user:'cdalmeida', nombre:'Almeida Chicaiza Christian David',      equipo:'Planificación', ciudad:'UIO',codigo:'1914',   cedula:'1716632235',celular:'958879516', mail:'cdalmeida@telconet.ec',  cargo:'PM JR'},
+  'vcarrillotn0807@gmail.com':   {user:'vcarrillo', nombre:'Carrillo Quezada Veronica Melina',     equipo:'Planificación', ciudad:'GYE',codigo:'3624',   cedula:'0922147699',celular:'995987255', mail:'vcarrillo@telconet.ec',  cargo:'Planificador Proyectos'},
+  'vcruztn2204@gmail.com':       {user:'vcruz',     nombre:'Cruz Cargua Verónica Lucia',           equipo:'Planificación', ciudad:'UIO',codigo:'2801',   cedula:'1720215811',celular:'984363462', mail:'vcruz@telconet.ec',      cargo:'PM JR'},
+  'dagallardotn1903@gmail.com':  {user:'dagallardo',nombre:'Gallardo Reasco Diana Alejandra',      equipo:'Planificación', ciudad:'UIO',codigo:'5878',   cedula:'1721145736',celular:'958850812', mail:'dagallardo@telconet.ec', cargo:'PM JR'},
+  'ealopezttn0503@gmail.com':    {user:'ealopezt',  nombre:'Lopez Topanta Erika Alexandra',        equipo:'Planificación', ciudad:'UIO',codigo:'12120',  cedula:'1726654880',celular:'995887362', mail:'ealopezt@telconet.ec',   cargo:'Planificador Proyectos'},
+  'aonatetn2112@gmail.com':      {user:'aonate',    nombre:'Oñate Campana Alexis David',           equipo:'Planificación', ciudad:'UIO',codigo:'9688',   cedula:'1726860552',celular:'962532969', mail:'aonate@telconet.ec',     cargo:'PM JR'},
+  'morozcotn2401@gmail.com':     {user:'morozco',   nombre:'Orozco Vega Melany Aracely',           equipo:'Planificación', ciudad:'UIO',codigo:'10208',  cedula:'1721895884',celular:'987504176', mail:'morozco@telconet.ec',    cargo:'PM JR'},
+  'sortiztn0922@gmail.com':      {user:'sortiz',    nombre:'Ortiz Granda Silvia Valeria',          equipo:'Planificación', ciudad:'UIO',codigo:'5707',   cedula:'1724441322',celular:'962907108', mail:'sortiz@telconet.ec',     cargo:'PM JR'},
+  'durbanotn2401@gmail.com':     {user:'durbano',   nombre:'Urbano Valverde Daisy Tatiana',        equipo:'Planificación', ciudad:'UIO',codigo:'8463',   cedula:'0202007472',celular:'983397518', mail:'durbano@telconet.ec',    cargo:'PM JR'},
+  'ggavilaneztn0603@gmail.com':  {user:'ggavilanez',nombre:'Gavilanez Perrazo Gabriela Fernanda',  equipo:'Planificación', ciudad:'UIO',codigo:'3957',   cedula:'1714515481',celular:'984482822', mail:'ggavilanez@telconet.ec', cargo:'PM JR'},
+  'sbaquetn1307@gmail.com':      {user:'sbaque',    nombre:'Baque Allauca Sulay Katherine',        equipo:'Planificación', ciudad:'GYE',codigo:'8964',   cedula:'0951873652',celular:'999747054', mail:'sbaque@telconet.ec',     cargo:'Planificador Proyectos'},
+  'mydelgadotn0822@gmail.com':   {user:'mydelgado', nombre:'Delgado Veliz Melany Yuleisy',         equipo:'Planificación', ciudad:'GYE',codigo:'9104',   cedula:'0926486929',celular:'',          mail:'mydelgado@telconet.ec',  cargo:'Planificador Proyectos'},
+  'wsalazartn91323@gmail.com':   {user:'wsalazar',  nombre:'Salazar Salazar Wendy Priscilla',      equipo:'Planificación', ciudad:'GYE',codigo:'4021',   cedula:'0915434989',celular:'999299226', mail:'wsalazar@telconet.ec',   cargo:'PM JR'},
+  'mspalmatn2023@gmail.com':     {user:'mspalma',   nombre:'Palma Vargas Mery Stephanie',          equipo:'Planificación', ciudad:'GYE',codigo:'9212',   cedula:'0930501523',celular:'983376100', mail:'mspalma@telconet.ec',    cargo:'PM JR'},
+  // — Implementación ————————————————————————————————————————————
+  'jcamalletn0605@gmail.com':    {user:'jcamalle',  nombre:'Camalle Vásquez Jerson Rodrigo',       equipo:'Implementación',ciudad:'UIO',codigo:'7924',   cedula:'1723203012',celular:'958731771', mail:'jcamalle@telconet.ec',   cargo:'PM SR'},
+  'kcorreatn2002@gmail.com':     {user:'kcorrea',   nombre:'Correa Ullon Karen Gabriela',          equipo:'Implementación',ciudad:'UIO',codigo:'2425',   cedula:'1721980199',celular:'984532931', mail:'kcorrea@telconet.ec',     cargo:'PM JR'},
+  'plunatn2404@gmail.com':       {user:'pluna',     nombre:'Luna Valencia Pablo Mauricio',         equipo:'Implementación',ciudad:'UIO',codigo:'11522',  cedula:'1716394935',celular:'962684408', mail:'pluna@telconet.ec',       cargo:'PM JR'},
+  'femorantn1005@gmail.com':     {user:'femoran',   nombre:'Moran Muñoz Flor Esther',              equipo:'Implementación',ciudad:'GYE',codigo:'189990', cedula:'0954660734',celular:'998653492', mail:'femoran@telconet.ec',     cargo:'PM SR'},
+  'pjsanchezctn2812@gmail.com':  {user:'pjsanchezc',nombre:'Sanchez Cajamarca Pedro Jonathan',     equipo:'Implementación',ciudad:'UIO',codigo:'',       cedula:'',          celular:'',          mail:'pjsanchezc@telconet.ec'},
+  'sntorrestn1803@gmail.com':    {user:'sntorres',  nombre:'Torres Noboa Stephano Nicolas',        equipo:'Implementación',ciudad:'UIO',codigo:'',       cedula:'',          celular:'',          mail:'sntorres@telconet.ec'},
+  'dveratn2608@gmail.com':       {user:'dvera',     nombre:'Vera Cardenas Daylin Joyce',           equipo:'Implementación',ciudad:'GYE',codigo:'7918',   cedula:'0925796484',celular:'987933319', mail:'dvera@telconet.ec',       cargo:'PM JR'},
+  'lgaibortn0101@gmail.com':     {user:'lgaibor',   nombre:'Gaibor Noboa Luis Alberto',            equipo:'Implementación',ciudad:'UIO',codigo:'3562',   cedula:'1721782702',celular:'998509427', mail:'lgaibor@telconet.ec',     cargo:'PM SR'},
+  'abguallpatn2907@gmail.com':   {user:'abguallpa', nombre:'Guallpa Parra Ana Beatriz',            equipo:'Implementación',ciudad:'UIO',codigo:'2942',   cedula:'1718006883',celular:'963090245', mail:'abguallpa@telconet.ec',   cargo:'PM JR'},
+  'mvaldeztn0107@gmail.com':     {user:'mvaldez',   nombre:'Valdez Mora Mirian Cecilia',           equipo:'Implementación',ciudad:'GYE',codigo:'5985',   cedula:'0918418328',celular:'995907827', mail:'mvaldez@telconet.ec',     cargo:'PM JR'},
+  'jkleontn2006@gmail.com':      {user:'jkleon',    nombre:'Leon Gaona Jhordy Kristofer',          equipo:'Implementación',ciudad:'UIO',codigo:'11850',  cedula:'1900477082',celular:'963002369', mail:'jkleon@telconet.ec',      cargo:'PM JR'},
+  'echiluizatn1911@gmail.com':   {user:'echiluiza', nombre:'Chiluiza Chavez Estefania Paola',      equipo:'Implementación',ciudad:'UIO',codigo:'9020',   cedula:'1724471543',celular:'983973024', mail:'echiluiza@telconet.ec',   cargo:'PM JR'},
+  'mamartinezvtn0718@gmail.com': {user:'mamartinezv',nombre:'Martinez Vergara Milton Alfredo',     equipo:'Implementación',ciudad:'GYE',codigo:'8692',   cedula:'0931525224',celular:'983387268', mail:'mamartinezv@telconet.ec', cargo:'PM SR'},
+  'vtacuritn2711@gmail.com':     {user:'vtacuri',   nombre:'Tacuri Ordonez Victor Manuel',         equipo:'Implementación',ciudad:'GYE',codigo:'7903',   cedula:'0951248699',celular:'979026388', mail:'vtacuri@telconet.ec',     cargo:'PM JR'},
+  'amguzmantn1605@gmail.com':    {user:'amguzman',  nombre:'Guzman Araujo Adriana Mayli',          equipo:'Implementación',ciudad:'GYE',codigo:'11647',  cedula:'0929199826',celular:'987885281', mail:'amguzman@telconet.ec',    cargo:'PM JR'},
+  'dcoroneltn1006@gmail.com':    {user:'dcoronel',  nombre:'Coronel Bonifaz Diana Elizabeth',      equipo:'Implementación',ciudad:'UIO',codigo:'188482', cedula:'1722931845',celular:'992870053', mail:'dcoronel@telconet.ec',    cargo:'PM JR'},
+  'klmartineztn2404@gmail.com':  {user:'klmartinez',nombre:'Martinez Toapanta Katherine Lizeth',   equipo:'Implementación',ciudad:'UIO',codigo:'4840',   cedula:'1720849072',celular:'979957207', mail:'klmartinez@telconet.ec',  cargo:'PM JR'},
+  'kremachetn0211@gmail.com':    {user:'kremache',  nombre:'Remache Santa Maria Katherine Ivanova',equipo:'Implementación',ciudad:'UIO',codigo:'11521',  cedula:'1104117336',celular:'987054035', mail:'kremache@telconet.ec',    cargo:'PM SR'},
+  // — O&M ————————————————————————————————————————————————————————
+  'erchoeztn1005@gmail.com':     {user:'erchoez',   nombre:'Choez Quimis Erick Roberto',           equipo:'O&M',           ciudad:'GYE',codigo:'189989', cedula:'0951667229',celular:'998452128', mail:'erchoez@telconet.ec',     cargo:'PM JR'},
+  'jkguamantn1002@gmail.com':    {user:'jkguaman',  nombre:'Guaman Ruiz Jennyfer Katherine',       equipo:'O&M',           ciudad:'GYE',codigo:'1824',   cedula:'0930946280',celular:'983497098', mail:'jkguaman@telconet.ec',    cargo:'PM JR'},
+  'clhidalgotn1304@gmail.com':   {user:'clhidalgo', nombre:'Hidalgo Jimenez Cristina Lisbeth',     equipo:'O&M',           ciudad:'GYE',codigo:'2730',   cedula:'0952523835',celular:'958879284', mail:'clhidalgo@telconet.ec',   cargo:'PM JR'},
+  'esriveratn0702@gmail.com':    {user:'esrivera',  nombre:'Rivera Castaneda Elizabeth Stephania', equipo:'O&M',           ciudad:'GYE',codigo:'187566', cedula:'0930538962',celular:'983439748', mail:'esrivera@telconet.ec',    cargo:'PM JR'},
+  'asancheztn0308@gmail.com':    {user:'ansanchez', nombre:'Sanchez Zambrano Angela Rosa',         equipo:'O&M',           ciudad:'GYE',codigo:'1797',   cedula:'0915847271',celular:'998020255', mail:'ansanchez@telconet.ec',   cargo:'PM JR'},
+  'aarroyotn2206@gmail.com':     {user:'aarroyo',   nombre:'Arroyo Burgos Aura Erlinda',           equipo:'O&M',           ciudad:'UIO',codigo:'8987',   cedula:'1002900767',celular:'983874047', mail:'aarroyo@telconet.ec',     cargo:'PM JR'},
+  'jlcastillottn0107@gmail.com': {user:'jlcastillot',nombre:'Castillo Tipantasi José Luis',        equipo:'O&M',           ciudad:'UIO',codigo:'4815',   cedula:'1722228796',celular:'987023927', mail:'jlcastillot@telconet.ec', cargo:'PM JR'},
+  'aldelgadotn1002@gmail.com':   {user:'aldelgado', nombre:'Delgado Simbaña Ana Laura',            equipo:'O&M',           ciudad:'UIO',codigo:'7303',   cedula:'1719041442',celular:'987613410', mail:'aldelgado@telconet.ec',   cargo:'PM JR'},
+  'bsangolquitn3103@gmail.com':  {user:'bsangolqui',nombre:'Sangolqui Campoverde Byron Raul',      equipo:'O&M',           ciudad:'UIO',codigo:'184859', cedula:'1718905076',celular:'962890647', mail:'bsangolqui@telconet.ec',  cargo:'PM JR'},
   // Usuario sin cuenta Google — acceso solo por admin
-  'sagarcia@telconet.ec':        {user:'sagarcia',  nombre:'Garcia Toscano Stalin Alfonso',         equipo:'Planificación',ciudad:'UIO',codigo:'',     cedula:'',          celular:'',          mail:'sagarcia@telconet.ec'},
+  'sagarcia@telconet.ec':        {user:'sagarcia',  nombre:'Garcia Toscano Stalin Alfonso',        equipo:'Planificación', ciudad:'UIO',codigo:'',       cedula:'',          celular:'',          mail:'sagarcia@telconet.ec'},
 };
 
 const ADMIN_MAP = {
@@ -519,7 +522,7 @@ async function guardarEditPersonal(userLogin) {
   });
   // Sincronizar en Supabase (siempre, para nombre y equipo)
   if (sb) {
-    await sb.from('asignaciones').update({ nombre: p.nombre, equipo: p.equipo }).eq('user_login', userLogin);
+    await sb.from('asignaciones').update({ nombre: p.nombre, equipo: p.equipo, cargo: p.cargo||null }).eq('user_login', userLogin);
   }
 
   closeModalEditPersonal();
@@ -771,7 +774,7 @@ async function loadAll() {
     // Enriquecer nombre y equipo desde el array personal (fuente de verdad)
     const p = personal.find(x => x.user === a.user_login);
     if (p) {
-      return { ...a, nombre: p.nombre, equipo: p.equipo };
+      return { ...a, nombre: p.nombre, equipo: p.equipo, cargo: p.cargo||a.cargo||null };
     }
     return a;
   });
@@ -2615,6 +2618,7 @@ async function guardarAsignacion(abrirCorreo = false) {
     user_login: userLogin || prev?.user_login,
     nombre: pers?.nombre || prev?.nombre,
     equipo: equipo || prev?.equipo,
+    cargo: pers?.cargo || prev?.cargo || null,
     curso_id: selectedCurso ? String(selectedCurso.id) : prev?.curso_id,
     curso_titulo: selectedCurso ? selectedCurso.titulo : prev?.curso_titulo,
     horas_curso: selectedCurso ? Number(selectedCurso.horas||0) : prev?.horas_curso,
