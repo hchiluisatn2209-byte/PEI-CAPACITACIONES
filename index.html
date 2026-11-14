@@ -4101,6 +4101,7 @@ function renderPersonal() {
           <th style="${thS}" onclick="sortPersonal('celular')">CELULAR</th>
           <th style="${thS}" onclick="sortPersonal('mail')">MAIL</th>
           <th style="${thS}" onclick="sortPersonal('equipo')">EQUIPO</th>
+          <th style="${thS}" onclick="sortPersonal('cargo')">CARGO</th>
           <th style="${thS};text-align:center" onclick="sortPersonal('asignados')">ASIGNADOS</th>
           <th style="${thS};text-align:center" onclick="sortPersonal('culminados')">CULMINADOS</th>
           <th style="${thS}" onclick="sortPersonal('avance')">AVANCE</th>
@@ -4164,7 +4165,7 @@ function renderPersonalTabla() {
   });
 
   // Actualizar flechas en encabezados
-  const COLS = ['user','nombre','ciudad','codigo','cedula','celular','mail','equipo','asignados','culminados','avance'];
+  const COLS = ['user','nombre','ciudad','codigo','cedula','celular','mail','equipo','cargo','asignados','culminados','avance'];
   document.querySelectorAll('#thPersonal th').forEach((th, i) => {
     const c = COLS[i];
     // quitar flecha vieja
@@ -4190,6 +4191,7 @@ function renderPersonalTabla() {
       + '<td style="font-size:12px">' + (per.celular||'—') + '</td>'
       + '<td style="font-size:12px"><a href="mailto:' + per.mail + '" style="color:var(--blue);text-decoration:none">' + (per.mail||'—') + '</a></td>'
       + '<td>' + equipoBadgeStr(per.equipo) + '</td>'
+      + '<td><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px;background:'+(per.cargo==='PM SR'?'#fef3c7':per.cargo==='Planificador Proyectos'?'#ede9fe':'#f1f5f9')+';color:'+(per.cargo==='PM SR'?'#92400e':per.cargo==='Planificador Proyectos'?'#6d28d9':'#475569')+'">'+(per.cargo||'—')+'</span></td>'
       + '<td style="text-align:center">' + per._asig + '</td>'
       + '<td style="text-align:center">' + per._done + '</td>'
       + '<td><span style="font-size:12px">' + per._avg + '%</span><div class="pct-bar"><div class="pct-fill" style="width:' + per._avg + '%"></div></div></td>'
