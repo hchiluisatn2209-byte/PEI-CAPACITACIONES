@@ -729,9 +729,8 @@ document.addEventListener('click', e => {
 //  ADMIN APP
 // ═══════════════════════════════════════════════════════════════
 function renderAdminApp() {
-  const licTab = isSuperAdmin()
-    ? `<div class="nav-tab" onclick="adminTab(this,'licencias')">🪪 Licencias</div>`
-    : '';
+  // Licencias visible para superadmin Y admin equipo (admin equipo ve solo su equipo)
+  const licTab = `<div class="nav-tab" onclick="adminTab(this,'licencias')">🪪 Licencias</div>`;
   document.getElementById('mainNav').innerHTML =
     `<div class="nav-tab active" onclick="adminTab(this,'dashboard')">📊 Dashboard</div>
     <div class="nav-tab" onclick="adminTab(this,'solicitudes')">📥 Solicitudes</div>
@@ -749,7 +748,12 @@ function adminTab(el, tab) {
   if (tab === 'dashboard') renderAdminDashboard();
   else if (tab === 'solicitudes') renderSolicitudes();
   else if (tab === 'asignaciones') renderAdminAsignaciones();
-  else if (tab === 'licencias') renderLicencias();
+  else if (tab === 'licencias') {
+    // Admin equipo: forzar sub-tab a su propio equipo; superadmin: mantener selección
+    const eqAdm = adminEquipo();
+    if (eqAdm) _licEquipo = eqAdm;
+    renderLicencias();
+  }
   else if (tab === 'catalogo') renderCatalogo();
   else if (tab === 'personal') renderPersonal();
   else if (tab === 'evaluaciones') renderEvaluaciones();
@@ -822,152 +826,184 @@ const EC_BG = {
   'En curso':'#f0f9ff','Culminado':'#f0fdf4','Rechazado':'#fef2f2'
 };
 
+// Sub-tab activo en Licencias
+let _licEquipo = 'Todos';
+
 function renderLicencias() {
   const cont = document.getElementById('mainContent');
 
-  // Para cada persona del pool, buscar TODOS sus cursos Telco U
-  const slotCards = POOL_UIO.map((userLogin, i) => {
-    const p = personal.find(x => x.user === userLogin) || { nombre: userLogin, mail: '' };
-    const cursos = asignaciones.filter(a => a.user_login === userLogin && a.licencia === 'Telco U')
-      .sort((a,b) => b.id - a.id); // más reciente primero
+  // Helper: construye las cards de un array de userLogins (con sus índices globales en POOL_UIO)
+  function buildSlotCards(userLogins) {
+    return userLogins.map(({ login: userLogin, idx: i }) => {
+      const p = personal.find(x => x.user === userLogin) || { nombre: userLogin, mail: '' };
+      const cursos = asignaciones.filter(a => a.user_login === userLogin && a.licencia === 'Telco U')
+        .sort((a,b) => b.id - a.id);
+      const totalC = cursos.length;
+      const enCurso    = cursos.filter(a => a.estado === 'En curso').length;
+      const autorizados= cursos.filter(a => a.estado === 'Autorizado').length;
+      const culminados = cursos.filter(a => a.estado === 'Culminado').length;
+      const pendientes = cursos.filter(a => ['Pendiente','En revisión'].includes(a.estado)).length;
+      const primero = cursos.slice().sort((a,b) => new Date(a.created_at)-new Date(b.created_at))[0];
+      const diasLicencia = primero ? Math.floor((Date.now()-new Date(primero.created_at))/(24*3600*1000)) : null;
+      const alerta = diasLicencia !== null && diasLicencia >= 28;
+      const cursosHtml = cursos.length === 0
+        ? '<div style="font-size:11px;color:var(--text3);padding:6px 0">Sin cursos registrados en Telco U</div>'
+        : cursos.slice(0,5).map(a => {
+            const col = EC_COLOR[a.estado]||'#888', bg = EC_BG[a.estado]||'#f5f5f5';
+            return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--gray-bd)">'
+              + '<span style="flex:1;font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+(a.curso_titulo||'')+'">'+(a.curso_titulo||'—')+'</span>'
+              + '<span style="flex-shrink:0;font-size:10px;font-weight:600;padding:1px 7px;border-radius:8px;background:'+bg+';color:'+col+'">'+a.estado+'</span>'
+              + '</div>';
+          }).join('') + (cursos.length > 5 ? '<div style="font-size:10px;color:var(--text3);padding-top:4px">+ '+(cursos.length-5)+' más...</div>' : '');
 
-    // Resumen de cursos por estado
-    const totalC = cursos.length;
-    const enCurso = cursos.filter(a => a.estado === 'En curso').length;
-    const autorizados = cursos.filter(a => a.estado === 'Autorizado').length;
-    const culminados = cursos.filter(a => a.estado === 'Culminado').length;
-    const pendientes = cursos.filter(a => ['Pendiente','En revisión'].includes(a.estado)).length;
+      // Equipo badge
+      const eqIcon = p.equipo === 'Planificación' ? '📐' : p.equipo === 'Implementación' ? '⚙️' : p.equipo === 'O&M' ? '🖥' : '👤';
+      const eqColor = p.equipo === 'Planificación' ? '#3b82f6' : p.equipo === 'Implementación' ? '#f59e0b' : '#8b5cf6';
 
-    // Fecha de inicio de licencia = primer curso Telco U más antiguo activo
-    const primero = cursos.slice().sort((a,b) => new Date(a.created_at)-new Date(b.created_at))[0];
-    const diasLicencia = primero
-      ? Math.floor((Date.now()-new Date(primero.created_at))/(24*3600*1000)) : null;
-    const alerta = diasLicencia !== null && diasLicencia >= 28;
+      return '<div style="background:var(--surface-2);border:1.5px solid '+(alerta?'#f59e0b':'var(--gray-bd)')+';'
+        + (alerta?'box-shadow:0 0 0 2px #fde68a;':'')
+        + 'border-radius:12px;overflow:hidden">'
+        + '<div style="background:var(--navy);padding:10px 14px;display:flex;align-items:center;justify-content:space-between">'
+        + '<div style="display:flex;align-items:center;gap:8px">'
+        + '<span style="font-size:11px;font-weight:700;color:#fff;background:#16a34a;border-radius:6px;padding:2px 8px">Slot '+(i+1)+'</span>'
+        + (p.equipo ? '<span style="font-size:10px;font-weight:600;color:#fff;background:'+eqColor+';border-radius:6px;padding:1px 7px">'+eqIcon+' '+p.equipo+'</span>' : '')
+        + '</div>'
+        + (diasLicencia !== null ? '<span style="font-size:10px;color:'+(alerta?'#fde68a':'rgba(255,255,255,.6)')+'">'+(alerta?'⚠️ ':'⏱ ')+diasLicencia+' días</span>' : '')
+        + '</div>'
+        + '<div style="padding:12px 14px">'
+        + '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:1px">'+p.nombre+'</div>'
+        + '<div style="font-size:11px;color:var(--text3);margin-bottom:10px">'+(p.mail||userLogin)+'</div>'
+        + '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">'
+        + (totalC ? '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#f1f5f9;color:var(--text3);font-weight:600">'+totalC+' cursos</span>' : '')
+        + (enCurso ? '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#f0f9ff;color:#0ea5e9;font-weight:600">▶ '+enCurso+' en curso</span>' : '')
+        + (autorizados ? '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#f5f3ff;color:#8b5cf6;font-weight:600">✔ '+autorizados+' autorizados</span>' : '')
+        + (culminados ? '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#f0fdf4;color:#16a34a;font-weight:600">🎓 '+culminados+' culminados</span>' : '')
+        + (pendientes ? '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#fffbeb;color:#f59e0b;font-weight:600">⏳ '+pendientes+' pendiente</span>' : '')
+        + '</div>'
+        + cursosHtml
+        + '<div style="margin-top:10px;display:flex;gap:6px">'
+        + '<button class="btn" style="font-size:11px;padding:5px 10px" onclick="verCursosSlot(\''+userLogin+'\')">Ver todos</button>'
+        + '<button class="btn primary" style="font-size:11px;padding:5px 10px" onclick="liberarSlot('+i+',\''+userLogin+'\')">🔄 Liberar slot</button>'
+        + '</div>'
+        + '</div></div>';
+    });
+  }
 
-    // Lista de cursos (compacta)
-    const cursosHtml = cursos.length === 0
-      ? '<div style="font-size:11px;color:var(--text3);padding:6px 0">Sin cursos registrados en Telco U</div>'
-      : cursos.slice(0,5).map(a => {
-          const col = EC_COLOR[a.estado] || '#888';
-          const bg  = EC_BG[a.estado]   || '#f5f5f5';
-          return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--gray-bd)">'
-            + '<span style="flex:1;font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="' + (a.curso_titulo||'') + '">' + (a.curso_titulo||'—') + '</span>'
-            + '<span style="flex-shrink:0;font-size:10px;font-weight:600;padding:1px 7px;border-radius:8px;background:' + bg + ';color:' + col + '">' + a.estado + '</span>'
-            + '</div>';
-        }).join('')
-        + (cursos.length > 5 ? '<div style="font-size:10px;color:var(--text3);padding-top:4px">+ ' + (cursos.length-5) + ' más...</div>' : '');
-
-    return '<div style="background:var(--surface-2);border:1.5px solid ' + (alerta?'#f59e0b':'var(--gray-bd)') + ';'
-      + (alerta?'box-shadow:0 0 0 2px #fde68a;':'')
-      + 'border-radius:12px;overflow:hidden">'
-      // Card header
-      + '<div style="background:var(--navy);padding:10px 14px;display:flex;align-items:center;justify-content:space-between">'
-      + '<div style="display:flex;align-items:center;gap:8px">'
-      + '<span style="font-size:11px;font-weight:700;color:#fff;background:#16a34a;border-radius:6px;padding:2px 8px">Slot ' + (i+1) + '</span>'
-      + '</div>'
-      + (diasLicencia !== null
-        ? '<span style="font-size:10px;color:' + (alerta?'#fde68a':'rgba(255,255,255,.6)') + '">'
-          + (alerta?'⚠️ ':'⏱ ') + diasLicencia + ' días con licencia</span>'
-        : '')
-      + '</div>'
-      // Card body
-      + '<div style="padding:12px 14px">'
-      + '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:1px">' + p.nombre + '</div>'
-      + '<div style="font-size:11px;color:var(--text3);margin-bottom:10px">' + (p.mail||userLogin) + '</div>'
-      // Mini stats
-      + '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">'
-      + (totalC ? '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#f1f5f9;color:var(--text3);font-weight:600">' + totalC + ' cursos</span>' : '')
-      + (enCurso ? '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#f0f9ff;color:#0ea5e9;font-weight:600">▶ ' + enCurso + ' en curso</span>' : '')
-      + (autorizados ? '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#f5f3ff;color:#8b5cf6;font-weight:600">✔ ' + autorizados + ' autorizados</span>' : '')
-      + (culminados ? '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#f0fdf4;color:#16a34a;font-weight:600">🎓 ' + culminados + ' culminados</span>' : '')
-      + (pendientes ? '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#fffbeb;color:#f59e0b;font-weight:600">⏳ ' + pendientes + ' pendiente</span>' : '')
-      + '</div>'
-      // Cursos list
-      + cursosHtml
-      // Acciones
-      + '<div style="margin-top:10px;display:flex;gap:6px">'
-      + '<button class="btn" style="font-size:11px;padding:5px 10px" onclick="verCursosSlot(\'' + userLogin + '\')">Ver todos</button>'
-      + '<button class="btn primary" style="font-size:11px;padding:5px 10px" onclick="liberarSlot(' + i + ',\'' + userLogin + '\')">🔄 Liberar slot</button>'
-      + '</div>'
-      + '</div>'
-      + '</div>';
+  // Preparar datos: pool con índice global y equipo
+  const poolConEquipo = POOL_UIO.map((login, idx) => {
+    const p = personal.find(x => x.user === login) || {};
+    return { login, idx, equipo: p.equipo || 'Sin equipo' };
   });
 
-  // Cola de espera: personas UIO con Telco U, estado Pendiente/En revisión, que NO están en el pool
+  // Resumen por equipo para los badges de los tabs
+  const equipos = ['Planificación','Implementación','O&M'];
+  const countByEq = {};
+  equipos.forEach(eq => { countByEq[eq] = poolConEquipo.filter(x => x.equipo === eq).length; });
+
+  // Filtrar según tab activo
+  const poolFiltrado = _licEquipo === 'Todos'
+    ? poolConEquipo
+    : poolConEquipo.filter(x => x.equipo === _licEquipo);
+
+  const slotCards = buildSlotCards(poolFiltrado);
+
+  // Slots libres (solo en "Todos")
+  const libres = Math.max(0, POOL_UIO_MAX - POOL_UIO.length);
+  const libresHtml = (_licEquipo === 'Todos' && libres > 0)
+    ? Array(libres).fill(0).map((_,j) =>
+        '<div style="background:var(--gray-bg);border:2px dashed var(--gray-bd);border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:160px;gap:6px">'
+        + '<div style="font-size:24px">🟢</div>'
+        + '<div style="font-size:12px;font-weight:700;color:#16a34a">Slot '+(POOL_UIO.length+j+1)+' — Disponible</div>'
+        + '<div style="font-size:11px;color:var(--text3)">Sin usuario asignado</div>'
+        + '</div>'
+      ).join('')
+    : '';
+
+  // Cola de espera filtrada por equipo
+  const colaEqFiltro = _licEquipo === 'Todos' ? null : _licEquipo;
   const cola = asignaciones.filter(a => {
     const p = personal.find(x => x.user === a.user_login);
     return p && p.ciudad === 'UIO' && a.licencia === 'Telco U'
       && ['Pendiente','En revisión'].includes(a.estado)
-      && !POOL_UIO.includes(a.user_login);
+      && !POOL_UIO.includes(a.user_login)
+      && (!colaEqFiltro || p.equipo === colaEqFiltro);
   });
-  // Deduplicar por persona (mostrar una fila por persona, con conteo de cursos pendientes)
   const colaByUser = {};
-  cola.forEach(a => {
-    if (!colaByUser[a.user_login]) colaByUser[a.user_login] = [];
-    colaByUser[a.user_login].push(a);
-  });
+  cola.forEach(a => { if (!colaByUser[a.user_login]) colaByUser[a.user_login] = []; colaByUser[a.user_login].push(a); });
   const colaPersonas = Object.entries(colaByUser)
     .map(([u, arr]) => ({ user: u, cursos: arr, oldest: arr.reduce((m,a)=> a.created_at < m ? a.created_at : m, arr[0].created_at) }))
     .sort((a,b) => new Date(a.oldest) - new Date(b.oldest));
 
-  const libres = Math.max(0, POOL_UIO_MAX - POOL_UIO.length);
-
   const colaHtml = colaPersonas.length === 0
-    ? '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">No hay solicitudes en espera para UIO</div>'
+    ? '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">No hay solicitudes en espera</div>'
     : colaPersonas.map(({ user, cursos, oldest }, idx) => {
         const p = personal.find(x => x.user === user) || { nombre: user };
         const diasEsp = Math.floor((Date.now()-new Date(oldest))/(24*3600*1000));
-        return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--gray-bd)'
-          + (idx===0?';background:#f0fdf4':'') + '">'
-          + '<div style="min-width:28px;height:28px;border-radius:50%;background:' + (idx===0?'#16a34a':'var(--gray-bd)') + ';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:' + (idx===0?'#fff':'var(--text3)') + '">' + (idx+1) + '</div>'
-          + '<div style="flex:1;min-width:0">'
-          + '<div style="font-size:12px;font-weight:600;color:var(--text)">' + p.nombre + '</div>'
-          + '<div style="font-size:11px;color:var(--text3)">' + cursos.length + ' curso(s) esperando · ' + diasEsp + ' días</div>'
-          + '</div>'
+        return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--gray-bd)'+(idx===0?';background:#f0fdf4':'')+'">'
+          + '<div style="min-width:28px;height:28px;border-radius:50%;background:'+(idx===0?'#16a34a':'var(--gray-bd)')+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:'+(idx===0?'#fff':'var(--text3)')+'">'+( idx+1)+'</div>'
+          + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--text)">'+p.nombre+'</div>'
+          + '<div style="font-size:11px;color:var(--text3)">'+cursos.length+' curso(s) esperando · '+diasEsp+' días</div></div>'
           + (libres > 0
-            ? '<button class="btn success" style="font-size:11px;padding:4px 10px" onclick="asignarSlotAPersona(\'' + user + '\')">✔ Dar licencia</button>'
+            ? '<button class="btn success" style="font-size:11px;padding:4px 10px" onclick="asignarSlotAPersona(\''+user+'\')">✔ Dar licencia</button>'
             : '<span style="font-size:10px;color:var(--text3)">Sin slots libres</span>')
           + '</div>';
       }).join('');
 
+  // Sub-tabs — admin equipo solo ve su propio equipo (sin poder cambiar)
+  const eqForzadoLic = adminEquipo();
+  const subTabsHtml = eqForzadoLic
+    ? '<div class="sub-tabs" style="margin-bottom:16px">'
+      + '<div class="sub-tab active">'
+      + (eqForzadoLic==='Planificación'?'📐':eqForzadoLic==='Implementación'?'⚙️':'🖥')+' '+eqForzadoLic
+      + ' <span style="font-size:10px;background:rgba(0,0,0,.12);border-radius:8px;padding:0 5px;margin-left:3px">'+(countByEq[eqForzadoLic]||0)+'</span>'
+      + '</div></div>'
+    : (() => {
+        const tabDefs = [
+          { key:'Todos',         label:'🗂 Todos',           count: POOL_UIO.length },
+          { key:'Planificación', label:'📐 Planificación',   count: countByEq['Planificación'] },
+          { key:'Implementación',label:'⚙️ Implementación',  count: countByEq['Implementación'] },
+          { key:'O&M',           label:'🖥 O&M',             count: countByEq['O&M'] },
+        ];
+        return '<div class="sub-tabs" style="margin-bottom:16px">'
+          + tabDefs.map(t =>
+              '<div class="sub-tab'+(t.key===_licEquipo?' active':'')+'" onclick="switchLicTab(\''+t.key+'\')">'
+              + t.label
+              + (t.count > 0 ? ' <span style="font-size:10px;background:rgba(0,0,0,.12);border-radius:8px;padding:0 5px;margin-left:3px">'+t.count+'</span>' : '')
+              + '</div>'
+            ).join('')
+          + '</div>';
+      })();
+
   cont.innerHTML =
-    '<div style="max-width:960px;margin:0 auto">'
-    + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">'
-    + '<div>'
-    + '<h2 style="font-size:18px;font-weight:700;color:var(--navy)">🪪 Pool de Licencias Telco U — UIO</h2>'
-    + '<p style="font-size:13px;color:var(--text3);margin-top:2px">5 licencias activas · la licencia es de la persona, los cursos se autorizan por separado</p>'
-    + '</div>'
+    '<div style="max-width:980px;margin:0 auto">'
+    + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">'
+    + '<div><h2 style="font-size:18px;font-weight:700;color:var(--navy)">🪪 Pool de Licencias Telco U — UIO</h2>'
+    + '<p style="font-size:13px;color:var(--text3);margin-top:2px">5 licencias activas · la licencia es de la persona, los cursos se autorizan por separado</p></div>'
     + '<div style="display:flex;gap:8px">'
     + '<div style="background:var(--green-lt);border:1px solid #6bbf8a;border-radius:10px;padding:8px 16px;text-align:center">'
-    + '<div style="font-size:20px;font-weight:700;color:#16a34a">' + POOL_UIO.length + ' / ' + POOL_UIO_MAX + '</div>'
-    + '<div style="font-size:10px;color:#16a34a;font-weight:600">SLOTS OCUPADOS</div>'
-    + '</div>'
+    + '<div style="font-size:20px;font-weight:700;color:#16a34a">'+POOL_UIO.length+' / '+POOL_UIO_MAX+'</div>'
+    + '<div style="font-size:10px;color:#16a34a;font-weight:600">SLOTS OCUPADOS</div></div>'
     + '<div style="background:var(--amber-lt);border:1px solid #f5c87a;border-radius:10px;padding:8px 16px;text-align:center">'
-    + '<div style="font-size:20px;font-weight:700;color:var(--amber)">' + colaPersonas.length + '</div>'
-    + '<div style="font-size:10px;color:var(--amber);font-weight:600">EN COLA</div>'
-    + '</div>'
-    + '</div>'
-    + '</div>'
-    // Slots
+    + '<div style="font-size:20px;font-weight:700;color:var(--amber)">'+colaPersonas.length+'</div>'
+    + '<div style="font-size:10px;color:var(--amber);font-weight:600">EN COLA</div></div>'
+    + '</div></div>'
+    + subTabsHtml
     + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:24px">'
     + slotCards.join('')
-    + (libres > 0 ? Array(libres).fill(0).map((_,j) =>
-        '<div style="background:var(--gray-bg);border:2px dashed var(--gray-bd);border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:160px;gap:6px">'
-        + '<div style="font-size:24px">🟢</div>'
-        + '<div style="font-size:12px;font-weight:700;color:#16a34a">Slot ' + (POOL_UIO.length+j+1) + ' — Disponible</div>'
-        + '<div style="font-size:11px;color:var(--text3)">Sin usuario asignado</div>'
-        + '</div>'
-      ).join('') : '')
+    + libresHtml
     + '</div>'
-    // Cola
     + '<div style="background:var(--surface-2);border:1px solid var(--gray-bd);border-radius:12px;overflow:hidden">'
     + '<div style="padding:12px 16px;background:var(--gray-bg);border-bottom:1px solid var(--gray-bd);display:flex;align-items:center;justify-content:space-between">'
-    + '<span style="font-size:13px;font-weight:700;color:var(--navy)">⏳ Próximos en recibir licencia — UIO</span>'
-    + '<span style="font-size:11px;color:var(--text3)">' + colaPersonas.length + ' persona(s) esperando</span>'
-    + '</div>'
+    + '<span style="font-size:13px;font-weight:700;color:var(--navy)">⏳ Próximos en recibir licencia'
+    + (_licEquipo !== 'Todos' ? ' · '+_licEquipo : ' — UIO') + '</span>'
+    + '<span style="font-size:11px;color:var(--text3)">'+colaPersonas.length+' persona(s) esperando</span></div>'
     + colaHtml
-    + '</div>'
-    + '</div>';
+    + '</div></div>';
+}
+
+function switchLicTab(eq) {
+  _licEquipo = eq;
+  renderLicencias();
 }
 
 function verCursosSlot(userLogin) {
